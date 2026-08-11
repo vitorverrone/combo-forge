@@ -4,9 +4,9 @@
 
 **Blocked by:** 13 — Desafio Diário (cliente)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Assistir ao anúncio recompensado libera a 1 tentativa extra do Desafio Diário
-- [ ] O anúncio nunca é obrigatório; o progresso core funciona integralmente sem ele
-- [ ] Falha no carregamento/exibição do anúncio não bloqueia nem quebra o fluxo do jogo
-- [ ] A oferta de anúncio não é acionada como gatilho de conversão após uma derrota
+- [x] Assistir ao anúncio recompensado libera a 1 tentativa extra do Desafio Diário
+- [x] O anúncio nunca é obrigatório; o progresso core funciona integralmente sem ele
+- [x] Falha no carregamento/exibição do anúncio não bloqueia nem quebra o fluxo do jogo
+- [x] A oferta de anúncio não é acionada como gatilho de conversão após uma derrota
