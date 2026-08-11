@@ -5,4 +5,7 @@
  * Forja, Relíquias, DDA, Desafio Diário) vive aqui em fases futuras.
  */
 
+export * from './cards';
+export * from './patterns';
+
 export const engineModuleId = 'combo-forge-engine';
