@@ -17,3 +17,11 @@ _Evitar_: Chips, pontos brutos
 **Multiplicador de Combo**:
 O fator aplicado ao Valor-Base de uma Jogada, igual à contagem de Jogadas já feitas na mesma Rodada (1ª Jogada ×1, 2ª ×2, 3ª ×3, etc.). Zera ao iniciar uma nova Rodada.
 _Evitar_: Combo (sem qualificação), streak, chain, multiplicador global
+
+**Baralho**:
+O conjunto fixo de cartas disponíveis na Run. As cartas jogadas são recicladas — retornam ao Baralho ao fim da Rodada —, então a composição só muda através de Upgrades escolhidos entre Rodadas.
+_Evitar_: Deck, baralho consumível
+
+**Mão**:
+O subconjunto de cartas do Baralho que o jogador segura e a partir do qual seleciona as cartas de uma Jogada. Reabastece pelo Baralho após cada Jogada.
+_Evitar_: Hand (em inglês), baralho (Mão é um subconjunto, não o deck inteiro)
