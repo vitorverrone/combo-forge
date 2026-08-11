@@ -4,11 +4,11 @@
 
 **Blocked by:** 07 — Motor: DDA e determinismo, 09 — Fim de Rodada e derrota
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] O estado do DDA e as estatísticas de perfil persistem entre sessões via SQLite
-- [ ] Marcos de 1ª/3ª/5ª Run vencida e recorde ≥ 2.500 são detectados ao fim de cada Run
-- [ ] Desbloqueios aplicados: Martelo, Bigorna, novos Efeitos de Forja no pool de ofertas e Relíquias raras no pool
-- [ ] Quando um marco oferece mais de um desbloqueio, o jogador escolhe a ordem
-- [ ] Perfil mostra maior combo, taxa de vitória e cartas favoritas
-- [ ] Coleção lista cartas, Relíquias e Forjadores desbloqueados, com progresso visível
+- [x] O estado do DDA e as estatísticas de perfil persistem entre sessões via SQLite
+- [x] Marcos de 1ª/3ª/5ª Run vencida e recorde ≥ 2.500 são detectados ao fim de cada Run
+- [x] Desbloqueios aplicados: Martelo, Bigorna, novos Efeitos de Forja no pool de ofertas e Relíquias raras no pool
+- [x] Quando um marco oferece mais de um desbloqueio, o jogador escolhe a ordem
+- [x] Perfil mostra maior combo, taxa de vitória e cartas favoritas
+- [x] Coleção lista cartas, Relíquias e Forjadores desbloqueados, com progresso visível
