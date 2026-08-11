@@ -4,9 +4,12 @@ import {
   cardKey,
   createDeck,
   createMemoryDdaStorage,
+  createSeededRng,
   DEFAULT_DDA_CONFIG,
   DeckState,
+  generateForgeOffers,
   loadDda,
+  RELIC_POOL,
   PatternKind,
   PLAYS_PER_ROUND,
   RunEvent,
@@ -190,6 +193,64 @@ describe('fim de Rodada e derrota', () => {
     store.getState().startRun();
     const runBefore = store.getState().run;
     store.getState().nextRound();
+    expect(store.getState().run).toBe(runBefore);
+  });
+
+  test('applyForgeOffer de carta exige a carta alvo e encerra a fase forging', () => {
+    const store = createGameStore({ seed: () => 21 });
+    store.getState().startRun();
+    // Simula a Rodada vencida: fase forging com as ofertas do motor.
+    const offers = generateForgeOffers(createSeededRng(7), []);
+    store.setState({
+      run: { ...store.getState().run!, phase: 'forging', forgeOffers: offers },
+    });
+    const cardEffectIndex = offers.findIndex((offer) => offer.type === 'cardEffect');
+    const target = createDeck()[3];
+    store.getState().applyForgeOffer(cardEffectIndex, target);
+    const state = store.getState();
+    expect(state.run?.phase).toBe('roundWon');
+    expect(state.run?.forgeOffers).toHaveLength(0);
+    expect(state.run?.forgedCards).toHaveLength(1);
+    expect(cardKey(state.run!.forgedCards[0].card)).toBe(cardKey(target));
+  });
+
+  test('applyForgeOffer de Relíquia adquire a Relíquia da oferta', () => {
+    const store = createGameStore({ seed: () => 22 });
+    store.getState().startRun();
+    const offers = generateForgeOffers(createSeededRng(7), []);
+    store.setState({
+      run: { ...store.getState().run!, phase: 'forging', forgeOffers: offers },
+    });
+    const relicIndex = offers.findIndex((offer) => offer.type === 'relic');
+    expect(relicIndex).toBeGreaterThanOrEqual(0);
+    const relic = (offers[relicIndex] as Extract<(typeof offers)[number], { type: 'relic' }>).relic;
+    store.getState().applyForgeOffer(relicIndex);
+    const state = store.getState();
+    expect(state.run?.phase).toBe('roundWon');
+    expect(state.run?.relics.map((candidate) => candidate.id)).toContain(relic.id);
+  });
+
+  test('applyForgeOffer respeita o teto de 3 Relíquias: sem slot, só ofertas de carta', () => {
+    const store = createGameStore({ seed: () => 23 });
+    store.getState().startRun();
+    // Teto cheio: o motor gera 3 ofertas de carta, sem oferta de Relíquia.
+    const fullRelics = RELIC_POOL.slice(0, 3);
+    const offers = generateForgeOffers(createSeededRng(7), fullRelics);
+    expect(offers.every((offer) => offer.type === 'cardEffect')).toBe(true);
+    store.setState({
+      run: { ...store.getState().run!, phase: 'forging', forgeOffers: offers },
+    });
+    // Aplicar a primeira oferta (de carta) segue o fluxo normal.
+    store.getState().applyForgeOffer(0, createDeck()[5]);
+    expect(store.getState().run?.phase).toBe('roundWon');
+    expect(store.getState().run?.relics).toHaveLength(0);
+  });
+
+  test('applyForgeOffer ignora fases que não sejam forging', () => {
+    const store = createGameStore({ seed: () => 24 });
+    store.getState().startRun();
+    const runBefore = store.getState().run;
+    store.getState().applyForgeOffer(0, createDeck()[0]);
     expect(store.getState().run).toBe(runBefore);
   });
 

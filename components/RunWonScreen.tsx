@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { getForger, ROUNDS_PER_RUN, RunState } from '../engine';
+import { activeRelics, getForger, ROUNDS_PER_RUN, RunState } from '../engine';
 
+import { RelicRow } from './RelicRow';
 import { colors } from './theme';
 import { useGameStore } from '../store/gameStore';
 
@@ -26,6 +27,8 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
         <Text style={styles.scoreLabel}>FINAL SCORE</Text>
         <Text style={styles.scoreValue}>{run.runScore}</Text>
       </View>
+
+      <RelicRow relics={activeRelics(run.startingRelic, run.relics)} />
 
       <Pressable
         accessibilityLabel="Play another run"
