@@ -14,6 +14,10 @@
  * Relíquias (ticket 06): modificadores de pontuação derivados das Relíquias
  * ativas — Relíquias de Naipe multiplicam a contribuição das cartas do Naipe
  * na soma e Relíquias de Padrão somam ao bônus do Padrão.
+ *
+ * Dicas de hesitação (ticket 07): availablePatternHints é função pura que
+ * lista os Padrões formáveis pela Mão — apenas dado para a UI exibir uma
+ * dica sutil quando o jogador hesita; nunca altera estado nem Meta.
  */
 
 import {
@@ -146,6 +150,51 @@ export function evaluatePlay(cards: readonly Card[], context: PlayContext = {}):
   const bonus = PATTERN_BONUSES[patternKind] + (context.modifiers?.patternBonuses?.[patternKind] ?? 0);
   const baseValue = bonus + contributions.reduce((total, value) => total + value, 0);
   return { pattern: { kind: patternKind, bonus }, baseValue };
+}
+
+/**
+ * Padrões formáveis com as cartas da Mão (dica visual de hesitação, ticket
+ * 07). Função pura sobre os Valores impressos — não considera Curingas e
+ * nunca toca estado ou Meta. Devolve os melhores Padrões disponíveis, sem
+ * redundâncias implicadas (ex.: Quadra já implica Trinca).
+ */
+export function availablePatternHints(cards: readonly Card[]): PatternKind[] {
+  const countByValue = new Map<number, number>();
+  for (const card of cards) {
+    countByValue.set(card.value, (countByValue.get(card.value) ?? 0) + 1);
+  }
+  const counts = [...countByValue.values()];
+  const maxGroup = Math.max(...counts, 0);
+  const pairCount = counts.filter((count) => count >= 2).length;
+
+  const hints: PatternKind[] = [];
+  if (maxGroup >= 4) {
+    hints.push(PatternKind.FourOfAKind);
+  } else if (maxGroup >= 3 && pairCount >= 2) {
+    hints.push(PatternKind.FullHouse);
+  } else if (maxGroup >= 3) {
+    hints.push(PatternKind.ThreeOfAKind);
+  } else if (pairCount >= 2) {
+    hints.push(PatternKind.TwoPair);
+  } else if (pairCount === 1) {
+    hints.push(PatternKind.Pair);
+  }
+  if (isStraightPossible([...countByValue.keys()])) {
+    hints.push(PatternKind.Straight);
+  }
+  return hints;
+}
+
+/** Há 5 valores distintos consecutivos na Mão (incluindo 10–Ás)? */
+function isStraightPossible(values: readonly number[]): boolean {
+  const present = new Set(values);
+  // janelas de 5 consecutivos em 1..10
+  for (let start = MIN_CARD_VALUE; start <= 6; start += 1) {
+    const run = [start, start + 1, start + 2, start + 3, start + 4];
+    if (run.every((value) => present.has(value))) return true;
+  }
+  // 10–Ás: 7,8,9,10 + Ás (1)
+  return [7, 8, 9, 10, MIN_CARD_VALUE].every((value) => present.has(value));
 }
 
 /**

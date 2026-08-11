@@ -1,4 +1,5 @@
 import { Card, ForgeEffect } from './cards';
+import { DEFAULT_DDA_CONFIG, DEFAULT_DDA_STATE } from './dda';
 import { createDeck, DeckState, DISCARDS_PER_ROUND, HAND_SIZE } from './deck';
 import { ForgeOffer, forgeCard, forgeOfferSeed, generateForgeOffers } from './forge';
 import { createSeededRng, Rng } from './random';
@@ -44,6 +45,8 @@ function makeRun(hand: readonly Card[], overrides: Partial<RunState> = {}): RunS
     relics: [],
     startingRelic: undefined,
     forger: 'apprentice',
+    dda: DEFAULT_DDA_STATE,
+    ddaConfig: DEFAULT_DDA_CONFIG,
     forgeOffers: [],
     ...overrides,
   };
@@ -291,6 +294,31 @@ describe('Relíquias de Mecânica na estrutura (ticket 06)', () => {
     const { run: won } = makePlay(run, QUAD_TENS, createSeededRng(3));
     expect(won.forgeOffers).toHaveLength(3);
     expect(won.forgeOffers.every((o) => o.type === 'cardEffect')).toBe(true);
+  });
+});
+
+describe('boost de Relíquia rara (ticket 07)', () => {
+  test('com o boost e a decisão aleatória a favor, a oferta sai do subconjunto raro', () => {
+    const lowRng: Rng = () => 0.1; // rng() < RARE_RELIC_BOOST_RATE → viés para raras
+    const offers = generateForgeOffers(lowRng, [], { rareRelicBoost: true });
+    const relicOffer = offers.find((o) => o.type === 'relic');
+    expect(relicOffer).toBeDefined();
+    if (relicOffer !== undefined && relicOffer.type === 'relic') {
+      expect(relicOffer.relic.rarity).toBe('rare');
+    }
+  });
+
+  test('sem boost, o sorteio é uniforme sobre todas as disponíveis', () => {
+    const lowRng: Rng = () => 0.1;
+    const offers = generateForgeOffers(lowRng, [], { rareRelicBoost: false });
+    expect(offers.filter((o) => o.type === 'relic')).toHaveLength(1);
+  });
+
+  test('o boost permanece determinístico para a mesma stream', () => {
+    const lowRng: Rng = () => 0.1;
+    const a = generateForgeOffers(lowRng, [], { rareRelicBoost: true });
+    const b = generateForgeOffers(lowRng, [], { rareRelicBoost: true });
+    expect(a).toEqual(b);
   });
 });
 

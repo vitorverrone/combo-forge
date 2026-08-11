@@ -17,11 +17,18 @@
  * Relíquias e Forjadores (ticket 06): o Forjador escolhido no startRun traz
  * uma Relíquia exclusiva de largada (fora do teto de 3) e as Relíquias
  * aplicam regras à pontuação (Naipe/Padrão), à estrutura da Rodada
- * (Mecânica: Mão/Descarte) e ao Multiplicador de Combo. Estado serializável,
- * sem referências de UI.
+ * (Mecânica: Mão/Descarte) e ao Multiplicador de Combo.
+ *
+ * DDA (ticket 07): as Metas partem da curva base ajustada pelo histórico
+ * persistido entre Runs (dda) — −10% na Rodada da última derrota com falhas
+ * consecutivas, +10% com vitórias fáceis consecutivas, que também aumentam
+ * a frequência de Relíquia rara. A flag "sem DDA" (ddaConfig.enabled false,
+ * Desafio Diário) deixa as Metas na curva base. Estado serializável, sem
+ * referências de UI.
  */
 
 import { Card, ForgedCard } from './cards';
+import { adjustTarget, DdaConfig, DEFAULT_DDA_CONFIG, DEFAULT_DDA_STATE, DdaState } from './dda';
 import { DeckState, discardCards, initialDeckState, isDeckCard, playCards, RoundStructure, startRound } from './deck';
 import { ForgeOffer, forgeCard, forgeOfferSeed, generateForgeOffers } from './forge';
 import { ForgerId, getForger } from './forgers';
@@ -57,6 +64,10 @@ export interface RunState {
   readonly startingRelic?: Relic;
   /** Forjador escolhido no início da Run. */
   readonly forger: ForgerId;
+  /** Histórico DDA que ajusta as Metas (snapshot do início da Run). */
+  readonly dda: DdaState;
+  /** Parâmetros do DDA; `enabled: false` desliga todos os ajustes (Desafio Diário). */
+  readonly ddaConfig: DdaConfig;
   /** Ofertas da Forja atual (preenchido apenas na fase 'forging'). */
   readonly forgeOffers: readonly ForgeOffer[];
 }
@@ -99,13 +110,22 @@ export function currentMultiplier(run: RunState): number {
   return comboMultiplier(currentPlayNumber(run), activeRelics(run.startingRelic, run.relics));
 }
 
+export interface StartRunOptions {
+  /** Forjador escolhido (padrão: Aprendiz). */
+  readonly forger?: ForgerId;
+  /** Histórico DDA persistido entre Runs (padrão: neutro). */
+  readonly dda?: DdaState;
+  /** Parâmetros do DDA; `enabled: false` desliga os ajustes (Desafio Diário). */
+  readonly ddaConfig?: DdaConfig;
+}
+
 /**
  * Inicia uma nova Run (Rodada 1) a partir do seed — determina embaralhamento
- * e Forjas — com o Forjador escolhido (padrão: Aprendiz). A Relíquia
- * exclusiva de largada do Forjador entra fora do teto de 3.
+ * e Forjas — com o Forjador escolhido (padrão: Aprendiz) e o histórico DDA.
+ * A Relíquia exclusiva de largada do Forjador entra fora do teto de 3.
  */
-export function startRun(seed: number, forgerId: ForgerId = 'apprentice'): RunState {
-  const forger = getForger(forgerId);
+export function startRun(seed: number, options: StartRunOptions = {}): RunState {
+  const forger = getForger(options.forger ?? 'apprentice');
   return startRoundState(
     initialDeckState(),
     1,
@@ -116,6 +136,8 @@ export function startRun(seed: number, forgerId: ForgerId = 'apprentice'): RunSt
     [],
     forger.startingRelic,
     forger.id,
+    options.dda ?? DEFAULT_DDA_STATE,
+    options.ddaConfig ?? DEFAULT_DDA_CONFIG,
   );
 }
 
@@ -141,6 +163,8 @@ export function startNextRound(run: RunState, rng: Rng): RunState {
     run.relics,
     run.startingRelic,
     run.forger,
+    run.dda,
+    run.ddaConfig,
   );
 }
 
@@ -154,6 +178,8 @@ function startRoundState(
   relics: readonly Relic[] = [],
   startingRelic?: Relic,
   forger: ForgerId = 'apprentice',
+  dda: DdaState = DEFAULT_DDA_STATE,
+  ddaConfig: DdaConfig = DEFAULT_DDA_CONFIG,
 ): RunState {
   return {
     seed,
@@ -162,12 +188,14 @@ function startRoundState(
     playsRemaining: PLAYS_PER_ROUND,
     score: 0,
     runScore,
-    target: baseTarget(roundNumber),
+    target: adjustTarget(baseTarget(roundNumber), roundNumber, dda, ddaConfig),
     phase: 'playing',
     forgedCards,
     relics,
     startingRelic,
     forger,
+    dda,
+    ddaConfig,
     forgeOffers: [],
   };
 }
@@ -248,6 +276,10 @@ export function makePlay(
     const offers = generateForgeOffers(
       createSeededRng(forgeOfferSeed(run.seed, run.roundNumber)),
       run.relics,
+      {
+        // sequência de vitórias fáceis aumenta a frequência de Relíquia rara
+        rareRelicBoost: run.ddaConfig.enabled && run.dda.easyWins >= run.ddaConfig.easyWinThreshold,
+      },
     );
     events.push({ type: 'forgeOffers', roundNumber: run.roundNumber, offers });
     return { run: { ...base, phase: 'forging', forgeOffers: offers }, events };
