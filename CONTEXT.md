@@ -78,6 +78,10 @@ _Evitar_: Personagem, classe, herói
 O modo diário de comparação social justa. Um seed cobre a Run inteira (embaralhamento do Baralho + ofertas de Forja e de Relíquia), idêntico para todos os jogadores, e o DDA fica desligado. São 1 tentativa gratuita por dia + 1 extra via anúncio recompensado (opt-in). O ranking é semanal, opt-in, ordenado pela pontuação final da Run e mostra apenas a própria posição e o top 10.
 _Evitar_: Daily, desafio do dia
 
+**Meta-Progressão**:
+O sistema de desbloqueio permanente entre Runs, sem moeda — por conquista. Marcos: 1ª Run vencida (desbloqueia o Forjador Martelo), 3ª (desbloqueia a Bigorna), 5ª (2 novos Efeitos de Forja entram no pool de ofertas) e recorde de pontuação ≥ 2.500 numa Run (Relíquias raras entram no pool). Quando um marco oferece mais de um desbloqueio, o jogador escolhe a ordem.
+_Evitar_: Progressão, unlocks, meta-jogo (meta-jogo é o sistema mais amplo)
+
 **Run**:
 Uma sessão completa de jogo, da Rodada 1 até a derrota ou até vencer a 6ª Rodada. Ao falhar, reinicia-se imediatamente uma nova Run.
 _Evitar_: Partida, run run (sem repetição)
