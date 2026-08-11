@@ -4,10 +4,10 @@
 
 **Blocked by:** 09 — Fim de Rodada e derrota, 10 — Forja na UI
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Cada Jogada aciona feedback sonoro com pitch ascendente proporcional ao Multiplicador de Combo
-- [ ] Vibração háptica curta e proporcional ao tamanho do combo, sem vibração constante
-- [ ] Derrota por margem pequena destaca visualmente a barra de progresso "quase cheia"
-- [ ] Lembrete gentil de pausa aparece após X Runs consecutivas em intervalo curto, sem bloquear o jogo
-- [ ] O feedback é disparado por eventos emitidos pelo motor; a UI não contém regra de jogo
+- [x] Cada Jogada aciona feedback sonoro com pitch ascendente proporcional ao Multiplicador de Combo
+- [x] Vibração háptica curta e proporcional ao tamanho do combo, sem vibração constante
+- [x] Derrota por margem pequena destaca visualmente a barra de progresso "quase cheia"
+- [x] Lembrete gentil de pausa aparece após X Runs consecutivas em intervalo curto, sem bloquear o jogo
+- [x] O feedback é disparado por eventos emitidos pelo motor; a UI não contém regra de jogo
