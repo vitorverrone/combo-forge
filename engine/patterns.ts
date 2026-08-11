@@ -10,6 +10,10 @@
  * resolvem antes de multiplicadores), Curinga conta como qualquer Valor para
  * formar o melhor Padrão e Gatilho concede bônus apenas quando a condição
  * (número da Jogada na Rodada) é satisfeita.
+ *
+ * Relíquias (ticket 06): modificadores de pontuação derivados das Relíquias
+ * ativas — Relíquias de Naipe multiplicam a contribuição das cartas do Naipe
+ * na soma e Relíquias de Padrão somam ao bônus do Padrão.
  */
 
 import {
@@ -20,6 +24,7 @@ import {
   isCard,
   MAX_CARD_VALUE,
   MIN_CARD_VALUE,
+  Suit,
 } from './cards';
 
 export enum PatternKind {
@@ -59,11 +64,23 @@ const PATTERN_RANK: Readonly<Record<PatternKind, number>> = {
   [PatternKind.HighCard]: 1,
 };
 
+/**
+ * Modificadores de pontuação derivados das Relíquias ativas (ticket 06):
+ * Naipe (multiplica a contribuição das cartas do Naipe) e Padrão (soma ao
+ * bônus do Padrão). Ausente/omisso = jogo base.
+ */
+export interface ScoreModifiers {
+  readonly suitMultipliers?: Readonly<Partial<Record<Suit, number>>>;
+  readonly patternBonuses?: Readonly<Partial<Record<PatternKind, number>>>;
+}
+
 export interface PlayContext {
   /** Cartas Forjadas ativas na Run (identidade `naipe:valor`). */
   readonly forgedCards?: readonly ForgedCard[];
   /** Número da Jogada dentro da Rodada (1–4), para Gatilhos. */
   readonly playNumber?: number;
+  /** Modificadores de Relíquias aplicados à pontuação. */
+  readonly modifiers?: ScoreModifiers;
 }
 
 export interface PlayEvaluation {
@@ -109,17 +126,26 @@ export function evaluatePlay(cards: readonly Card[], context: PlayContext = {}):
   }
 
   // Contribuição de cada carta na ordem da Jogada: Curingas consomem as
-  // atribuições na ordem em que aparecem.
+  // atribuições na ordem em que aparecem; Relíquias de Naipe multiplicam a
+  // contribuição das cartas do Naipe (identidade impressa da carta).
+  const suitMultipliers = context.modifiers?.suitMultipliers ?? {};
   let wildcardIndex = 0;
   const contributions = cards.map((card) => {
     const forged = forgedCards.find((candidate) => cardKey(candidate.card) === cardKey(card));
-    if (!forged) return card.value;
-    const isWildcard = forged.effects.some((effect) => effect.kind === 'wildcard');
-    const rawValue = isWildcard ? assignments[wildcardIndex++] : card.value;
-    return cardContribution(rawValue, forged, context.playNumber);
+    const base = forged
+      ? cardContribution(
+          forged.effects.some((effect) => effect.kind === 'wildcard')
+            ? assignments[wildcardIndex++]
+            : card.value,
+          forged,
+          context.playNumber,
+        )
+      : card.value;
+    return base * (suitMultipliers[card.suit] ?? 1);
   });
-  const baseValue = PATTERN_BONUSES[patternKind] + contributions.reduce((total, value) => total + value, 0);
-  return { pattern: { kind: patternKind, bonus: PATTERN_BONUSES[patternKind] }, baseValue };
+  const bonus = PATTERN_BONUSES[patternKind] + (context.modifiers?.patternBonuses?.[patternKind] ?? 0);
+  const baseValue = bonus + contributions.reduce((total, value) => total + value, 0);
+  return { pattern: { kind: patternKind, bonus }, baseValue };
 }
 
 /**

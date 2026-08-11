@@ -2,7 +2,7 @@
  * Motor de jogo puro: nenhuma dependência de React Native, Skia, Reanimated,
  * Zustand ou SQLite. Toda a lógica de regras do Combo Forge (Padrões,
  * Valor-Base, Multiplicador de Combo, Baralho, Mão, Descarte, Rodada, Meta,
- * Forja e Cartas Forjadas, Relíquias) vive aqui; DDA, Forjadores e Desafio
+ * Forja e Cartas Forjadas, Relíquias e Forjadores) vive aqui; DDA e Desafio
  * Diário entram em fases futuras.
  */
 
@@ -12,6 +12,7 @@ export * from './random';
 export * from './deck';
 export * from './relics';
 export * from './forge';
+export * from './forgers';
 export * from './run';
 
 export const engineModuleId = 'combo-forge-engine';

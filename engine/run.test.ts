@@ -1,6 +1,9 @@
 import { Card } from './cards';
 import { createDeck, DeckState } from './deck';
+import { generateForgeOffers } from './forge';
+import { ForgerId, getForger } from './forgers';
 import { createSeededRng } from './random';
+import { RELIC_POOL } from './relics';
 import {
   baseTarget,
   currentMultiplier,
@@ -41,6 +44,8 @@ function makeRun(hand: readonly Card[], overrides: Partial<RunState> = {}): RunS
     seed: 0,
     forgedCards: [],
     relics: [],
+    startingRelic: undefined,
+    forger: 'apprentice',
     forgeOffers: [],
     ...overrides,
   };
@@ -221,9 +226,93 @@ describe('startNextRound', () => {
   });
 });
 
+describe('Relíquias na Run (ticket 06)', () => {
+  test('Relíquia de Naipe altera a pontuação da Jogada', () => {
+    const run = makeRun([spades(7), hearts(7)], { relics: [RELIC_POOL[0]] }); // espadas ×2
+    const { run: next } = makePlay(run, [spades(7), hearts(7)], createSeededRng(30));
+    expect(next.score).toBe(26); // (5 + 7×2 + 7) × 1
+  });
+
+  test('Relíquia de Padrão soma ao bônus do Padrão na Jogada', () => {
+    const run = makeRun([spades(7), hearts(7)], { relics: [RELIC_POOL[4]] }); // Par +10
+    const { run: next, events } = makePlay(run, [spades(7), hearts(7)], createSeededRng(31));
+    expect(next.score).toBe(29); // (5+10) + 7 + 7
+    expect(eventsOfType(events, 'played')[0]).toMatchObject({ baseValue: 29 });
+  });
+
+  test('Relíquia de Combo altera o Multiplicador da Jogada', () => {
+    const run = makeRun([spades(7), hearts(7)], { relics: [RELIC_POOL[8]] }); // começa ×2
+    expect(currentMultiplier(run)).toBe(2);
+    const { run: next, events } = makePlay(run, [spades(7), hearts(7)], createSeededRng(32));
+    expect(next.score).toBe(38); // 19 × 2
+    expect(eventsOfType(events, 'played')[0]).toMatchObject({ multiplier: 2 });
+  });
+
+  test('Gatilho conta a Jogada real, não o Multiplicador alterado', () => {
+    const run = makeRun([spades(7), hearts(7)], {
+      relics: [RELIC_POOL[8]], // começa ×2
+      forgedCards: [{ card: spades(7), effects: [{ kind: 'trigger', triggerPlay: 1, bonus: 20 }] }],
+    });
+    // 1ª Jogada real dispara o Gatilho: (5 + 27 + 7) × 2 = 78
+    const { run: next } = makePlay(run, [spades(7), hearts(7)], createSeededRng(33));
+    expect(next.score).toBe(78);
+  });
+
+  test('a Relíquia de largada do Forjador não consome slot do teto de 3', () => {
+    const run = makeRun([], {
+      forger: 'hammer',
+      startingRelic: getForger('hammer').startingRelic,
+      relics: RELIC_POOL.slice(0, 2),
+    });
+    // 2 adquiridas + 1 de largada: a Forja ainda oferece Relíquia
+    const offers = generateForgeOffers(createSeededRng(1), run.relics);
+    expect(offers.filter((o) => o.type === 'relic')).toHaveLength(1);
+  });
+});
+
+describe('Forjadores na Run (ticket 06)', () => {
+  test('Forjador Martelo aplica a Relíquia exclusiva de largada, fora do teto', () => {
+    const run = startRun(42, 'hammer');
+    expect(run.forger).toBe('hammer');
+    expect(run.startingRelic).toBeDefined();
+    expect(run.relics).toHaveLength(0);
+  });
+
+  test('Martelo fortalece a Trinca na pontuação', () => {
+    const run = makeRun([spades(7), hearts(7), diamonds(7)], {
+      forger: 'hammer',
+      startingRelic: getForger('hammer').startingRelic,
+    });
+    const { run: next } = makePlay(run, [spades(7), hearts(7), diamonds(7)], createSeededRng(34));
+    expect(next.score).toBe(56); // (25 + 10) + 21
+  });
+
+  test('Bigorna começa com ×2 na 1ª Jogada', () => {
+    const run = startRun(42, 'anvil');
+    expect(run.forger).toBe('anvil');
+    expect(currentMultiplier(run)).toBe(2);
+  });
+
+  test('Aprendiz é neutro: sem Relíquia de largada e ×1 na 1ª Jogada', () => {
+    const run = startRun(42);
+    expect(run.forger).toBe('apprentice');
+    expect(run.startingRelic).toBeUndefined();
+    expect(currentMultiplier(run)).toBe(1);
+  });
+
+  test('startRun com Forjador desconhecido lança erro', () => {
+    expect(() => startRun(1, 'mage' as ForgerId)).toThrow();
+  });
+});
+
 describe('serialização', () => {
   test('estado da Run é serializável', () => {
     const run = startRun(16);
+    expect(JSON.parse(JSON.stringify(run))).toEqual(run);
+  });
+
+  test('estado com Forjador e Relíquia de largada é serializável', () => {
+    const run = startRun(7, 'anvil');
     expect(JSON.parse(JSON.stringify(run))).toEqual(run);
   });
 });
