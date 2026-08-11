@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 — Motor: Padrões e Valor-Base, 03 — Motor: Baralho, Mão e Descarte
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Vencer a Rodada R (1–5) gera 3 ofertas de Forja distintas com RNG injetado; vencer a 6ª Rodada encerra a Run em vitória, sem Forja
 - [ ] Aplicar um Efeito de Forja transforma a carta em Carta Forjada com efeito permanente na Run
