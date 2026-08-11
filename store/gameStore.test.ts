@@ -5,9 +5,12 @@ import {
   cardKey,
   computeUnlocks,
   createDeck,
+  COSMETIC_CATALOG,
+  createDevShopProvider,
   createMemoryDailyChallengeStorage,
   createMemoryDdaStorage,
   createMemoryProgressionStorage,
+  createMemoryShopStorage,
   createSeededRng,
   DailyBackend,
   DailyLeaderboard,
@@ -504,6 +507,94 @@ describe('Desafio Diário (ticket 13)', () => {
     await failing.getState().fetchLeaderboard();
     expect(failing.getState().daily.leaderboardError).toBe('sem leaderboard');
     expect(failing.getState().daily.leaderboard).toBeNull();
+  });
+});
+
+describe('loja cosmética (ticket 14)', () => {
+  test('openShop navega para a loja e carrega as ofertas', async () => {
+    const store = createGameStore({ shopProvider: createDevShopProvider() });
+    store.getState().openShop();
+    expect(store.getState().screen).toBe('shop');
+    await Promise.resolve();
+    expect(store.getState().shop.status).toBe('ready');
+    expect(store.getState().shop.offerings).toHaveLength(COSMETIC_CATALOG.length);
+  });
+
+  test('purchaseCosmetic compra, persiste e auto-equipa a skin', async () => {
+    const storage = createMemoryShopStorage();
+    const store = createGameStore({ shopStorage: storage, shopProvider: createDevShopProvider() });
+    await store.getState().purchaseCosmetic('skin-obsidian');
+    let state = store.getState();
+    expect(state.shop.owned.owned).toContain('skin-obsidian');
+    expect(state.shop.owned.equippedDeckSkin).toBe('skin-obsidian'); // aplicada na hora
+    expect(storage.load()?.owned).toContain('skin-obsidian');
+    // VFX não interfere na skin.
+    await store.getState().purchaseCosmetic('vfx-golden-combo');
+    state = store.getState();
+    expect(state.shop.owned.owned).toContain('vfx-golden-combo');
+    expect(state.shop.owned.equippedComboVfx).toBe('vfx-golden-combo');
+    expect(state.shop.owned.equippedDeckSkin).toBe('skin-obsidian');
+  });
+
+  test('equipCosmetic equipa apenas itens comprados e troca a skin atual', async () => {
+    const store = createGameStore({ shopProvider: createDevShopProvider() });
+    // sem comprar, não equipa
+    store.getState().equipCosmetic('skin-obsidian');
+    expect(store.getState().shop.owned.equippedDeckSkin).toBeNull();
+    await store.getState().purchaseCosmetic('skin-obsidian');
+    await store.getState().purchaseCosmetic('skin-emerald');
+    store.getState().equipCosmetic('skin-obsidian');
+    expect(store.getState().shop.owned.equippedDeckSkin).toBe('skin-obsidian');
+    store.getState().equipCosmetic('skin-emerald');
+    expect(store.getState().shop.owned.equippedDeckSkin).toBe('skin-emerald');
+  });
+
+  test('purchaseCosmetic ignora item já comprado (sem chamar o provider)', async () => {
+    const provider = createDevShopProvider();
+    const spy = jest.spyOn(provider, 'purchase');
+    const store = createGameStore({ shopProvider: provider });
+    await store.getState().purchaseCosmetic('skin-obsidian');
+    await store.getState().purchaseCosmetic('skin-obsidian');
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  test('restorePurchases junta compras do servidor às locais', async () => {
+    const store = createGameStore({
+      shopProvider: {
+        ...createDevShopProvider(),
+        restore: async () => ['combo_forge_skin_royal', 'combo_forge_skin_obsidian'],
+      },
+    });
+    await store.getState().purchaseCosmetic('skin-obsidian');
+    await store.getState().restorePurchases();
+    const owned = store.getState().shop.owned.owned;
+    expect(owned).toContain('skin-obsidian');
+    expect(owned).toContain('skin-royal');
+  });
+
+  test('falha do provider marca erro e não adiciona o item', async () => {
+    const store = createGameStore({
+      shopProvider: {
+        ...createDevShopProvider(),
+        purchase: async () => {
+          throw new Error('loja fora do ar');
+        },
+      },
+    });
+    await store.getState().purchaseCosmetic('skin-obsidian');
+    const state = store.getState();
+    expect(state.shop.error).toBe('loja fora do ar');
+    expect(state.shop.owned.owned).toHaveLength(0);
+    expect(state.shop.purchasing).toBeNull();
+  });
+
+  test('item inexistente é rejeitado sem quebrar o estado', async () => {
+    const store = createGameStore({ shopProvider: createDevShopProvider() });
+    await store.getState().purchaseCosmetic('nao-existe');
+    const state = store.getState();
+    expect(state.shop.error).toBeDefined();
+    expect(state.shop.owned.owned).toHaveLength(0);
+    expect(state.shop.purchasing).toBeNull();
   });
 });
 

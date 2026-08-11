@@ -17,7 +17,9 @@ import {
   DdaState,
   DdaStorage,
   PersistedProgression,
+  PersistedShop,
   ProgressionStorage,
+  ShopStorage,
 } from '../engine';
 
 /** Banco dedicado do Combo Forge (o KV store cria uma tabela própria). */
@@ -26,6 +28,7 @@ const DDA_KEY = 'combo-forge:dda';
 const PROGRESSION_KEY = 'combo-forge:progression';
 const DAILY_ATTEMPTS_KEY = 'combo-forge:daily-attempts';
 const DAILY_DEVICE_ID_KEY = 'combo-forge:daily-device-id';
+const SHOP_KEY = 'combo-forge:shop';
 
 const kv = new SQLiteStorage(DATABASE_NAME);
 
@@ -60,6 +63,14 @@ export function createSqliteProgressionStorage(): ProgressionStorage {
   };
 }
 
+/** Port de storage da Loja Cosmética sobre SQLite (comprados + equipados). */
+export function createSqliteShopStorage(): ShopStorage {
+  return {
+    load: () => readJson<PersistedShop>(SHOP_KEY),
+    save: (state) => writeJson(SHOP_KEY, state),
+  };
+}
+
 /** Port de storage do Desafio Diário sobre SQLite (tentativas + deviceId). */
 export function createSqliteDailyChallengeStorage(): DailyChallengeStorage {
   return {
@@ -73,15 +84,17 @@ export function createSqliteDailyChallengeStorage(): DailyChallengeStorage {
   };
 }
 
-/** Persistência completa do app (DDA + meta-progressão + diário) num banco. */
+/** Persistência completa do app (DDA + meta + diário + loja) num banco. */
 export function createSqlitePersistence(): {
   readonly ddaStorage: DdaStorage;
   readonly progressionStorage: ProgressionStorage;
   readonly dailyStorage: DailyChallengeStorage;
+  readonly shopStorage: ShopStorage;
 } {
   return {
     ddaStorage: createSqliteDdaStorage(),
     progressionStorage: createSqliteProgressionStorage(),
     dailyStorage: createSqliteDailyChallengeStorage(),
+    shopStorage: createSqliteShopStorage(),
   };
 }

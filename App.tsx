@@ -5,6 +5,7 @@ import { CollectionScreen } from './components/CollectionScreen';
 import { DailyChallengeScreen } from './components/DailyChallengeScreen';
 import { GameScreen } from './components/GameScreen';
 import { ProfileScreen } from './components/ProfileScreen';
+import { ShopScreen } from './components/ShopScreen';
 import { StartScreen } from './components/StartScreen';
 import { UnlockChoiceModal } from './components/UnlockChoiceModal';
 import { colors } from './components/theme';
@@ -25,6 +26,7 @@ export default function App() {
       {screen === 'profile' && <ProfileScreen />}
       {screen === 'collection' && <CollectionScreen />}
       {screen === 'daily' && <DailyChallengeScreen />}
+      {screen === 'shop' && <ShopScreen />}
       <UnlockChoiceModal />
       <StatusBar style="light" />
     </View>

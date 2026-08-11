@@ -1,6 +1,6 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { activeRelics, cardKey, currentMultiplier, getForger } from '../engine';
+import { activeRelics, cardKey, cosmeticItemById, currentMultiplier, getForger } from '../engine';
 
 import { CardView } from './CardView';
 import { PATTERN_NAME } from './format';
@@ -17,6 +17,13 @@ export function GameScreen() {
   const clearSelection = useGameStore((state) => state.clearSelection);
   const playSelection = useGameStore((state) => state.playSelection);
   const discardSelection = useGameStore((state) => state.discardSelection);
+  // Cosméticos equipados (ticket 14): skin do baralho + VFX de combo.
+  const shopOwned = useGameStore((state) => state.shop.owned);
+  const deckSkin =
+    shopOwned.equippedDeckSkin === null ? undefined : cosmeticItemById(shopOwned.equippedDeckSkin);
+  const comboVfx =
+    shopOwned.equippedComboVfx === null ? undefined : cosmeticItemById(shopOwned.equippedComboVfx);
+  const comboAccent = comboVfx?.kind === 'comboVfx' ? comboVfx.accent : colors.gold;
 
   if (run === null) return null;
   if (run.phase !== 'playing') return <PhaseScreen run={run} />;
@@ -51,7 +58,7 @@ export function GameScreen() {
         <View style={styles.pillRow}>
           <Pill label="Plays" value={String(run.playsRemaining)} />
           <Pill label="Discards" value={String(discardsRemaining)} />
-          <Pill label="Combo" value={`×${multiplier}`} accent />
+          <Pill label="Combo" value={`×${multiplier}`} accent={comboAccent} />
         </View>
 
         <RelicRow relics={relics} />
@@ -77,6 +84,7 @@ export function GameScreen() {
               forgedCards={run.forgedCards}
               selected={selectedKeys.includes(cardKey(card))}
               onPress={() => toggleCard(cardKey(card))}
+              skin={deckSkin?.kind === 'deckSkin' ? deckSkin.palette : undefined}
             />
           ))}
         </View>
@@ -114,11 +122,11 @@ export function GameScreen() {
   );
 }
 
-function Pill({ label, value, accent = false }: { label: string; value: string; accent?: boolean }) {
+function Pill({ label, value, accent = false }: { label: string; value: string; accent?: string | false }) {
   return (
-    <View style={[styles.pill, accent && styles.pillAccent]}>
+    <View style={[styles.pill, accent && { borderColor: accent }]}>
       <Text style={styles.pillLabel}>{label}</Text>
-      <Text style={[styles.pillValue, accent && styles.pillValueAccent]}>{value}</Text>
+      <Text style={[styles.pillValue, accent && { color: accent }]}>{value}</Text>
     </View>
   );
 }
@@ -202,9 +210,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
   },
-  pillAccent: {
-    borderColor: colors.gold,
-  },
   pillLabel: {
     color: colors.textDim,
     fontSize: 11,
@@ -216,9 +221,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
     marginTop: 2,
-  },
-  pillValueAccent: {
-    color: colors.gold,
   },
   preview: {
     marginTop: 14,

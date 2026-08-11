@@ -8,25 +8,30 @@
  */
 import {
   createInitialDailyAttempts,
+  createInitialShopState,
   dailyAttemptsForDay,
   DEFAULT_PROGRESSION,
   utcDateIso,
 } from '../engine';
 
 import { createAppDailyBackend } from '../services/supabase';
+import { createAppShopProvider } from '../services/revenuecat';
 
 import { gameStore } from './gameStore';
 import { createSqlitePersistence } from './sqlite';
 
 export function initializeSqlitePersistence(): void {
   try {
-    const { ddaStorage, progressionStorage, dailyStorage } = createSqlitePersistence();
+    const { ddaStorage, progressionStorage, dailyStorage, shopStorage } =
+      createSqlitePersistence();
     const saved = progressionStorage.load();
     const savedAttempts = dailyStorage.loadAttempts();
     gameStore.setState({
       ddaStorage,
       dailyStorage,
       dailyBackend: createAppDailyBackend(),
+      shopStorage,
+      shopProvider: createAppShopProvider(),
       progression: saved ?? DEFAULT_PROGRESSION,
       daily: {
         ...gameStore.getState().daily,
@@ -34,6 +39,10 @@ export function initializeSqlitePersistence(): void {
           savedAttempts ?? createInitialDailyAttempts(utcDateIso()),
           utcDateIso(),
         ),
+      },
+      shop: {
+        ...gameStore.getState().shop,
+        owned: shopStorage.load() ?? createInitialShopState(),
       },
     });
   } catch {

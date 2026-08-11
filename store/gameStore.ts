@@ -73,7 +73,23 @@ import {
   withBestSubmitted,
 } from '../engine';
 
-export type Screen = 'start' | 'game' | 'profile' | 'collection' | 'daily';
+import {
+  COSMETIC_CATALOG,
+  cosmeticItemById,
+  createDevShopProvider,
+  createInitialShopState,
+  createMemoryShopStorage,
+  equipItem as engineEquipItem,
+  isOwned,
+  mergeOwned,
+  PersistedShop,
+  purchaseItem as enginePurchaseItem,
+  ShopOffering,
+  ShopProvider,
+  ShopStorage,
+} from '../engine';
+
+export type Screen = 'start' | 'game' | 'profile' | 'collection' | 'daily' | 'shop';
 
 /** Modo da Run atual: normal (meta-progressão conta) ou Desafio Diário. */
 export type RunMode = 'normal' | 'daily';
@@ -103,6 +119,20 @@ export interface DailyState {
   readonly leaderboardError: string | null;
 }
 
+export interface ShopState {
+  /** Itens comprados + equipados (persistido entre sessões). */
+  readonly owned: PersistedShop;
+  /** Ofertas (preços) carregadas do provider; vazio até loadShop. */
+  readonly offerings: readonly ShopOffering[];
+  /** Carga das ofertas. */
+  readonly status: 'idle' | 'loading' | 'ready' | 'error';
+  readonly error: string | null;
+  /** Item com compra em andamento (id) ou null. */
+  readonly purchasing: string | null;
+  /** Restauração de compras em andamento. */
+  readonly restoring: boolean;
+}
+
 export interface GameState {
   readonly screen: Screen;
   readonly forger: ForgerId;
@@ -130,6 +160,10 @@ export interface GameState {
   readonly dailyStorage: DailyChallengeStorage;
   readonly dailyBackend: DailyBackend;
   readonly adProvider: AdProvider;
+  /** Loja cosmética (ticket 14) — itens só visuais, nunca poder. */
+  readonly shop: ShopState;
+  readonly shopStorage: ShopStorage;
+  readonly shopProvider: ShopProvider;
 
   readonly chooseForger: (forger: ForgerId) => void;
   readonly startRun: () => void;
@@ -143,6 +177,16 @@ export interface GameState {
   readonly submitDailyScore: (score: number) => Promise<void>;
   /** Opt-in: busca o leaderboard semanal (posição própria + top 10). */
   readonly fetchLeaderboard: () => Promise<void>;
+  /** Abre a loja cosmética. */
+  readonly openShop: () => void;
+  /** Carrega as ofertas (preços) do provider e o estado persistido. */
+  readonly loadShop: () => Promise<void>;
+  /** Compra um item cosmético (IAP via provider). */
+  readonly purchaseCosmetic: (itemId: string) => Promise<void>;
+  /** Equipa um item comprado (skin de baralho ou VFX de combo). */
+  readonly equipCosmetic: (itemId: string) => void;
+  /** Restaura compras do dispositivo (novo aparelho). */
+  readonly restorePurchases: () => Promise<void>;
   readonly toggleCard: (key: string) => void;
   readonly clearSelection: () => void;
   readonly playSelection: () => void;
@@ -182,6 +226,12 @@ export interface GameStoreDeps {
   readonly adProvider?: AdProvider;
   /** Relógio injetável (padrão: Date.now; usado na fronteira de dia UTC). */
   readonly now?: () => Date;
+  /** Port de persistência da loja (padrão: memória, p/ testes). */
+  readonly shopStorage?: ShopStorage;
+  /** Provider de compras (padrão: dev simulado; app injeta RevenueCat). */
+  readonly shopProvider?: ShopProvider;
+  /** Estado inicial da loja (padrão: vazio; injetável em testes). */
+  readonly initialShop?: PersistedShop;
 }
 
 /** Seleção resolvida em cartas da Mão, na ordem da Mão. */
@@ -242,6 +292,10 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
   const nextSeed = deps.seed ?? (() => (Date.now() % 0xffffffff) >>> 0);
   const now = deps.now ?? (() => new Date());
 
+  const shopStorage = deps.shopStorage ?? createMemoryShopStorage();
+  const shopProvider = deps.shopProvider ?? createDevShopProvider();
+  const initialShop = deps.initialShop ?? shopStorage.load() ?? createInitialShopState();
+
   // Estado inicial do Desafio Diário: deviceId persistido (ou novo) e
   // tentativas com rollover para o dia atual.
   const today = utcDateIso(now());
@@ -284,6 +338,98 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     dailyStorage,
     dailyBackend,
     adProvider,
+    shop: {
+      owned: initialShop,
+      offerings: [],
+      status: 'idle',
+      error: null,
+      purchasing: null,
+      restoring: false,
+    },
+    shopStorage,
+    shopProvider,
+
+    openShop: () => {
+      set({ screen: 'shop' });
+      void get().loadShop();
+    },
+
+    loadShop: async () => {
+      const { shop, shopProvider } = get();
+      set({ shop: { ...shop, status: 'loading', error: null } });
+      try {
+        const offerings = await shopProvider.loadOfferings();
+        set({ shop: { ...get().shop, offerings, status: 'ready' } });
+      } catch (error) {
+        set({
+          shop: {
+            ...get().shop,
+            status: 'error',
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+      }
+    },
+
+    purchaseCosmetic: async (itemId) => {
+      const { shop } = get();
+      if (shop.purchasing !== null || isOwned(shop.owned, itemId)) return;
+      set({ shop: { ...shop, purchasing: itemId, error: null } });
+      try {
+        const productId = requireCatalogProductId(itemId);
+        const purchased = await shopProvider.purchase(productId);
+        if (purchased) {
+          // A skin comprada é equipada na hora (aplicada ao Baralho nas
+          // próximas Runs — ticket 14); VFX de combo idem.
+          let owned = enginePurchaseItem(get().shop.owned, itemId);
+          owned = engineEquipItem(owned, itemId);
+          shopStorage.save(owned);
+          set({ shop: { ...get().shop, owned, purchasing: null } });
+        } else {
+          set({ shop: { ...get().shop, purchasing: null } });
+        }
+      } catch (error) {
+        set({
+          shop: {
+            ...get().shop,
+            purchasing: null,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+      }
+    },
+
+    equipCosmetic: (itemId) => {
+      const owned = engineEquipItem(get().shop.owned, itemId);
+      if (owned === get().shop.owned) return; // não comprado ou inválido
+      shopStorage.save(owned);
+      set({ shop: { ...get().shop, owned } });
+    },
+
+    restorePurchases: async () => {
+      const { shop } = get();
+      if (shop.restoring) return;
+      set({ shop: { ...shop, restoring: true, error: null } });
+      try {
+        const productIds = await shopProvider.restore();
+        const catalogId = (productId: string) =>
+          COSMETIC_CATALOG.find((item) => item.productId === productId)?.id;
+        const itemIds = productIds
+          .map(catalogId)
+          .filter((id): id is string => id !== undefined);
+        const owned = mergeOwned(get().shop.owned, itemIds);
+        shopStorage.save(owned);
+        set({ shop: { ...get().shop, owned, restoring: false } });
+      } catch (error) {
+        set({
+          shop: {
+            ...get().shop,
+            restoring: false,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+      }
+    },
 
     chooseForger: (forger) => {
       // Forjadores bloqueados pela meta-progressão não podem ser escolhidos.
@@ -572,6 +718,15 @@ function advanceProgression(
     unlockChoice,
     recentUnlocks,
   };
+}
+
+/** productId do catálogo para o item (defesa da UI); lança se inexistente. */
+function requireCatalogProductId(itemId: string): string {
+  const item = cosmeticItemById(itemId);
+  if (item === undefined) {
+    throw new Error(`Item cosmético inexistente: ${itemId}.`);
+  }
+  return item.productId;
 }
 
 /** Store singleton usado pela UI (memória; o app injeta SQLite no boot). */

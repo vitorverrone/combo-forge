@@ -24,6 +24,7 @@ export function StartScreen() {
   const openProfile = useGameStore((state) => state.openProfile);
   const openCollection = useGameStore((state) => state.openCollection);
   const openDaily = useGameStore((state) => state.openDaily);
+  const openShop = useGameStore((state) => state.openShop);
   const daily = useGameStore((state) => state.daily);
 
   const unlocks = computeUnlocks(progression);
@@ -46,6 +47,13 @@ export function StartScreen() {
           style={({ pressed }) => [styles.navButton, pressed && styles.forgerCardPressed]}
         >
           <Text style={styles.navButtonText}>COLLECTION</Text>
+        </Pressable>
+        <Pressable
+          accessibilityLabel="Open shop"
+          onPress={openShop}
+          style={({ pressed }) => [styles.navButton, styles.navButtonShop, pressed && styles.forgerCardPressed]}
+        >
+          <Text style={[styles.navButtonText, styles.navButtonShopText]}>SHOP</Text>
         </Pressable>
       </View>
 
@@ -134,6 +142,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
     letterSpacing: 1,
+  },
+  navButtonShop: {
+    borderColor: colors.gold,
+  },
+  navButtonShopText: {
+    color: colors.gold,
   },
   title: {
     color: colors.gold,
