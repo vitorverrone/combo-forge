@@ -14,6 +14,7 @@ export * from './dda';
 export * from './relics';
 export * from './forge';
 export * from './forgers';
+export * from './progression';
 export * from './run';
 
 export const engineModuleId = 'combo-forge-engine';

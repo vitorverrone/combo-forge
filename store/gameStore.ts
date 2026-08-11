@@ -1,12 +1,14 @@
 /**
- * Camada de estado (Zustand) da Run jogável.
+ * Camada de estado (Zustand) da Run jogável + meta-progressão (ticket 11).
  *
  * Nenhuma regra de jogo vive aqui: o store apenas (a) guarda o estado do
  * motor (RunState) e estado de UI (tela, seleção de cartas), (b) despacha as
  * ações do jogador para o motor puro com a stream de RNG contínua que ele
- * mesmo criou no startRun e (c) persiste o histórico DDA ao fim de cada
- * Rodada (port de storage injetado). Tudo o que a UI precisa ler (preview do
- * Padrão, etc.) vem de funções puras do motor.
+ * mesmo criou no startRun, (c) persiste o histórico DDA ao fim de cada
+ * Rodada e (d) acumula estatísticas de perfil e reivindica desbloqueios de
+ * meta-progressão ao fim de cada Run (funções puras de progression.ts),
+ * persistindo via port injetado (memória nos testes; SQLite no app).
+ * Tudo o que a UI precisa ler vem de funções puras do motor.
  */
 
 import { useStore } from 'zustand';
@@ -16,29 +18,44 @@ import {
   activeRelics,
   Card,
   cardKey,
+  claimOption as engineClaimOption,
+  claimReachedSingles,
+  computeUnlocks,
   createMemoryDdaStorage,
+  createMemoryProgressionStorage,
   createSeededRng,
   currentPlayNumber,
   DEFAULT_DDA_CONFIG,
+  DEFAULT_PROGRESSION,
   discard,
   DdaStorage,
   applyForgeOffer as engineApplyForgeOffer,
   evaluatePlay,
   ForgerId,
   isEasyWin,
+  isForgerUnlocked,
+  isOptionClaimable,
   loadDda,
   makePlay,
+  milestoneOptionTitle,
+  PendingMilestone,
+  pendingMilestones,
+  PersistedProgression,
   persistDda,
   PlayEvaluation,
+  ProgressionStorage,
+  recordPlay,
+  recordRunEnd,
   Rng,
   RunEvent,
   RunState,
+  saveProgression,
   scoreModifiers,
   startNextRound,
   startRun as engineStartRun,
 } from '../engine';
 
-export type Screen = 'start' | 'game';
+export type Screen = 'start' | 'game' | 'profile' | 'collection';
 
 /** Máximo de cartas selecionáveis (tamanho máximo de uma Jogada). */
 export const MAX_SELECTION = 5;
@@ -54,6 +71,15 @@ export interface GameState {
   /** Stream contínua de RNG da Run; criada no startRun e usada em toda ação. */
   readonly rng: Rng | null;
   readonly ddaStorage: DdaStorage;
+  /** Meta-progressão persistida: estatísticas de perfil + desbloqueios. */
+  readonly progression: PersistedProgression;
+  /**
+   * Marco com mais de uma opção aguardando a escolha de ordem do jogador
+   * (modal). Null quando não há escolha pendente.
+   */
+  readonly unlockChoice: PendingMilestone | null;
+  /** Títulos dos desbloqueios recém-concedidos (banner nas telas de fim de Run). */
+  readonly recentUnlocks: readonly string[];
 
   readonly chooseForger: (forger: ForgerId) => void;
   readonly startRun: () => void;
@@ -71,11 +97,21 @@ export interface GameState {
   readonly nextRound: () => void;
   /** Reinicia imediatamente uma nova Run (novo seed, mesmo Forjador). */
   readonly restartRun: () => void;
+  /** Reivindica uma opção de desbloqueio pendente (escolha da ordem). */
+  readonly claimUnlock: (optionId: string) => void;
+  /** Fecha o modal de escolha de desbloqueio sem reivindicar (fica na Coleção). */
+  readonly dismissUnlockChoice: () => void;
+  readonly openProfile: () => void;
+  readonly openCollection: () => void;
   readonly backToStart: () => void;
 }
 
 export interface GameStoreDeps {
   readonly ddaStorage?: DdaStorage;
+  /** Port de persistência da meta-progressão (padrão: memória, p/ testes). */
+  readonly progressionStorage?: ProgressionStorage;
+  /** Meta-progressão inicial (padrão: nova; injetável em testes). */
+  readonly initialProgression?: PersistedProgression;
   /** Fonte de seed da próxima Run (padrão: relógio; injetável em testes). */
   readonly seed?: () => number;
 }
@@ -131,6 +167,7 @@ export function persistRoundEnd(
 
 export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
   const ddaStorage = deps.ddaStorage ?? createMemoryDdaStorage();
+  const progressionStorage = deps.progressionStorage ?? createMemoryProgressionStorage();
   const nextSeed = deps.seed ?? (() => (Date.now() % 0xffffffff) >>> 0);
 
   return createStore<GameState>()((set, get) => ({
@@ -141,16 +178,25 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     lastEvents: [],
     rng: null,
     ddaStorage,
+    progression: deps.initialProgression ?? DEFAULT_PROGRESSION,
+    unlockChoice: null,
+    recentUnlocks: [],
 
-    chooseForger: (forger) => set({ forger }),
+    chooseForger: (forger) => {
+      // Forjadores bloqueados pela meta-progressão não podem ser escolhidos.
+      if (!isForgerUnlocked(computeUnlocks(get().progression), forger)) return;
+      set({ forger });
+    },
 
     startRun: () => {
-      const forger = get().forger;
+      const { forger, progression } = get();
+      const unlocks = computeUnlocks(progression);
+      if (!isForgerUnlocked(unlocks, forger)) return;
       const seed = nextSeed();
       const rng = createSeededRng(seed);
       const dda = loadDda(ddaStorage, DEFAULT_DDA_CONFIG);
-      const run = engineStartRun(seed, { forger, dda, ddaConfig: DEFAULT_DDA_CONFIG, rng });
-      set({ screen: 'game', run, rng, selectedKeys: [], lastEvents: [] });
+      const run = engineStartRun(seed, { forger, dda, ddaConfig: DEFAULT_DDA_CONFIG, rng, unlocks });
+      set({ screen: 'game', run, rng, selectedKeys: [], lastEvents: [], recentUnlocks: [] });
     },
 
     toggleCard: (key) => {
@@ -168,12 +214,13 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     clearSelection: () => set({ selectedKeys: [] }),
 
     playSelection: () => {
-      const { run, rng, selectedKeys, ddaStorage: storage } = get();
+      const { run, rng, selectedKeys, ddaStorage: storage, progression } = get();
       if (run === null || rng === null || selectedKeys.length === 0) return;
       try {
-        const result = makePlay(run, selectedCards(run, selectedKeys), rng);
+        const played = selectedCards(run, selectedKeys);
+        const result = makePlay(run, played, rng);
         persistRoundEnd(result.run, result.events, storage);
-        set({ run: result.run, selectedKeys: [], lastEvents: result.events });
+        set(advanceProgression(result, played, progression, get().unlockChoice, get().recentUnlocks, progressionStorage));
       } catch {
         // Jogada inválida (defesa da UI): estado permanece intacto
       }
@@ -212,12 +259,82 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       get().startRun();
     },
 
+    claimUnlock: (optionId) => {
+      const { progression } = get();
+      if (!isOptionClaimable(progression, optionId)) return;
+      const next = engineClaimOption(progression, optionId);
+      saveProgression(progressionStorage, next);
+      // O modal fecha após a escolha; as opções restantes ficam na Coleção.
+      set({
+        progression: next,
+        unlockChoice: null,
+        recentUnlocks: [milestoneOptionTitle(optionId)],
+      });
+    },
+
+    dismissUnlockChoice: () => set({ unlockChoice: null }),
+
+    openProfile: () => set({ screen: 'profile' }),
+    openCollection: () => set({ screen: 'collection' }),
+
     backToStart: () =>
       set({ screen: 'start', run: null, selectedKeys: [], lastEvents: [], rng: null }),
   }));
 }
 
-/** Store singleton usado pela UI. */
+/**
+ * Avança a meta-progressão após uma ação de Jogada: acumula estatísticas por
+ * Jogada, registra o fim da Run (vitória/derrota + recorde), reivindica
+ * automaticamente os marcos de opção única e expõe o marco multi-opção
+ * (escolha da ordem) como modal. Persiste o resultado no storage.
+ */
+function advanceProgression(
+  result: { run: RunState; events: readonly RunEvent[] },
+  played: readonly Card[],
+  progression: PersistedProgression,
+  currentChoice: PendingMilestone | null,
+  currentUnlocks: readonly string[],
+  storage: ProgressionStorage,
+): Partial<GameState> {
+  let next: PersistedProgression = progression;
+  let unlockChoice = currentChoice;
+  let recentUnlocks = currentUnlocks;
+
+  const playedEvent = result.events.find((event) => event.type === 'played');
+  if (playedEvent !== undefined) {
+    next = { ...next, stats: recordPlay(next.stats, played, playedEvent.multiplier) };
+  }
+
+  const ended = result.events.find(
+    (event) => event.type === 'runWon' || event.type === 'runLost',
+  );
+  if (ended !== undefined) {
+    next = { ...next, stats: recordRunEnd(next.stats, ended.type === 'runWon', result.run.runScore) };
+    const singles = claimReachedSingles(next);
+    next = singles.persisted;
+    if (singles.claimed.length > 0) {
+      recentUnlocks = singles.claimed.map(milestoneOptionTitle);
+    }
+    const multi = pendingMilestones(next).find((candidate) => candidate.milestone.options.length > 1);
+    if (multi !== undefined) {
+      unlockChoice = multi;
+    }
+  }
+
+  // Grava a cada Jogada: o blob é pequeno (estatísticas + ids) e o port do
+  // SQLite é síncrono via KV store — aceitável no MVP.
+  saveProgression(storage, next);
+  return {
+    run: result.run,
+    selectedKeys: [],
+    lastEvents: result.events,
+    progression: next,
+    unlockChoice,
+    recentUnlocks,
+  };
+}
+
+/** Store singleton usado pela UI (memória; o app injeta SQLite no boot). */
 export const gameStore = createGameStore();
 
 /** Hook da UI: seleciona uma fatia do estado do store. */

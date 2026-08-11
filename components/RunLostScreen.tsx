@@ -14,6 +14,7 @@ interface RunLostScreenProps {
 export function RunLostScreen({ run }: RunLostScreenProps) {
   const restartRun = useGameStore((state) => state.restartRun);
   const backToStart = useGameStore((state) => state.backToStart);
+  const recentUnlocks = useGameStore((state) => state.recentUnlocks);
 
   const missing = Math.max(run.target - run.score, 0);
   // Barra "quase cheia" quando a margem é pequena (Efeito Zeigarnik).
@@ -33,6 +34,14 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
         </Text>
       ) : (
         <Text style={styles.missingText}>The target slipped away.</Text>
+      )}
+
+      {recentUnlocks.length > 0 && (
+        <View style={styles.unlockBanner}>
+          <Text style={styles.unlockBannerText}>
+            NEW UNLOCK{recentUnlocks.length > 1 ? 'S' : ''}: {recentUnlocks.join(' · ')}
+          </Text>
+        </View>
       )}
 
       <View style={styles.progressTrack}>
@@ -100,6 +109,23 @@ const styles = StyleSheet.create({
   missingValue: {
     color: colors.danger,
     fontWeight: '800',
+  },
+  unlockBanner: {
+    alignSelf: 'stretch',
+    borderRadius: 10,
+    backgroundColor: 'rgba(224,165,62,0.15)',
+    borderWidth: 1,
+    borderColor: colors.gold,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  unlockBannerText: {
+    color: colors.gold,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   progressTrack: {
     alignSelf: 'stretch',

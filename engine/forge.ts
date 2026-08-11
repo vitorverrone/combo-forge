@@ -33,16 +33,35 @@ export const MAX_CARD_EFFECT_OFFERS = 3;
  * a forma das regras é a que importa). Cada entrada é única: a geração
  * embaralha o pool e toma as primeiras N, garantindo ofertas distintas.
  */
-export const FORGE_EFFECT_POOL: readonly ForgeEffect[] = [
-  { kind: 'valueBonus', amount: 2 },
-  { kind: 'valueBonus', amount: 3 },
-  { kind: 'valueBonus', amount: 5 },
-  { kind: 'multiplier', multiplier: 2 },
-  { kind: 'multiplier', multiplier: 3 },
-  { kind: 'wildcard' },
-  { kind: 'trigger', triggerPlay: 3, bonus: 20 },
-  { kind: 'trigger', triggerPlay: 4, bonus: 30 },
+export const FORGE_EFFECT_POOL: readonly ForgeEffectOption[] = [
+  { id: 'value-bonus-2', effect: { kind: 'valueBonus', amount: 2 } },
+  { id: 'value-bonus-3', effect: { kind: 'valueBonus', amount: 3 } },
+  { id: 'value-bonus-5', effect: { kind: 'valueBonus', amount: 5 } },
+  { id: 'multiplier-2', effect: { kind: 'multiplier', multiplier: 2 } },
+  { id: 'multiplier-3', effect: { kind: 'multiplier', multiplier: 3 } },
+  { id: 'wildcard', effect: { kind: 'wildcard' } },
+  { id: 'trigger-3-20', effect: { kind: 'trigger', triggerPlay: 3, bonus: 20 } },
+  { id: 'trigger-4-30', effect: { kind: 'trigger', triggerPlay: 4, bonus: 30 } },
 ];
+
+/**
+ * Efeitos de Forja bônus (ticket 11): entram no pool de ofertas apenas quando
+ * o marco "5ª Run vencida" as desbloqueia (o jogador escolhe a ordem).
+ */
+export const BONUS_FORGE_EFFECTS: readonly ForgeEffectOption[] = [
+  { id: 'value-bonus-7', effect: { kind: 'valueBonus', amount: 7 } },
+  { id: 'trigger-2-15', effect: { kind: 'trigger', triggerPlay: 2, bonus: 15 } },
+];
+
+/**
+ * Uma entrada do pool de Efeitos de Forja: o efeito + um id estável. O id é
+ * a identidade usada pela Meta-Progressão (ticket 11) para gatear os efeitos
+ * bônus (BONUS_FORGE_EFFECTS) por desbloqueio.
+ */
+export interface ForgeEffectOption {
+  readonly id: string;
+  readonly effect: ForgeEffect;
+}
 
 /**
  * Seed da stream de Forja da Rodada R: independente do stream de
@@ -61,6 +80,16 @@ export interface ForgeOfferOptions {
    * para a mesma stream.
    */
   readonly rareRelicBoost?: boolean;
+  /**
+   * Pool de Efeitos de Forja ofertáveis (ticket 11): a Meta-Progressão filtra
+   * os efeitos bônus até serem desbloqueados. Padrão: FORGE_EFFECT_POOL.
+   */
+  readonly forgeEffects?: readonly ForgeEffectOption[];
+  /**
+   * Pool de Relíquias ofertáveis (ticket 11): as raras só entram com o
+   * desbloqueio de recorde ≥ 2.500. Padrão: RELIC_POOL completo.
+   */
+  readonly relics?: readonly Relic[];
 }
 
 /** Probabilidade de a oferta vir do subconjunto raro quando o boost está ativo. */
@@ -76,14 +105,16 @@ export function generateForgeOffers(
   ownedRelics: readonly Relic[],
   options: ForgeOfferOptions = {},
 ): ForgeOffer[] {
+  const effectPool = options.forgeEffects ?? FORGE_EFFECT_POOL;
+  const relicPool = options.relics ?? RELIC_POOL;
   const hasRelicSlot = ownedRelics.length < RELIC_CAP;
   const effectCount = hasRelicSlot ? CARD_EFFECT_OFFERS : MAX_CARD_EFFECT_OFFERS;
-  const offers: ForgeOffer[] = pickDistinct(FORGE_EFFECT_POOL, effectCount, rng).map((effect) => ({
+  const offers: ForgeOffer[] = pickDistinct(effectPool, effectCount, rng).map((option) => ({
     type: 'cardEffect',
-    effect,
+    effect: option.effect,
   }));
   if (hasRelicSlot) {
-    const available = RELIC_POOL.filter((relic) => !ownedRelics.some((owned) => owned.id === relic.id));
+    const available = relicPool.filter((relic) => !ownedRelics.some((owned) => owned.id === relic.id));
     const rares = available.filter((relic) => relic.rarity === 'rare');
     let candidates = available;
     if (options.rareRelicBoost && rares.length > 0 && rng() < RARE_RELIC_BOOST_RATE) {

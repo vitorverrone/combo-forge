@@ -3,6 +3,7 @@ import { DEFAULT_DDA_CONFIG, DEFAULT_DDA_STATE } from './dda';
 import { createDeck, DeckState, DISCARDS_PER_ROUND, HAND_SIZE } from './deck';
 import { ForgeOffer, forgeCard, forgeOfferSeed, generateForgeOffers } from './forge';
 import { createSeededRng, Rng } from './random';
+import { ALL_UNLOCKS } from './progression';
 import { RELIC_CAP, RELIC_POOL } from './relics';
 import {
   applyForgeOffer,
@@ -47,6 +48,7 @@ function makeRun(hand: readonly Card[], overrides: Partial<RunState> = {}): RunS
     forger: 'apprentice',
     dda: DEFAULT_DDA_STATE,
     ddaConfig: DEFAULT_DDA_CONFIG,
+    unlocks: ALL_UNLOCKS,
     forgeOffers: [],
     ...overrides,
   };

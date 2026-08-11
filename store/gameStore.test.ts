@@ -1,14 +1,22 @@
 import {
+  ALL_UNLOCKS,
   baseTarget,
   Card,
   cardKey,
+  computeUnlocks,
   createDeck,
   createMemoryDdaStorage,
+  createMemoryProgressionStorage,
   createSeededRng,
   DEFAULT_DDA_CONFIG,
+  DEFAULT_PROFILE_STATS,
+  DEFAULT_PROGRESSION,
   DeckState,
   generateForgeOffers,
+  isForgerUnlocked,
   loadDda,
+  milestoneOptionTitle,
+  pendingMilestones,
   RELIC_POOL,
   PatternKind,
   PLAYS_PER_ROUND,
@@ -20,6 +28,8 @@ import { createGameStore, persistRoundEnd, selectionPreview } from './gameStore'
 
 const spades = (value: number): Card => ({ suit: 'spades', value });
 const hearts = (value: number): Card => ({ suit: 'hearts', value });
+const diamonds = (value: number): Card => ({ suit: 'diamonds', value });
+const clubs = (value: number): Card => ({ suit: 'clubs', value });
 
 /** Constrói uma Run com Mão conhecida (para testes determinísticos). */
 function makeRunWithHand(hand: readonly Card[]): RunState {
@@ -45,6 +55,7 @@ function makeRunWithHand(hand: readonly Card[]): RunState {
     forger: 'apprentice',
     dda: { lastFailedRound: 0, consecutiveFailures: 0, easyWins: 0 },
     ddaConfig: DEFAULT_DDA_CONFIG,
+    unlocks: ALL_UNLOCKS,
     forgeOffers: [],
   };
 }
@@ -58,7 +69,10 @@ describe('createGameStore', () => {
   });
 
   test('startRun inicia a Run com Mão de 7, o Forjador escolhido e a Relíquia de largada', () => {
-    const store = createGameStore({ seed: () => 1234 });
+    const store = createGameStore({
+      seed: () => 1234,
+      initialProgression: { ...DEFAULT_PROGRESSION, claimedOptions: ['unlock-forger-hammer'] },
+    });
     store.getState().chooseForger('hammer');
     store.getState().startRun();
     const state = store.getState();
@@ -256,7 +270,10 @@ describe('fim de Rodada e derrota', () => {
 
   test('restartRun inicia nova Run com novo seed, mesmo Forjador e Mão nova', () => {
     let seed = 100;
-    const store = createGameStore({ seed: () => seed });
+    const store = createGameStore({
+      seed: () => seed,
+      initialProgression: { ...DEFAULT_PROGRESSION, claimedOptions: ['unlock-forger-anvil'] },
+    });
     store.getState().chooseForger('anvil');
     store.getState().startRun();
     const firstSeed = store.getState().run!.seed;
@@ -275,6 +292,125 @@ describe('fim de Rodada e derrota', () => {
     expect(state.run!.seed).not.toBe(firstSeed);
     expect(state.run!.seed).toBe(200);
     expect(state.run!.deck.hand.map(cardKey)).not.toEqual(firstHand);
+  });
+});
+
+describe('meta-progressão (ticket 11)', () => {
+  const QUAD_TENS = [clubs(10), spades(10), hearts(10), diamonds(10)];
+
+  /** Coloca uma Run na Rodada 6 com Mão vencedora e joga a quadra (runWon). */
+  function winStoreRun(store: ReturnType<typeof createGameStore>): void {
+    store.getState().startRun(); // garante a stream de RNG no store
+    store.setState({ run: { ...makeRunWithHand(QUAD_TENS), roundNumber: 6 } });
+    for (const card of QUAD_TENS) store.getState().toggleCard(cardKey(card));
+    store.getState().playSelection();
+  }
+
+  test('chooseForger ignora Forjadores bloqueados pela meta-progressão', () => {
+    const store = createGameStore();
+    store.getState().chooseForger('hammer');
+    expect(store.getState().forger).toBe('apprentice');
+  });
+
+  test('chooseForger aceita Forjador desbloqueado e startRun respeita os unlocks', () => {
+    const store = createGameStore({
+      initialProgression: { ...DEFAULT_PROGRESSION, claimedOptions: ['unlock-forger-hammer'] },
+    });
+    store.getState().chooseForger('hammer');
+    expect(store.getState().forger).toBe('hammer');
+    store.getState().startRun();
+    expect(store.getState().run?.forger).toBe('hammer');
+    expect(isForgerUnlocked(computeUnlocks(store.getState().progression), 'hammer')).toBe(true);
+  });
+
+  test('fim de Run vencida registra a vitória, desbloqueia o Martelo e mostra o banner', () => {
+    const storage = createMemoryProgressionStorage();
+    const store = createGameStore({ progressionStorage: storage });
+    winStoreRun(store);
+    const state = store.getState();
+    expect(state.run?.phase).toBe('runWon');
+    expect(state.progression.stats.runsWon).toBe(1);
+    expect(state.progression.stats.runsStarted).toBe(1);
+    expect(state.progression.stats.bestRunScore).toBeGreaterThan(0);
+    expect(computeUnlocks(state.progression).forgers).toContain('hammer');
+    expect(state.recentUnlocks).toContain(milestoneOptionTitle('unlock-forger-hammer'));
+    expect(storage.load()?.claimedOptions).toContain('unlock-forger-hammer');
+  });
+
+  test('Run perdida registra a derrota sem desbloquear nada', () => {
+    const store = createGameStore();
+    store.getState().startRun();
+    store.setState({ run: { ...makeRunWithHand([spades(1)]), playsRemaining: 1 } });
+    store.getState().toggleCard(cardKey(spades(1)));
+    store.getState().playSelection();
+    const state = store.getState();
+    expect(state.run?.phase).toBe('runLost');
+    expect(state.progression.stats.runsStarted).toBe(1);
+    expect(state.progression.stats.runsWon).toBe(0);
+    expect(state.progression.claimedOptions).toHaveLength(0);
+    expect(state.recentUnlocks).toHaveLength(0);
+  });
+
+  test('quinta vitória: o jogador escolhe a ordem dos dois Efeitos de Forja', () => {
+    const store = createGameStore({
+      initialProgression: {
+        ...DEFAULT_PROGRESSION,
+        stats: { ...DEFAULT_PROFILE_STATS, runsWon: 4 },
+        claimedOptions: ['unlock-forger-hammer', 'unlock-forger-anvil'],
+      },
+    });
+    winStoreRun(store);
+    let state = store.getState();
+    expect(state.progression.stats.runsWon).toBe(5);
+    // marco multi-opção pendente → modal aberto com as duas opções
+    expect(state.unlockChoice).not.toBeNull();
+    expect(state.unlockChoice?.unclaimedOptions).toHaveLength(2);
+    // primeira escolha de ordem
+    store.getState().claimUnlock('value-bonus-7');
+    state = store.getState();
+    expect(computeUnlocks(state.progression).extraEffects).toEqual(['value-bonus-7']);
+    expect(state.unlockChoice).toBeNull();
+    // a segunda continua disponível para reivindicar depois (Coleção)
+    const pending = pendingMilestones(state.progression);
+    expect(pending).toHaveLength(1);
+    expect(pending[0].unclaimedOptions.map((option) => option.id)).toEqual(['trigger-2-15']);
+    // segunda escolha completa o marco
+    store.getState().claimUnlock('trigger-2-15');
+    expect(computeUnlocks(store.getState().progression).extraEffects).toHaveLength(2);
+  });
+
+  test('claimUnlock persiste a escolha no storage', () => {
+    const storage = createMemoryProgressionStorage();
+    const store = createGameStore({
+      progressionStorage: storage,
+      initialProgression: {
+        ...DEFAULT_PROGRESSION,
+        stats: { ...DEFAULT_PROFILE_STATS, runsWon: 5 },
+      },
+    });
+    store.getState().claimUnlock('value-bonus-7');
+    expect(storage.load()?.claimedOptions).toContain('value-bonus-7');
+  });
+
+  test('Jogadas acumulam estatísticas de perfil (cartas jogadas e maior combo)', () => {
+    const store = createGameStore({ seed: () => 4 });
+    store.getState().startRun();
+    const hand = store.getState().run!.deck.hand;
+    store.getState().toggleCard(cardKey(hand[0]));
+    store.getState().playSelection();
+    const stats = store.getState().progression.stats;
+    expect(stats.cardPlays[cardKey(hand[0])]).toBe(1);
+    expect(stats.maxMultiplier).toBeGreaterThanOrEqual(1);
+  });
+
+  test('openProfile, openCollection e backToStart navegam entre telas', () => {
+    const store = createGameStore();
+    store.getState().openProfile();
+    expect(store.getState().screen).toBe('profile');
+    store.getState().openCollection();
+    expect(store.getState().screen).toBe('collection');
+    store.getState().backToStart();
+    expect(store.getState().screen).toBe('start');
   });
 });
 

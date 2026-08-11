@@ -14,11 +14,19 @@ interface RunWonScreenProps {
 export function RunWonScreen({ run }: RunWonScreenProps) {
   const restartRun = useGameStore((state) => state.restartRun);
   const backToStart = useGameStore((state) => state.backToStart);
+  const recentUnlocks = useGameStore((state) => state.recentUnlocks);
 
   return (
     <View style={styles.container}>
       <Text style={styles.eyebrow}>ALL {ROUNDS_PER_RUN} ROUNDS CLEARED</Text>
       <Text style={styles.title}>Run Complete!</Text>
+      {recentUnlocks.length > 0 && (
+        <View style={styles.unlockBanner}>
+          <Text style={styles.unlockBannerText}>
+            NEW UNLOCK{recentUnlocks.length > 1 ? 'S' : ''}: {recentUnlocks.join(' · ')}
+          </Text>
+        </View>
+      )}
       <Text style={styles.subtitle}>
         {getForger(run.forger).name} forged a {run.runScore}-point run.
       </Text>
@@ -72,6 +80,23 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginTop: 8,
     textAlign: 'center',
+  },
+  unlockBanner: {
+    alignSelf: 'stretch',
+    borderRadius: 10,
+    backgroundColor: 'rgba(127,201,138,0.15)',
+    borderWidth: 1,
+    borderColor: colors.success,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  unlockBannerText: {
+    color: colors.success,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 1,
   },
   card: {
     alignItems: 'center',

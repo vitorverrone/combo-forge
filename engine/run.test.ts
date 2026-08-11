@@ -4,6 +4,7 @@ import { createDeck, DeckState } from './deck';
 import { generateForgeOffers } from './forge';
 import { ForgerId, getForger } from './forgers';
 import { availablePatternHints, PatternKind } from './patterns';
+import { ALL_UNLOCKS } from './progression';
 import { createSeededRng } from './random';
 import { RELIC_POOL } from './relics';
 import {
@@ -50,6 +51,7 @@ function makeRun(hand: readonly Card[], overrides: Partial<RunState> = {}): RunS
     forger: 'apprentice',
     dda: DEFAULT_DDA_STATE,
     ddaConfig: DEFAULT_DDA_CONFIG,
+    unlocks: ALL_UNLOCKS,
     forgeOffers: [],
     ...overrides,
   };

@@ -33,6 +33,7 @@ import { DeckState, discardCards, initialDeckState, isDeckCard, playCards, Round
 import { ForgeOffer, forgeCard, forgeOfferSeed, generateForgeOffers } from './forge';
 import { ForgerId, getForger } from './forgers';
 import { evaluatePlay } from './patterns';
+import { ALL_UNLOCKS, isForgerUnlocked, poolsFor, UnlocksState } from './progression';
 import { createSeededRng, Rng } from './random';
 import { activeRelics, comboMultiplier, Relic, RELIC_CAP, scoreModifiers, structureModifiers } from './relics';
 
@@ -68,6 +69,8 @@ export interface RunState {
   readonly dda: DdaState;
   /** Parâmetros do DDA; `enabled: false` desliga todos os ajustes (Desafio Diário). */
   readonly ddaConfig: DdaConfig;
+  /** Desbloqueios de conteúdo (ticket 11): filtram os pools de Forja e o Forjador. */
+  readonly unlocks: UnlocksState;
   /** Ofertas da Forja atual (preenchido apenas na fase 'forging'). */
   readonly forgeOffers: readonly ForgeOffer[];
 }
@@ -123,15 +126,26 @@ export interface StartRunOptions {
    * (cada startRun usa uma stream nova).
    */
   readonly rng?: Rng;
+  /**
+   * Desbloqueios de conteúdo da meta-progressão (ticket 11): filtram os
+   * pools de Forja (Efeitos bônus e Relíquias raras) e gateam o Forjador.
+   * Padrão: tudo desbloqueado.
+   */
+  readonly unlocks?: UnlocksState;
 }
 
 /**
  * Inicia uma nova Run (Rodada 1) a partir do seed — determina embaralhamento
  * e Forjas — com o Forjador escolhido (padrão: Aprendiz) e o histórico DDA.
- * A Relíquia exclusiva de largada do Forjador entra fora do teto de 3.
+ * A Relíquia exclusiva de largada do Forjador entra fora do teto de 3. O
+ * Forjador precisa estar desbloqueado nos unlocks passados (ticket 11).
  */
 export function startRun(seed: number, options: StartRunOptions = {}): RunState {
   const forger = getForger(options.forger ?? 'apprentice');
+  const unlocks = options.unlocks ?? ALL_UNLOCKS;
+  if (!isForgerUnlocked(unlocks, forger.id)) {
+    throw new Error(`Forjador bloqueado pela meta-progressão: ${forger.id}.`);
+  }
   return startRoundState(
     initialDeckState(),
     1,
@@ -144,6 +158,7 @@ export function startRun(seed: number, options: StartRunOptions = {}): RunState 
     forger.id,
     options.dda ?? DEFAULT_DDA_STATE,
     options.ddaConfig ?? DEFAULT_DDA_CONFIG,
+    unlocks,
   );
 }
 
@@ -171,6 +186,7 @@ export function startNextRound(run: RunState, rng: Rng): RunState {
     run.forger,
     run.dda,
     run.ddaConfig,
+    run.unlocks,
   );
 }
 
@@ -186,6 +202,7 @@ function startRoundState(
   forger: ForgerId = 'apprentice',
   dda: DdaState = DEFAULT_DDA_STATE,
   ddaConfig: DdaConfig = DEFAULT_DDA_CONFIG,
+  unlocks: UnlocksState = ALL_UNLOCKS,
 ): RunState {
   return {
     seed,
@@ -202,6 +219,7 @@ function startRoundState(
     forger,
     dda,
     ddaConfig,
+    unlocks,
     forgeOffers: [],
   };
 }
@@ -279,12 +297,16 @@ export function makePlay(
       events.push({ type: 'runWon', roundNumber: run.roundNumber, runScore: base.runScore });
       return { run: { ...base, phase: 'runWon' }, events };
     }
+    const pools = poolsFor(run.unlocks);
     const offers = generateForgeOffers(
       createSeededRng(forgeOfferSeed(run.seed, run.roundNumber)),
       run.relics,
       {
         // sequência de vitórias fáceis aumenta a frequência de Relíquia rara
         rareRelicBoost: run.ddaConfig.enabled && run.dda.easyWins >= run.ddaConfig.easyWinThreshold,
+        // pools filtrados pelos desbloqueios da meta-progressão (ticket 11)
+        forgeEffects: pools.forgeEffects,
+        relics: pools.relics,
       },
     );
     events.push({ type: 'forgeOffers', roundNumber: run.roundNumber, offers });
