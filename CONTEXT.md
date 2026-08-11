@@ -35,8 +35,12 @@ O momento entre Rodadas em que o jogador escolhe 1 entre 3 ofertas para fortalec
 _Evitar_: Upgrade, shop, melhoria
 
 **Carta Forjada**:
-Uma carta do Baralho que recebeu um efeito especial via Forja. O efeito é permanente na Run e se aplica sempre que a carta entra numa Jogada.
+Uma carta do Baralho que recebeu um ou mais Efeitos de Forja, permanentes na Run, aplicados sempre que a carta entra numa Jogada. Pode ser forjada de novo em Forjas futuras, empilhando efeitos.
 _Evitar_: Carta melhorada, enhanced card
+
+**Efeito de Forja**:
+Um dos quatro efeitos aplicáveis a uma carta via Forja: +Valor (soma fixa ao Valor da carta), Multiplicador (carta vale ×2 ou ×3), Curinga (conta como qualquer Valor e qualquer Naipe) e Gatilho (bônus sob condição, ex.: "se for a 3ª Jogada da Rodada, +20"). Efeitos empilhados resolvem somas antes de multiplicadores.
+_Evitar_: Efeito especial, habilidade de carta
 
 **Relíquia**:
 Um item passivo que altera uma regra global da Run (ex.: "Espadas valem o dobro"). Adquirido via Forja, com máximo de 3 ativas por Run.
