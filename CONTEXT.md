@@ -74,6 +74,10 @@ _Evitar_: Curva de dificuldade (a curva base é o alicerce; DDA é o ajuste din�
 Um personagem jogável definido por uma Relíquia exclusiva de largada (fora do teto de 3). O MVP tem três: Aprendiz (neutro, sem relíquia — o onboarding), Martelo (fortalece um Padrão) e Bigorna (mexe no Multiplicador de Combo). O Aprendiz é sempre disponível; os demais são desbloqueados por marcos de meta-progressão.
 _Evitar_: Personagem, classe, herói
 
+**Desafio Diário**:
+O modo diário de comparação social justa. Um seed cobre a Run inteira (embaralhamento do Baralho + ofertas de Forja e de Relíquia), idêntico para todos os jogadores, e o DDA fica desligado. São 1 tentativa gratuita por dia + 1 extra via anúncio recompensado (opt-in). O ranking é semanal, opt-in, ordenado pela pontuação final da Run e mostra apenas a própria posição e o top 10.
+_Evitar_: Daily, desafio do dia
+
 **Run**:
 Uma sessão completa de jogo, da Rodada 1 até a derrota ou até vencer a 6ª Rodada. Ao falhar, reinicia-se imediatamente uma nova Run.
 _Evitar_: Partida, run run (sem repetição)
