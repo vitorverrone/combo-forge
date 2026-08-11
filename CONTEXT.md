@@ -30,6 +30,10 @@ _Evitar_: Hand (em inglês), baralho (Mão é um subconjunto, não o deck inteir
 A ação de trocar cartas da Mão antes de jogar: as cartas escolhidas voltam ao Baralho e o mesmo número é comprado. Há 2 Descarte por Rodada, compartilhados entre as 4 Jogadas; os não usados são perdidos.
 _Evitar_: Troca, redraw, swap
 
+**Padrão**:
+A configuração das cartas de uma Jogada que define o bônus do Valor-Base. Os padrões do jogo são: Carta Alta (fallback de 1 carta), Par, Dois Pares, Trinca, Sequência (5 cartas em ordem, naipes livres, incluindo Ás–5 e 10–Ás), Full House e Quadra. A Jogada pontua o melhor Padrão formado pelas cartas selecionadas (2–5 cartas, ou 1 para Carta Alta) e todas as cartas selecionadas somam seus valores ao bônus.
+_Evitar_: Mão (Mão é o conjunto disponível; Padrão é a configuração jogada), combinação
+
 **Rodada**:
 Uma unidade da Run com uma Meta de pontos e exatamente 4 Jogadas disponíveis. É vencida quando a pontuação acumulada atinge a Meta antes das Jogadas se esgotarem.
 _Evitar_: Blind (é o nome do GDD para a Meta; Rodada é a unidade de jogo), round
