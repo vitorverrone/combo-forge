@@ -4,7 +4,7 @@
 
 **Blocked by:** 02 — Motor: Padrões e Valor-Base, 03 — Motor: Baralho, Mão e Descarte
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] A 1ª Jogada da Rodada usa ×1, a 4ª usa ×4; o Multiplicador zera ao iniciar uma nova Rodada
 - [ ] Pontuação da Rodada = Σ (Valor-Base da Jogada × Multiplicador de Combo da Jogada)
