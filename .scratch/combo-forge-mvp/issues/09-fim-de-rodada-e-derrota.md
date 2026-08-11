@@ -4,7 +4,7 @@
 
 **Blocked by:** 08 — Run jogável (tela de jogo)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Vitória de Rodada mostra o resumo (pontuação obtida vs Meta) e avança para a Rodada seguinte
 - [ ] Vencer a 6ª Rodada encerra a Run em vitória com tela de conclusão
