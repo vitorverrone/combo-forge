@@ -30,6 +30,18 @@ _Evitar_: Suit, cor (cor é detalhe de renderização)
 O número de uma carta, de 1 a 10. Entra na soma do Valor-Base e na formação de Sequências.
 _Evitar_: Rank
 
+**Forja**:
+O momento entre Rodadas em que o jogador escolhe 1 entre 3 ofertas para fortalecer a build: 2 ofertas de efeito de carta e 1 oferta de Relíquia. Ocorre após cada Rodada vencida (5 por Run).
+_Evitar_: Upgrade, shop, melhoria
+
+**Carta Forjada**:
+Uma carta do Baralho que recebeu um efeito especial via Forja. O efeito é permanente na Run e se aplica sempre que a carta entra numa Jogada.
+_Evitar_: Carta melhorada, enhanced card
+
+**Relíquia**:
+Um item passivo que altera uma regra global da Run (ex.: "Espadas valem o dobro"). Adquirido via Forja, com máximo de 3 ativas por Run.
+_Evitar_: Artefato, item, power-up
+
 **Mão**:
 O subconjunto de 7 cartas do Baralho que o jogador segura e a partir do qual seleciona as cartas de uma Jogada. Reabastece pelo Baralho após cada Jogada ou Descarte.
 _Evitar_: Hand (em inglês), baralho (Mão é um subconjunto, não o deck inteiro)
