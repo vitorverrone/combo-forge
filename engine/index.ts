@@ -7,5 +7,7 @@
 
 export * from './cards';
 export * from './patterns';
+export * from './random';
+export * from './deck';
 
 export const engineModuleId = 'combo-forge-engine';
