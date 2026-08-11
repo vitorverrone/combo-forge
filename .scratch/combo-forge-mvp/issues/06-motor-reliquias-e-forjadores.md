@@ -4,7 +4,7 @@
 
 **Blocked by:** 04 — Motor: Rodada, Meta e Combo, 05 — Motor: Forja e Cartas Forjadas
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Relíquias de Naipe e Padrão alteram o cálculo do Valor-Base; de Mecânica alteram estrutura (ex.: +1 Descarte, +1 carta na Mão, nunca +1 Jogada); de Combo alteram o Multiplicador de Combo
 - [ ] O teto de 3 Relíquias ativas é respeitado em qualquer caminho de aquisição
