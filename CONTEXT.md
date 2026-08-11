@@ -70,6 +70,10 @@ _Evitar_: Blind, objetivo, alvo
 O sistema que ajusta a Meta para manter o jogador em Flow, persistente entre Runs. Falhar a mesma Rodada 3 vezes seguidas reduz a Meta dela em 10%; 5 vitórias fáceis consecutivas (margem ≥ 30% acima da Meta com 1+ Jogada sobrando) aumentam a Meta em 10% e a chance de Relíquia rara. Hesitação dispara apenas dicas visuais, sem tocar a Meta. Fica desligado no Desafio Diário.
 _Evitar_: Curva de dificuldade (a curva base é o alicerce; DDA é o ajuste dinâmico sobre ela), adaptive difficulty
 
+**Forjador**:
+Um personagem jogável definido por uma Relíquia exclusiva de largada (fora do teto de 3). O MVP tem três: Aprendiz (neutro, sem relíquia — o onboarding), Martelo (fortalece um Padrão) e Bigorna (mexe no Multiplicador de Combo). O Aprendiz é sempre disponível; os demais são desbloqueados por marcos de meta-progressão.
+_Evitar_: Personagem, classe, herói
+
 **Run**:
 Uma sessão completa de jogo, da Rodada 1 até a derrota ou até vencer a 6ª Rodada. Ao falhar, reinicia-se imediatamente uma nova Run.
 _Evitar_: Partida, run run (sem repetição)
