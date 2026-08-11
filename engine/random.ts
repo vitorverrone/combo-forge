@@ -8,8 +8,10 @@
  * Nota de design (tickets 05/07/13): decisões do jogador (quantas Jogadas
  * até esgotar o drawPile) mudam quantas chamadas de rng() o embaralhamento
  * consome. Para o Desafio Diário ser justo, as ofertas de Forja/Relíquia
- * devem usar streams de RNG separados (ou seeds independentes) — não o mesmo
- * stream do embaralhamento.
+ * usam streams de RNG separados, derivados do seed da Run e da Rodada
+ * (forgeOfferSeed em forge.ts — implementado no ticket 05), nunca o mesmo
+ * stream do embaralhamento. Regras de DDA e o seed completo do Desafio
+ * Diário ainda virão nos tickets 07 e 13.
  */
 
 export type Rng = () => number;
