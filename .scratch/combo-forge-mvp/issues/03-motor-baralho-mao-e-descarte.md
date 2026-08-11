@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — Scaffolding do projeto
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Baralho com 40 cartas únicas (4 naipes × 10 Valores), sem figuras
 - [ ] Embaralhamento determinístico com RNG injetado: mesmo seed → mesma ordem
