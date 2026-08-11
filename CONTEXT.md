@@ -19,8 +19,16 @@ O fator aplicado ao Valor-Base de uma Jogada, igual à contagem de Jogadas já f
 _Evitar_: Combo (sem qualificação), streak, chain, multiplicador global
 
 **Baralho**:
-O conjunto fixo de cartas disponíveis na Run. As cartas jogadas são recicladas — retornam ao Baralho ao fim da Rodada —, então a composição só muda através de Upgrades escolhidos entre Rodadas.
+O conjunto fixo de 40 cartas da Run: 4 naipes × 10 valores (1 a 10, sem figuras). As cartas jogadas são recicladas — retornam ao Baralho ao fim da Rodada —, então a composição só muda através de Forjas escolhidas entre Rodadas.
 _Evitar_: Deck, baralho consumível
+
+**Naipe**:
+A família de uma carta. Há 4 no jogo (Espadas, Copas, Ouros, Paus). Por si só não forma Padrão — é identidade usada por Relíquias e efeitos de carta.
+_Evitar_: Suit, cor (cor é detalhe de renderização)
+
+**Valor**:
+O número de uma carta, de 1 a 10. Entra na soma do Valor-Base e na formação de Sequências.
+_Evitar_: Rank
 
 **Mão**:
 O subconjunto de 7 cartas do Baralho que o jogador segura e a partir do qual seleciona as cartas de uma Jogada. Reabastece pelo Baralho após cada Jogada ou Descarte.
