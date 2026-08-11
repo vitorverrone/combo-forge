@@ -25,3 +25,15 @@ _Evitar_: Deck, baralho consumível
 **Mão**:
 O subconjunto de cartas do Baralho que o jogador segura e a partir do qual seleciona as cartas de uma Jogada. Reabastece pelo Baralho após cada Jogada.
 _Evitar_: Hand (em inglês), baralho (Mão é um subconjunto, não o deck inteiro)
+
+**Rodada**:
+Uma unidade da Run com uma Meta de pontos e exatamente 4 Jogadas disponíveis. É vencida quando a pontuação acumulada atinge a Meta antes das Jogadas se esgotarem.
+_Evitar_: Blind (é o nome do GDD para a Meta; Rodada é a unidade de jogo), round
+
+**Meta**:
+O alvo de pontos de uma Rodada. Atingida quando a pontuação acumulada da Rodada a iguala ou supera, avançando a Run; não atingida, a Run termina.
+_Evitar_: Blind, objetivo, alvo
+
+**Run**:
+Uma sessão completa de jogo, da Rodada 1 até a derrota ou até vencer a 6ª Rodada. Ao falhar, reinicia-se imediatamente uma nova Run.
+_Evitar_: Partida, run run (sem repetição)
