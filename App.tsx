@@ -1,14 +1,18 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
-import { engineModuleId } from './engine';
+import { GameScreen } from './components/GameScreen';
+import { StartScreen } from './components/StartScreen';
+import { colors } from './components/theme';
+import { useGameStore } from './store/gameStore';
 
 export default function App() {
+  const screen = useGameStore((state) => state.screen);
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Combo Forge</Text>
-      <Text style={styles.engine}>{engineModuleId}</Text>
-      <StatusBar style="auto" />
+      {screen === 'start' ? <StartScreen /> : <GameScreen />}
+      <StatusBar style="light" />
     </View>
   );
 }
@@ -16,17 +20,6 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  engine: {
-    marginTop: 8,
-    fontSize: 12,
-    color: '#666',
+    backgroundColor: colors.background,
   },
 });

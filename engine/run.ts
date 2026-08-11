@@ -117,6 +117,12 @@ export interface StartRunOptions {
   readonly dda?: DdaState;
   /** Parâmetros do DDA; `enabled: false` desliga os ajustes (Desafio Diário). */
   readonly ddaConfig?: DdaConfig;
+  /**
+   * Stream contínua de RNG do embaralhamento/compra; quem chama é dono da
+   * stream e deve passá-la às ações seguintes. Default: criada do seed
+   * (cada startRun usa uma stream nova).
+   */
+  readonly rng?: Rng;
 }
 
 /**
@@ -129,7 +135,7 @@ export function startRun(seed: number, options: StartRunOptions = {}): RunState 
   return startRoundState(
     initialDeckState(),
     1,
-    createSeededRng(seed),
+    options.rng ?? createSeededRng(seed),
     0,
     seed,
     [],
