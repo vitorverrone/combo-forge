@@ -63,8 +63,12 @@ Uma unidade da Run com uma Meta de pontos e exatamente 4 Jogadas disponíveis. �
 _Evitar_: Blind (é o nome do GDD para a Meta; Rodada é a unidade de jogo), round
 
 **Meta**:
-O alvo de pontos de uma Rodada. Atingida quando a pontuação acumulada da Rodada a iguala ou supera, avançando a Run; não atingida, a Run termina.
+O alvo de pontos de uma Rodada. Atingida quando a pontuação acumulada da Rodada a iguala ou supera, avançando a Run; não atingida, a Run termina. A curva base é 50 × 1,7^(R−1) na Rodada R, ajustada pelo DDA.
 _Evitar_: Blind, objetivo, alvo
+
+**Dificuldade Dinâmica (DDA)**:
+O sistema que ajusta a Meta para manter o jogador em Flow, persistente entre Runs. Falhar a mesma Rodada 3 vezes seguidas reduz a Meta dela em 10%; 5 vitórias fáceis consecutivas (margem ≥ 30% acima da Meta com 1+ Jogada sobrando) aumentam a Meta em 10% e a chance de Relíquia rara. Hesitação dispara apenas dicas visuais, sem tocar a Meta. Fica desligado no Desafio Diário.
+_Evitar_: Curva de dificuldade (a curva base é o alicerce; DDA é o ajuste dinâmico sobre ela), adaptive difficulty
 
 **Run**:
 Uma sessão completa de jogo, da Rodada 1 até a derrota ou até vencer a 6ª Rodada. Ao falhar, reinicia-se imediatamente uma nova Run.
