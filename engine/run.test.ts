@@ -1,7 +1,9 @@
 import { Card } from './cards';
+import { DEFAULT_DDA_CONFIG, DEFAULT_DDA_STATE } from './dda';
 import { createDeck, DeckState } from './deck';
 import { generateForgeOffers } from './forge';
 import { ForgerId, getForger } from './forgers';
+import { availablePatternHints, PatternKind } from './patterns';
 import { createSeededRng } from './random';
 import { RELIC_POOL } from './relics';
 import {
@@ -46,6 +48,8 @@ function makeRun(hand: readonly Card[], overrides: Partial<RunState> = {}): RunS
     relics: [],
     startingRelic: undefined,
     forger: 'apprentice',
+    dda: DEFAULT_DDA_STATE,
+    ddaConfig: DEFAULT_DDA_CONFIG,
     forgeOffers: [],
     ...overrides,
   };
@@ -272,7 +276,7 @@ describe('Relíquias na Run (ticket 06)', () => {
 
 describe('Forjadores na Run (ticket 06)', () => {
   test('Forjador Martelo aplica a Relíquia exclusiva de largada, fora do teto', () => {
-    const run = startRun(42, 'hammer');
+    const run = startRun(42, { forger: 'hammer' });
     expect(run.forger).toBe('hammer');
     expect(run.startingRelic).toBeDefined();
     expect(run.relics).toHaveLength(0);
@@ -288,7 +292,7 @@ describe('Forjadores na Run (ticket 06)', () => {
   });
 
   test('Bigorna começa com ×2 na 1ª Jogada', () => {
-    const run = startRun(42, 'anvil');
+    const run = startRun(42, { forger: 'anvil' });
     expect(run.forger).toBe('anvil');
     expect(currentMultiplier(run)).toBe(2);
   });
@@ -301,7 +305,7 @@ describe('Forjadores na Run (ticket 06)', () => {
   });
 
   test('startRun com Forjador desconhecido lança erro', () => {
-    expect(() => startRun(1, 'mage' as ForgerId)).toThrow();
+    expect(() => startRun(1, { forger: 'mage' as ForgerId })).toThrow();
   });
 });
 
@@ -312,7 +316,85 @@ describe('serialização', () => {
   });
 
   test('estado com Forjador e Relíquia de largada é serializável', () => {
-    const run = startRun(7, 'anvil');
+    const run = startRun(7, { forger: 'anvil' });
     expect(JSON.parse(JSON.stringify(run))).toEqual(run);
+  });
+});
+
+describe('DDA na Run (ticket 07)', () => {
+  test('a Meta da Rodada da última derrota vem −10% na Rodada seguinte', () => {
+    const run = makeRun([], {
+      phase: 'roundWon',
+      roundNumber: 1,
+      dda: { lastFailedRound: 2, consecutiveFailures: 3, easyWins: 0 },
+      target: 0,
+    });
+    const next = startNextRound(run, createSeededRng(40));
+    expect(next.roundNumber).toBe(2);
+    expect(next.target).toBe(Math.round(baseTarget(2) * 0.9)); // 85 → 77
+  });
+
+  test('5 vitórias fáceis consecutivas aumentam a Meta em 10%', () => {
+    const run = makeRun([], {
+      phase: 'roundWon',
+      roundNumber: 1,
+      dda: { lastFailedRound: 0, consecutiveFailures: 0, easyWins: 5 },
+      target: 0,
+    });
+    const next = startNextRound(run, createSeededRng(41));
+    expect(next.target).toBe(Math.round(baseTarget(2) * 1.1)); // 85 → 94
+  });
+
+  test('sem DDA (Desafio Diário): Meta igual à curva base', () => {
+    const run = makeRun([], {
+      phase: 'roundWon',
+      roundNumber: 1,
+      dda: { lastFailedRound: 3, consecutiveFailures: 9, easyWins: 9 },
+      ddaConfig: { ...DEFAULT_DDA_CONFIG, enabled: false },
+      target: 0,
+    });
+    const next = startNextRound(run, createSeededRng(42));
+    expect(next.target).toBe(baseTarget(2)); // 85
+  });
+
+  test('5 vitórias fáceis consecutivas ativam o boost de Relíquia rara na Forja', () => {
+    // seed 1: a stream da Forja da Rodada 1 decide o boost com rng() < 0.5
+    const run = makeRun([clubs(10), spades(10), hearts(10), diamonds(10)], {
+      seed: 1,
+      dda: { lastFailedRound: 0, consecutiveFailures: 0, easyWins: 5 },
+    });
+    const won = makePlay(run, [clubs(10), spades(10), hearts(10), diamonds(10)], createSeededRng(43)).run;
+    const relicOffer = won.forgeOffers.find((o) => o.type === 'relic');
+    expect(relicOffer).toBeDefined();
+    if (relicOffer !== undefined && relicOffer.type === 'relic') {
+      expect(relicOffer.relic.rarity).toBe('rare');
+    }
+  });
+
+  test('dicas de hesitação são só dados: não alteram a Meta nem o estado da Run', () => {
+    const run = makeRun([spades(7), hearts(7), diamonds(7)]);
+    const snapshot = JSON.stringify(run);
+    const hints = availablePatternHints(run.deck.hand);
+    expect(hints).toContain(PatternKind.ThreeOfAKind);
+    expect(run.target).toBe(baseTarget(1));
+    expect(JSON.stringify(run)).toBe(snapshot);
+  });
+});
+
+describe('determinismo (ticket 07)', () => {
+  test('mesmo seed produz a mesma sequência de ofertas de Forja ao longo das Rodadas', () => {
+    const offersByRound = (seed: number): string[] => {
+      const offers: string[] = [];
+      for (let round = 1; round <= 3; round += 1) {
+        const run = makeRun([clubs(10), spades(10), hearts(10), diamonds(10)], { seed, roundNumber: round });
+        const won = makePlay(run, [clubs(10), spades(10), hearts(10), diamonds(10)], createSeededRng(round)).run;
+        offers.push(JSON.stringify(won.forgeOffers));
+      }
+      return offers;
+    };
+
+    expect(offersByRound(77)).toEqual(offersByRound(77));
+    // seeds diferentes divergem a partir da 1ª oferta
+    expect(offersByRound(77)).not.toEqual(offersByRound(78));
   });
 });

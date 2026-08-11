@@ -1,5 +1,5 @@
 import { Card, ForgeEffect, ForgedCard } from './cards';
-import { evaluatePlay, identifyPattern, PatternKind, ScoreModifiers } from './patterns';
+import { availablePatternHints, evaluatePlay, identifyPattern, PatternKind, ScoreModifiers } from './patterns';
 
 const spades = (value: number): Card => ({ suit: 'spades', value });
 const hearts = (value: number): Card => ({ suit: 'hearts', value });
@@ -198,6 +198,46 @@ describe('Relíquias no Valor-Base (ticket 06)', () => {
     const mods: ScoreModifiers = { suitMultipliers: { spades: 2 }, patternBonuses: { [PatternKind.Pair]: 10 } };
     // 7♠ forjada ×2 e ×2 do Naipe: 7×2×2 = 28; 7♥ = 7; par: (5+10) + 28 + 7 = 50
     expect(evaluatePlay([spades(7), hearts(7)], { forgedCards, modifiers: mods }).baseValue).toBe(50);
+  });
+});
+
+describe('availablePatternHints (dicas de hesitação, ticket 07)', () => {
+  test('dica do melhor Padrão formável pela Mão, sem redundâncias', () => {
+    expect(availablePatternHints([spades(7), hearts(7)])).toEqual([PatternKind.Pair]);
+    expect(availablePatternHints([spades(7), hearts(7), diamonds(7)])).toEqual([PatternKind.ThreeOfAKind]);
+    expect(availablePatternHints([spades(7), hearts(7), diamonds(7), clubs(7)])).toEqual([
+      PatternKind.FourOfAKind,
+    ]);
+  });
+
+  test('Full House e Dois Pares', () => {
+    expect(availablePatternHints([spades(7), hearts(7), diamonds(7), spades(3), hearts(3)])).toEqual([
+      PatternKind.FullHouse,
+    ]);
+    expect(availablePatternHints([spades(7), hearts(7), spades(3), hearts(3)])).toEqual([
+      PatternKind.TwoPair,
+    ]);
+    // Mão de 7 com 3 pares ainda sugere Dois Pares (regressão: pairCount >= 2)
+    expect(availablePatternHints([spades(7), hearts(7), spades(3), hearts(3), spades(9), hearts(9), clubs(5)])).toEqual([
+      PatternKind.TwoPair,
+    ]);
+  });
+
+  test('Sequência é dica independente, incluindo Ás–5 e 10–Ás', () => {
+    expect(availablePatternHints([spades(1), spades(2), spades(3), spades(4), spades(5), clubs(9)])).toEqual([
+      PatternKind.Straight,
+    ]);
+    expect(availablePatternHints([spades(7), spades(8), spades(9), spades(10), spades(1)])).toEqual([
+      PatternKind.Straight,
+    ]);
+    expect(availablePatternHints([spades(7), hearts(7), spades(8), spades(9), spades(10), spades(1)])).toEqual([
+      PatternKind.Pair,
+      PatternKind.Straight,
+    ]);
+  });
+
+  test('Mão sem Padrão não gera dica de combinação', () => {
+    expect(availablePatternHints([spades(1), spades(3), spades(6), spades(8), spades(10)])).toEqual([]);
   });
 });
 

@@ -54,12 +54,28 @@ export function forgeOfferSeed(seed: number, roundNumber: number): number {
   return (Math.imul(seed, 31) + roundNumber) >>> 0;
 }
 
+export interface ForgeOfferOptions {
+  /**
+   * DDA de vitórias fáceis (ticket 07): aumenta a frequência de Relíquia
+   * rara na oferta. Consome uma chamada extra de rng() — determinística
+   * para a mesma stream.
+   */
+  readonly rareRelicBoost?: boolean;
+}
+
+/** Probabilidade de a oferta vir do subconjunto raro quando o boost está ativo. */
+export const RARE_RELIC_BOOST_RATE = 0.5;
+
 /**
  * Gera as 3 ofertas da Forja: 2 de Efeito de Forja + 1 de Relíquia. Com o
  * teto de RELIC_CAP Relíquias ativas, a oferta de Relíquia vira uma terceira
  * oferta de carta. Determinístico para uma mesma stream.
  */
-export function generateForgeOffers(rng: Rng, ownedRelics: readonly Relic[]): ForgeOffer[] {
+export function generateForgeOffers(
+  rng: Rng,
+  ownedRelics: readonly Relic[],
+  options: ForgeOfferOptions = {},
+): ForgeOffer[] {
   const hasRelicSlot = ownedRelics.length < RELIC_CAP;
   const effectCount = hasRelicSlot ? CARD_EFFECT_OFFERS : MAX_CARD_EFFECT_OFFERS;
   const offers: ForgeOffer[] = pickDistinct(FORGE_EFFECT_POOL, effectCount, rng).map((effect) => ({
@@ -68,7 +84,12 @@ export function generateForgeOffers(rng: Rng, ownedRelics: readonly Relic[]): Fo
   }));
   if (hasRelicSlot) {
     const available = RELIC_POOL.filter((relic) => !ownedRelics.some((owned) => owned.id === relic.id));
-    const [relic] = pickDistinct(available, 1, rng);
+    const rares = available.filter((relic) => relic.rarity === 'rare');
+    let candidates = available;
+    if (options.rareRelicBoost && rares.length > 0 && rng() < RARE_RELIC_BOOST_RATE) {
+      candidates = rares;
+    }
+    const [relic] = pickDistinct(candidates, 1, rng);
     if (relic === undefined) {
       throw new Error('Nenhuma Relíquia disponível para a oferta de Forja.');
     }
