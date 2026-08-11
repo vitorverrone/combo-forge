@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef } from 'react';
 
 import { activeRelics, getForger, RunState } from '../engine';
 
@@ -27,6 +28,20 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
   const progress = Math.min(run.score / run.target, 1);
   const marginPct = missing > 0 ? Math.round((missing / run.target) * 100) : 0;
   const soClose = missing > 0 && missing <= Math.round(run.target * 0.1);
+
+  // Pulso suave na barra "quase cheia" (juice transiente, volta ao repouso).
+  const pulse = useRef(new Animated.Value(1)).current;
+  useEffect(() => {
+    if (!soClose) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(pulse, { toValue: 0.55, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+        Animated.timing(pulse, { toValue: 1, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [soClose, pulse]);
 
   return (
     <View style={styles.container}>
@@ -60,11 +75,12 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
       )}
 
       <View style={styles.progressTrack}>
-        <View
+        <Animated.View
           style={[
             styles.progressFill,
             { width: `${progress * 100}%` },
             soClose && styles.progressFillClose,
+            soClose && { opacity: pulse },
           ]}
         />
       </View>

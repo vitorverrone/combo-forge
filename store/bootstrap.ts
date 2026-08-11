@@ -7,6 +7,7 @@
  * Chamado uma única vez, na avaliação do módulo de App.tsx.
  */
 import {
+  createInitialBreakHistory,
   createInitialDailyAttempts,
   createInitialShopState,
   dailyAttemptsForDay,
@@ -22,7 +23,7 @@ import { createSqlitePersistence } from './sqlite';
 
 export function initializeSqlitePersistence(): void {
   try {
-    const { ddaStorage, progressionStorage, dailyStorage, shopStorage } =
+    const { ddaStorage, progressionStorage, dailyStorage, shopStorage, breakStorage } =
       createSqlitePersistence();
     const saved = progressionStorage.load();
     const savedAttempts = dailyStorage.loadAttempts();
@@ -32,6 +33,8 @@ export function initializeSqlitePersistence(): void {
       dailyBackend: createAppDailyBackend(),
       shopStorage,
       shopProvider: createAppShopProvider(),
+      breakStorage,
+      breakHistory: breakStorage.load() ?? createInitialBreakHistory(),
       progression: saved ?? DEFAULT_PROGRESSION,
       daily: {
         ...gameStore.getState().daily,

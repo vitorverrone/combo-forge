@@ -1,8 +1,10 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 
+import { BreakReminderBanner } from './components/BreakReminderBanner';
 import { CollectionScreen } from './components/CollectionScreen';
 import { DailyChallengeScreen } from './components/DailyChallengeScreen';
+import { GameFeedback } from './components/GameFeedback';
 import { GameScreen } from './components/GameScreen';
 import { ProfileScreen } from './components/ProfileScreen';
 import { ShopScreen } from './components/ShopScreen';
@@ -28,6 +30,8 @@ export default function App() {
       {screen === 'daily' && <DailyChallengeScreen />}
       {screen === 'shop' && <ShopScreen />}
       <UnlockChoiceModal />
+      <BreakReminderBanner />
+      <GameFeedback />
       <StatusBar style="light" />
     </View>
   );

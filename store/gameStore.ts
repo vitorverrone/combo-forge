@@ -74,6 +74,17 @@ import {
 } from '../engine';
 
 import {
+  BreakHistory,
+  BreakStorage,
+  createInitialBreakHistory,
+  createMemoryBreakStorage,
+  DEFAULT_BREAK_REMINDER_CONFIG,
+  markBreakSuggested,
+  recordRunFinished,
+  shouldSuggestBreak,
+} from '../engine';
+
+import {
   COSMETIC_CATALOG,
   cosmeticItemById,
   createDevShopProvider,
@@ -164,6 +175,10 @@ export interface GameState {
   readonly shop: ShopState;
   readonly shopStorage: ShopStorage;
   readonly shopProvider: ShopProvider;
+  /** Lembrete gentil de pausa (ticket 15) — sugere, nunca bloqueia. */
+  readonly breakSuggestion: boolean;
+  readonly breakHistory: BreakHistory;
+  readonly breakStorage: BreakStorage;
 
   readonly chooseForger: (forger: ForgerId) => void;
   readonly startRun: () => void;
@@ -187,6 +202,8 @@ export interface GameState {
   readonly equipCosmetic: (itemId: string) => void;
   /** Restaura compras do dispositivo (novo aparelho). */
   readonly restorePurchases: () => Promise<void>;
+  /** Dispensa o lembrete de pausa atual (cooldown; o jogo nunca é bloqueado). */
+  readonly dismissBreakReminder: () => void;
   readonly toggleCard: (key: string) => void;
   readonly clearSelection: () => void;
   readonly playSelection: () => void;
@@ -232,6 +249,10 @@ export interface GameStoreDeps {
   readonly shopProvider?: ShopProvider;
   /** Estado inicial da loja (padrão: vazio; injetável em testes). */
   readonly initialShop?: PersistedShop;
+  /** Port de persistência do histórico de pausa (padrão: memória). */
+  readonly breakStorage?: BreakStorage;
+  /** Relógio para o lembrete de pausa (padrão: Date.now). */
+  readonly breakNow?: () => number;
 }
 
 /** Seleção resolvida em cartas da Mão, na ordem da Mão. */
@@ -295,6 +316,9 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
   const shopStorage = deps.shopStorage ?? createMemoryShopStorage();
   const shopProvider = deps.shopProvider ?? createDevShopProvider();
   const initialShop = deps.initialShop ?? shopStorage.load() ?? createInitialShopState();
+  const breakStorage = deps.breakStorage ?? createMemoryBreakStorage();
+  const breakNow = deps.breakNow ?? (() => Date.now());
+  const initialBreakHistory = breakStorage.load() ?? createInitialBreakHistory();
 
   // Estado inicial do Desafio Diário: deviceId persistido (ou novo) e
   // tentativas com rollover para o dia atual.
@@ -348,6 +372,16 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     },
     shopStorage,
     shopProvider,
+    breakSuggestion: false,
+    breakHistory: initialBreakHistory,
+    breakStorage,
+
+    dismissBreakReminder: () => {
+      const { breakHistory, breakStorage } = get();
+      const next = markBreakSuggested(breakHistory, breakNow());
+      breakStorage.save(next);
+      set({ breakHistory: next, breakSuggestion: false });
+    },
 
     openShop: () => {
       set({ screen: 'shop' });
@@ -587,6 +621,9 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       try {
         const played = selectedCards(run, selectedKeys);
         const result = makePlay(run, played, rng);
+        // Lembrete de pausa (ticket 15): toda Run encerrada conta, em qualquer
+        // modo — a sugestão nunca bloqueia o jogo.
+        const breakPatch = advanceBreakReminder(result.events, get().breakHistory, breakNow(), breakStorage);
         if (runMode === 'daily') {
           // Desafio Diário: não conta para meta-progressão (sem stats, sem
           // desbloqueios) e o DDA está desligado — nada a persistir além do
@@ -602,10 +639,14 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
             selectedKeys: [],
             lastEvents: result.events,
             recentUnlocks: [],
+            ...breakPatch,
           });
         } else {
           persistRoundEnd(result.run, result.events, storage);
-          set(advanceProgression(result, played, progression, get().unlockChoice, get().recentUnlocks, progressionStorage));
+          set({
+            ...advanceProgression(result, played, progression, get().unlockChoice, get().recentUnlocks, progressionStorage),
+            ...breakPatch,
+          });
         }
       } catch {
         // Jogada inválida (defesa da UI): estado permanece intacto
@@ -717,6 +758,29 @@ function advanceProgression(
     progression: next,
     unlockChoice,
     recentUnlocks,
+  };
+}
+
+/**
+ * Atualiza o histórico de pausa quando uma Run termina (runWon/runLost):
+ * registra o fim e computa a sugestão gentil. Devolve o patch de estado;
+ * vazio quando não houve fim de Run. Nunca altera regra de jogo.
+ */
+function advanceBreakReminder(
+  events: readonly RunEvent[],
+  history: BreakHistory,
+  nowMs: number,
+  storage: BreakStorage,
+): Partial<GameState> {
+  const ended = events.some(
+    (event) => event.type === 'runWon' || event.type === 'runLost',
+  );
+  if (!ended) return {};
+  const next = recordRunFinished(history, nowMs);
+  storage.save(next);
+  return {
+    breakHistory: next,
+    breakSuggestion: shouldSuggestBreak(next, nowMs, DEFAULT_BREAK_REMINDER_CONFIG),
   };
 }
 

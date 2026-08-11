@@ -6,6 +6,7 @@
     "@shopify/react-native-skia": "2.6.2",
     "@supabase/supabase-js": "^2.112.3",
     "expo": "~57.0.10",
+    "expo-audio": "~57.0.3",
     "expo-haptics": "~57.0.1",
     "expo-sqlite": "~57.0.1",
     "expo-status-bar": "~57.0.1",

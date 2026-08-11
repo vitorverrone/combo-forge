@@ -19,5 +19,7 @@ export * from './run';
 export * from './daily';
 export * from './adProvider';
 export * from './shop';
+export * from './feedback';
+export * from './breaks';
 
 export const engineModuleId = 'combo-forge-engine';
