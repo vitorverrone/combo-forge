@@ -1,6 +1,16 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { computeUnlocks, FORGERS, getForger, isForgerUnlocked, milestoneForForger } from '../engine';
+import {
+  canPlayDaily,
+  computeUnlocks,
+  dailyAttemptsForDay,
+  DAILY_MAX_ATTEMPTS,
+  FORGERS,
+  getForger,
+  isForgerUnlocked,
+  milestoneForForger,
+  utcDateIso,
+} from '../engine';
 
 import { relicDescription } from './format';
 import { colors } from './theme';
@@ -13,8 +23,12 @@ export function StartScreen() {
   const progression = useGameStore((state) => state.progression);
   const openProfile = useGameStore((state) => state.openProfile);
   const openCollection = useGameStore((state) => state.openCollection);
+  const openDaily = useGameStore((state) => state.openDaily);
+  const daily = useGameStore((state) => state.daily);
 
   const unlocks = computeUnlocks(progression);
+  const dailyAttempts = dailyAttemptsForDay(daily.attempts, utcDateIso());
+  const dailyPlayable = canPlayDaily(dailyAttempts);
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
@@ -71,6 +85,16 @@ export function StartScreen() {
           );
         })}
       </View>
+      <Pressable
+        accessibilityLabel="Daily challenge"
+        onPress={openDaily}
+        style={({ pressed }) => [styles.dailyButton, pressed && styles.dailyButtonPressed]}
+      >
+        <Text style={styles.dailyButtonText}>DAILY CHALLENGE</Text>
+        <Text style={styles.dailyButtonHint}>
+          {dailyAttempts.attemptsUsed}/{DAILY_MAX_ATTEMPTS} attempts used{dailyPlayable ? '' : ' · done for today'}
+        </Text>
+      </Pressable>
       <Pressable
         accessibilityLabel="Start run"
         onPress={startRun}
@@ -173,8 +197,33 @@ const styles = StyleSheet.create({
     marginTop: 2,
     fontWeight: '600',
   },
+  dailyButton: {
+    marginTop: 24,
+    alignSelf: 'stretch',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: colors.gold,
+    backgroundColor: colors.surface,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  dailyButtonPressed: {
+    backgroundColor: '#2a2140',
+  },
+  dailyButtonText: {
+    color: colors.gold,
+    fontSize: 15,
+    fontWeight: '900',
+    letterSpacing: 2,
+  },
+  dailyButtonHint: {
+    color: colors.textDim,
+    fontSize: 11,
+    fontWeight: '600',
+    marginTop: 4,
+  },
   startButton: {
-    marginTop: 28,
+    marginTop: 12,
     alignSelf: 'stretch',
     borderRadius: 12,
     backgroundColor: colors.gold,

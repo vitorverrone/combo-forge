@@ -11,12 +11,21 @@
  */
 import { SQLiteStorage } from 'expo-sqlite/kv-store';
 
-import { DdaState, DdaStorage, PersistedProgression, ProgressionStorage } from '../engine';
+import {
+  DailyAttempts,
+  DailyChallengeStorage,
+  DdaState,
+  DdaStorage,
+  PersistedProgression,
+  ProgressionStorage,
+} from '../engine';
 
 /** Banco dedicado do Combo Forge (o KV store cria uma tabela própria). */
 const DATABASE_NAME = 'combo-forge.db';
 const DDA_KEY = 'combo-forge:dda';
 const PROGRESSION_KEY = 'combo-forge:progression';
+const DAILY_ATTEMPTS_KEY = 'combo-forge:daily-attempts';
+const DAILY_DEVICE_ID_KEY = 'combo-forge:daily-device-id';
 
 const kv = new SQLiteStorage(DATABASE_NAME);
 
@@ -51,13 +60,28 @@ export function createSqliteProgressionStorage(): ProgressionStorage {
   };
 }
 
-/** Persistência completa do app (DDA + meta-progressão) num único banco. */
+/** Port de storage do Desafio Diário sobre SQLite (tentativas + deviceId). */
+export function createSqliteDailyChallengeStorage(): DailyChallengeStorage {
+  return {
+    loadAttempts: () => readJson<DailyAttempts>(DAILY_ATTEMPTS_KEY),
+    saveAttempts: (state) => writeJson(DAILY_ATTEMPTS_KEY, state),
+    loadDeviceId: () => {
+      const raw = kv.getItemSync(DAILY_DEVICE_ID_KEY);
+      return raw ?? null;
+    },
+    saveDeviceId: (id) => writeJson(DAILY_DEVICE_ID_KEY, id),
+  };
+}
+
+/** Persistência completa do app (DDA + meta-progressão + diário) num banco. */
 export function createSqlitePersistence(): {
   readonly ddaStorage: DdaStorage;
   readonly progressionStorage: ProgressionStorage;
+  readonly dailyStorage: DailyChallengeStorage;
 } {
   return {
     ddaStorage: createSqliteDdaStorage(),
     progressionStorage: createSqliteProgressionStorage(),
+    dailyStorage: createSqliteDailyChallengeStorage(),
   };
 }

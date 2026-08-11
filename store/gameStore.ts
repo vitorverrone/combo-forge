@@ -16,15 +16,30 @@ import { createStore, StoreApi } from 'zustand/vanilla';
 
 import {
   activeRelics,
+  AdProvider,
+  ALL_UNLOCKS,
+  canPlayDaily,
+  canWatchExtraAd,
   Card,
   cardKey,
   claimOption as engineClaimOption,
   claimReachedSingles,
   computeUnlocks,
+  consumeDailyAttempt,
+  createDevAdProvider,
+  createDeviceId,
+  createInitialDailyAttempts,
+  createMemoryDailyChallengeStorage,
   createMemoryDdaStorage,
   createMemoryProgressionStorage,
   createSeededRng,
+  createUnavailableDailyBackend,
   currentPlayNumber,
+  DailyAttempts,
+  DailyBackend,
+  DailyChallengeStorage,
+  DailyLeaderboard,
+  dailyAttemptsForDay,
   DEFAULT_DDA_CONFIG,
   DEFAULT_PROGRESSION,
   discard,
@@ -53,16 +68,46 @@ import {
   scoreModifiers,
   startNextRound,
   startRun as engineStartRun,
+  unlockExtraAttempt,
+  utcDateIso,
+  withBestSubmitted,
 } from '../engine';
 
-export type Screen = 'start' | 'game' | 'profile' | 'collection';
+export type Screen = 'start' | 'game' | 'profile' | 'collection' | 'daily';
+
+/** Modo da Run atual: normal (meta-progressão conta) ou Desafio Diário. */
+export type RunMode = 'normal' | 'daily';
 
 /** Máximo de cartas selecionáveis (tamanho máximo de uma Jogada). */
 export const MAX_SELECTION = 5;
 
+export interface DailyState {
+  /** Tentativas do dia (persistidas entre sessões). */
+  readonly attempts: DailyAttempts;
+  /** UUID opaco do dispositivo (persistido; identidade no leaderboard). */
+  readonly deviceId: string;
+  /** Seed do dia em cache (null até a primeira busca do dia). */
+  readonly seed: number | null;
+  /** Data a que o seed em cache se refere (YYYY-MM-DD, UTC). */
+  readonly seedDate: string;
+  /** Busca do seed / início da Run do dia. */
+  readonly status: 'idle' | 'loading' | 'ready' | 'error';
+  readonly error: string | null;
+  /** Anúncio recompensado da tentativa extra. */
+  readonly adLoading: boolean;
+  /** Submissão da pontuação ao fim da Run. */
+  readonly submitStatus: 'idle' | 'submitting' | 'submitted' | 'failed';
+  /** Leaderboard semanal (opt-in; null até o jogador abrir). */
+  readonly leaderboard: DailyLeaderboard | null;
+  readonly leaderboardLoading: boolean;
+  readonly leaderboardError: string | null;
+}
+
 export interface GameState {
   readonly screen: Screen;
   readonly forger: ForgerId;
+  /** Modo da Run atual (Desafio Diário não conta para meta-progressão). */
+  readonly runMode: RunMode;
   readonly run: RunState | null;
   /** Identidades (`naipe:valor`) das cartas da Mão selecionadas. */
   readonly selectedKeys: readonly string[];
@@ -80,9 +125,24 @@ export interface GameState {
   readonly unlockChoice: PendingMilestone | null;
   /** Títulos dos desbloqueios recém-concedidos (banner nas telas de fim de Run). */
   readonly recentUnlocks: readonly string[];
+  /** Estado do Desafio Diário (ticket 13). */
+  readonly daily: DailyState;
+  readonly dailyStorage: DailyChallengeStorage;
+  readonly dailyBackend: DailyBackend;
+  readonly adProvider: AdProvider;
 
   readonly chooseForger: (forger: ForgerId) => void;
   readonly startRun: () => void;
+  /** Abre a tela do Desafio Diário. */
+  readonly openDaily: () => void;
+  /** Inicia a Run do Desafio Diário (seed do dia, DDA off, Forjador fixo). */
+  readonly startDailyChallenge: () => Promise<void>;
+  /** Assistir anúncio recompensado para liberar a tentativa extra. */
+  readonly watchAdForExtraAttempt: () => Promise<void>;
+  /** Submete a pontuação da Run ao backend (best-of-week no servidor). */
+  readonly submitDailyScore: (score: number) => Promise<void>;
+  /** Opt-in: busca o leaderboard semanal (posição própria + top 10). */
+  readonly fetchLeaderboard: () => Promise<void>;
   readonly toggleCard: (key: string) => void;
   readonly clearSelection: () => void;
   readonly playSelection: () => void;
@@ -114,6 +174,14 @@ export interface GameStoreDeps {
   readonly initialProgression?: PersistedProgression;
   /** Fonte de seed da próxima Run (padrão: relógio; injetável em testes). */
   readonly seed?: () => number;
+  /** Port de persistência do Desafio Diário (padrão: memória, p/ testes). */
+  readonly dailyStorage?: DailyChallengeStorage;
+  /** Backend do Desafio Diário (padrão: indisponível; app injeta Supabase). */
+  readonly dailyBackend?: DailyBackend;
+  /** Provider de anúncios recompensados (padrão: dev, assiste sempre). */
+  readonly adProvider?: AdProvider;
+  /** Relógio injetável (padrão: Date.now; usado na fronteira de dia UTC). */
+  readonly now?: () => Date;
 }
 
 /** Seleção resolvida em cartas da Mão, na ordem da Mão. */
@@ -168,11 +236,30 @@ export function persistRoundEnd(
 export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
   const ddaStorage = deps.ddaStorage ?? createMemoryDdaStorage();
   const progressionStorage = deps.progressionStorage ?? createMemoryProgressionStorage();
+  const dailyStorage = deps.dailyStorage ?? createMemoryDailyChallengeStorage();
+  const dailyBackend = deps.dailyBackend ?? createUnavailableDailyBackend();
+  const adProvider = deps.adProvider ?? createDevAdProvider();
   const nextSeed = deps.seed ?? (() => (Date.now() % 0xffffffff) >>> 0);
+  const now = deps.now ?? (() => new Date());
+
+  // Estado inicial do Desafio Diário: deviceId persistido (ou novo) e
+  // tentativas com rollover para o dia atual.
+  const today = utcDateIso(now());
+  const storedDeviceId = dailyStorage.loadDeviceId();
+  const deviceId = storedDeviceId ?? createDeviceId();
+  if (deviceId !== storedDeviceId) dailyStorage.saveDeviceId(deviceId);
+  const initialAttempts = dailyAttemptsForDay(
+    dailyStorage.loadAttempts() ?? createInitialDailyAttempts(today),
+    today,
+  );
+  if (initialAttempts !== dailyStorage.loadAttempts()) {
+    dailyStorage.saveAttempts(initialAttempts);
+  }
 
   return createStore<GameState>()((set, get) => ({
     screen: 'start',
     forger: 'apprentice',
+    runMode: 'normal',
     run: null,
     selectedKeys: [],
     lastEvents: [],
@@ -181,6 +268,22 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     progression: deps.initialProgression ?? DEFAULT_PROGRESSION,
     unlockChoice: null,
     recentUnlocks: [],
+    daily: {
+      attempts: initialAttempts,
+      deviceId,
+      seed: null,
+      seedDate: '',
+      status: 'idle',
+      error: null,
+      adLoading: false,
+      submitStatus: 'idle',
+      leaderboard: null,
+      leaderboardLoading: false,
+      leaderboardError: null,
+    },
+    dailyStorage,
+    dailyBackend,
+    adProvider,
 
     chooseForger: (forger) => {
       // Forjadores bloqueados pela meta-progressão não podem ser escolhidos.
@@ -196,7 +299,126 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       const rng = createSeededRng(seed);
       const dda = loadDda(ddaStorage, DEFAULT_DDA_CONFIG);
       const run = engineStartRun(seed, { forger, dda, ddaConfig: DEFAULT_DDA_CONFIG, rng, unlocks });
-      set({ screen: 'game', run, rng, selectedKeys: [], lastEvents: [], recentUnlocks: [] });
+      set({ screen: 'game', runMode: 'normal', run, rng, selectedKeys: [], lastEvents: [], recentUnlocks: [] });
+    },
+
+    openDaily: () => {
+      set({ screen: 'daily' });
+    },
+
+    startDailyChallenge: async () => {
+      const { daily } = get();
+      const today = utcDateIso(now());
+      const attempts = dailyAttemptsForDay(daily.attempts, today);
+      if (!canPlayDaily(attempts)) return;
+      set({ daily: { ...daily, attempts, status: 'loading', error: null } });
+      try {
+        // Seed do dia: reusa o cache do dia ou busca no backend (mesmo seed
+        // para todos os jogadores — comparação justa, ADR 0003).
+        let seed = daily.seed;
+        if (seed === null || daily.seedDate !== today) {
+          seed = await dailyBackend.fetchSeed(today);
+        }
+        const nextAttempts = consumeDailyAttempt(attempts);
+        dailyStorage.saveAttempts(nextAttempts);
+        const rng = createSeededRng(seed);
+        // Forjador fixo (Aprendiz) + pools completos (ALL_UNLOCKS) + DDA off:
+        // a Run do dia é idêntica para todos os jogadores.
+        const run = engineStartRun(seed, {
+          forger: 'apprentice',
+          ddaConfig: { ...DEFAULT_DDA_CONFIG, enabled: false },
+          unlocks: ALL_UNLOCKS,
+          rng,
+        });
+        set({
+          screen: 'game',
+          runMode: 'daily',
+          run,
+          rng,
+          selectedKeys: [],
+          lastEvents: [],
+          recentUnlocks: [],
+          unlockChoice: null,
+          daily: {
+            ...daily,
+            attempts: nextAttempts,
+            seed,
+            seedDate: today,
+            status: 'ready',
+            error: null,
+            submitStatus: 'idle',
+          },
+        });
+      } catch (error) {
+        dailyStorage.saveAttempts(attempts);
+        set({
+          daily: {
+            ...daily,
+            attempts,
+            status: 'error',
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+      }
+    },
+
+    watchAdForExtraAttempt: async () => {
+      const { daily } = get();
+      const attempts = dailyAttemptsForDay(daily.attempts, utcDateIso(now()));
+      if (!canWatchExtraAd(attempts)) return;
+      set({ daily: { ...daily, attempts, adLoading: true } });
+      try {
+        const watched = await adProvider.requestRewardedAd();
+        if (watched) {
+          const nextAttempts = unlockExtraAttempt(attempts);
+          dailyStorage.saveAttempts(nextAttempts);
+          set({ daily: { ...daily, attempts: nextAttempts, adLoading: false } });
+        } else {
+          set({ daily: { ...daily, attempts, adLoading: false } });
+        }
+      } catch {
+        // Falha do provider (sem anúncio no momento): mantém o estado.
+        set({ daily: { ...daily, attempts, adLoading: false } });
+      }
+    },
+
+    submitDailyScore: async (score: number) => {
+      const { daily } = get();
+      if (daily.submitStatus === 'submitting' || daily.submitStatus === 'submitted') return;
+      const attempts = dailyAttemptsForDay(daily.attempts, utcDateIso(now()));
+      set({ daily: { ...daily, attempts, submitStatus: 'submitting' } });
+      try {
+        // O servidor guarda a melhor pontuação do dia do dispositivo.
+        const stored = await dailyBackend.submitScore(daily.deviceId, score);
+        const nextAttempts = withBestSubmitted(attempts, stored);
+        dailyStorage.saveAttempts(nextAttempts);
+        set({
+          daily: { ...daily, attempts: nextAttempts, submitStatus: 'submitted' },
+        });
+      } catch {
+        set({ daily: { ...daily, attempts, submitStatus: 'failed' } });
+      }
+    },
+
+    fetchLeaderboard: async () => {
+      const { daily } = get();
+      const attempts = dailyAttemptsForDay(daily.attempts, utcDateIso(now()));
+      set({ daily: { ...daily, attempts, leaderboardLoading: true, leaderboardError: null } });
+      try {
+        const leaderboard = await dailyBackend.fetchLeaderboard(daily.deviceId);
+        set({
+          daily: { ...daily, attempts, leaderboard, leaderboardLoading: false },
+        });
+      } catch (error) {
+        set({
+          daily: {
+            ...daily,
+            attempts,
+            leaderboardLoading: false,
+            leaderboardError: error instanceof Error ? error.message : String(error),
+          },
+        });
+      }
     },
 
     toggleCard: (key) => {
@@ -214,13 +436,31 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     clearSelection: () => set({ selectedKeys: [] }),
 
     playSelection: () => {
-      const { run, rng, selectedKeys, ddaStorage: storage, progression } = get();
+      const { run, rng, selectedKeys, ddaStorage: storage, progression, runMode, daily } = get();
       if (run === null || rng === null || selectedKeys.length === 0) return;
       try {
         const played = selectedCards(run, selectedKeys);
         const result = makePlay(run, played, rng);
-        persistRoundEnd(result.run, result.events, storage);
-        set(advanceProgression(result, played, progression, get().unlockChoice, get().recentUnlocks, progressionStorage));
+        if (runMode === 'daily') {
+          // Desafio Diário: não conta para meta-progressão (sem stats, sem
+          // desbloqueios) e o DDA está desligado — nada a persistir além do
+          // resultado. Ao fim da Run, submete a pontuação ao backend.
+          const ended = result.events.find(
+            (event) => event.type === 'runWon' || event.type === 'runLost',
+          );
+          if (ended !== undefined) {
+            void get().submitDailyScore(result.run.runScore);
+          }
+          set({
+            run: result.run,
+            selectedKeys: [],
+            lastEvents: result.events,
+            recentUnlocks: [],
+          });
+        } else {
+          persistRoundEnd(result.run, result.events, storage);
+          set(advanceProgression(result, played, progression, get().unlockChoice, get().recentUnlocks, progressionStorage));
+        }
       } catch {
         // Jogada inválida (defesa da UI): estado permanece intacto
       }
@@ -278,7 +518,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     openCollection: () => set({ screen: 'collection' }),
 
     backToStart: () =>
-      set({ screen: 'start', run: null, selectedKeys: [], lastEvents: [], rng: null }),
+      set({ screen: 'start', runMode: 'normal', run: null, selectedKeys: [], lastEvents: [], rng: null }),
   }));
 }
 

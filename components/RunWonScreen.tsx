@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { activeRelics, getForger, ROUNDS_PER_RUN, RunState } from '../engine';
 
+import { DailySubmitStatus } from './DailySubmitStatus';
 import { RelicRow } from './RelicRow';
 import { colors } from './theme';
 import { useGameStore } from '../store/gameStore';
@@ -15,12 +16,20 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
   const restartRun = useGameStore((state) => state.restartRun);
   const backToStart = useGameStore((state) => state.backToStart);
   const recentUnlocks = useGameStore((state) => state.recentUnlocks);
+  const runMode = useGameStore((state) => state.runMode);
+  const daily = useGameStore((state) => state.daily);
+  const openDaily = useGameStore((state) => state.openDaily);
+  const submitDailyScore = useGameStore((state) => state.submitDailyScore);
+
+  const dailyEnd = runMode === 'daily';
 
   return (
     <View style={styles.container}>
-      <Text style={styles.eyebrow}>ALL {ROUNDS_PER_RUN} ROUNDS CLEARED</Text>
-      <Text style={styles.title}>Run Complete!</Text>
-      {recentUnlocks.length > 0 && (
+      <Text style={styles.eyebrow}>
+        {dailyEnd ? 'DAILY CHALLENGE · CLEARED' : `ALL ${ROUNDS_PER_RUN} ROUNDS CLEARED`}
+      </Text>
+      <Text style={styles.title}>{dailyEnd ? 'Daily Complete!' : 'Run Complete!'}</Text>
+      {!dailyEnd && recentUnlocks.length > 0 && (
         <View style={styles.unlockBanner}>
           <Text style={styles.unlockBannerText}>
             NEW UNLOCK{recentUnlocks.length > 1 ? 'S' : ''}: {recentUnlocks.join(' · ')}
@@ -36,21 +45,38 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
         <Text style={styles.scoreValue}>{run.runScore}</Text>
       </View>
 
+      {dailyEnd && (
+        <DailySubmitStatus
+          submitStatus={daily.submitStatus}
+          onRetry={() => void submitDailyScore(run.runScore)}
+        />
+      )}
+
       <RelicRow relics={activeRelics(run.startingRelic, run.relics)} />
 
+      {dailyEnd ? (
+        <Pressable
+          accessibilityLabel="Back to daily challenge"
+          onPress={openDaily}
+          style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
+        >
+          <Text style={styles.primaryButtonText}>DAILY CHALLENGE</Text>
+        </Pressable>
+      ) : (
+        <Pressable
+          accessibilityLabel="Play another run"
+          onPress={restartRun}
+          style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
+        >
+          <Text style={styles.primaryButtonText}>PLAY AGAIN</Text>
+        </Pressable>
+      )}
       <Pressable
-        accessibilityLabel="Play another run"
-        onPress={restartRun}
-        style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
-      >
-        <Text style={styles.primaryButtonText}>PLAY AGAIN</Text>
-      </Pressable>
-      <Pressable
-        accessibilityLabel="Back to forger select"
+        accessibilityLabel="Back to start"
         onPress={backToStart}
         style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
       >
-        <Text style={styles.secondaryButtonText}>CHANGE FORGER</Text>
+        <Text style={styles.secondaryButtonText}>{dailyEnd ? 'HOME' : 'CHANGE FORGER'}</Text>
       </Pressable>
     </View>
   );

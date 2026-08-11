@@ -11,6 +11,7 @@ import { MAX_SELECTION, selectionPreview, useGameStore } from '../store/gameStor
 
 export function GameScreen() {
   const run = useGameStore((state) => state.run);
+  const runMode = useGameStore((state) => state.runMode);
   const selectedKeys = useGameStore((state) => state.selectedKeys);
   const toggleCard = useGameStore((state) => state.toggleCard);
   const clearSelection = useGameStore((state) => state.clearSelection);
@@ -31,7 +32,10 @@ export function GameScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
           <View>
-            <Text style={styles.round}>Round {run.roundNumber}</Text>
+            <View style={styles.roundRow}>
+              <Text style={styles.round}>Round {run.roundNumber}</Text>
+              {runMode === 'daily' && <Text style={styles.dailyBadge}>DAILY</Text>}
+            </View>
             <Text style={styles.forger}>{getForger(run.forger).name} · Run {run.runScore}</Text>
           </View>
           <View style={styles.scoreBlock}>
@@ -136,6 +140,22 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 24,
     fontWeight: '900',
+  },
+  roundRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  dailyBadge: {
+    color: colors.gold,
+    fontSize: 10,
+    fontWeight: '900',
+    letterSpacing: 1,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
   },
   forger: {
     color: colors.textDim,

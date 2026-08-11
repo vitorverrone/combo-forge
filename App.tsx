@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 
 import { CollectionScreen } from './components/CollectionScreen';
+import { DailyChallengeScreen } from './components/DailyChallengeScreen';
 import { GameScreen } from './components/GameScreen';
 import { ProfileScreen } from './components/ProfileScreen';
 import { StartScreen } from './components/StartScreen';
@@ -23,6 +24,7 @@ export default function App() {
       {screen === 'game' && <GameScreen />}
       {screen === 'profile' && <ProfileScreen />}
       {screen === 'collection' && <CollectionScreen />}
+      {screen === 'daily' && <DailyChallengeScreen />}
       <UnlockChoiceModal />
       <StatusBar style="light" />
     </View>

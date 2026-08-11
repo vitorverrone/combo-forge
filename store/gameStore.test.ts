@@ -5,9 +5,13 @@ import {
   cardKey,
   computeUnlocks,
   createDeck,
+  createMemoryDailyChallengeStorage,
   createMemoryDdaStorage,
   createMemoryProgressionStorage,
   createSeededRng,
+  DailyBackend,
+  DailyLeaderboard,
+  DAILY_MAX_ATTEMPTS,
   DEFAULT_DDA_CONFIG,
   DEFAULT_PROFILE_STATS,
   DEFAULT_PROGRESSION,
@@ -25,6 +29,26 @@ import {
 } from '../engine';
 
 import { createGameStore, persistRoundEnd, selectionPreview } from './gameStore';
+
+/** Backend fake do Desafio Diário: seed fixo e chamadas rastreáveis. */
+function makeFakeDailyBackend(seed = 424242): DailyBackend & {
+  readonly submissions: { deviceId: string; score: number }[];
+} {
+  const submissions: { deviceId: string; score: number }[] = [];
+  return {
+    submissions,
+    fetchSeed: async () => seed,
+    submitScore: async (deviceId, score) => {
+      submissions.push({ deviceId, score });
+      return score;
+    },
+    fetchLeaderboard: async (): Promise<DailyLeaderboard> => ({
+      week: '2026-08-10',
+      own: { rank: 1, score: 4242 },
+      top: [{ rank: 1, score: 4242 }],
+    }),
+  };
+}
 
 const spades = (value: number): Card => ({ suit: 'spades', value });
 const hearts = (value: number): Card => ({ suit: 'hearts', value });
@@ -292,6 +316,194 @@ describe('fim de Rodada e derrota', () => {
     expect(state.run!.seed).not.toBe(firstSeed);
     expect(state.run!.seed).toBe(200);
     expect(state.run!.deck.hand.map(cardKey)).not.toEqual(firstHand);
+  });
+});
+
+describe('Desafio Diário (ticket 13)', () => {
+  const QUAD_TENS = [clubs(10), spades(10), hearts(10), diamonds(10)];
+
+  test('openDaily navega para a tela do desafio', () => {
+    const store = createGameStore();
+    store.getState().openDaily();
+    expect(store.getState().screen).toBe('daily');
+  });
+
+  test('startDailyChallenge usa o seed do backend, Forjador fixo, DDA desligado e consume a gratuita', async () => {
+    const storage = createMemoryDailyChallengeStorage();
+    const backend = makeFakeDailyBackend(424242);
+    const store = createGameStore({ dailyStorage: storage, dailyBackend: backend });
+    await store.getState().startDailyChallenge();
+    const state = store.getState();
+    expect(state.screen).toBe('game');
+    expect(state.runMode).toBe('daily');
+    expect(state.run).not.toBeNull();
+    expect(state.run?.seed).toBe(424242);
+    expect(state.run?.forger).toBe('apprentice');
+    expect(state.run?.ddaConfig.enabled).toBe(false);
+    expect(state.run?.unlocks).toEqual(ALL_UNLOCKS);
+    // Meta na curva base (DDA off) e tentativa consumida e persistida.
+    expect(state.run?.target).toBe(baseTarget(1));
+    expect(state.daily.attempts.attemptsUsed).toBe(1);
+    expect(storage.loadAttempts()?.attemptsUsed).toBe(1);
+    expect(storage.loadDeviceId()).toBe(state.daily.deviceId);
+  });
+
+  test('o seed do dia é cacheado: segunda tentativa não refaz a busca', async () => {
+    let fetches = 0;
+    const backend: DailyBackend = {
+      ...makeFakeDailyBackend(),
+      fetchSeed: async () => {
+        fetches += 1;
+        return 424242;
+      },
+    };
+    const store = createGameStore({ dailyBackend: backend });
+    await store.getState().startDailyChallenge(); // gratuita
+    await store.getState().watchAdForExtraAttempt(); // libera a extra
+    await store.getState().startDailyChallenge(); // extra
+    expect(fetches).toBe(1);
+    expect(store.getState().daily.attempts.attemptsUsed).toBe(DAILY_MAX_ATTEMPTS);
+  });
+
+  test('sem anúncio, a segunda tentativa é bloqueada', async () => {
+    const store = createGameStore({ dailyBackend: makeFakeDailyBackend() });
+    await store.getState().startDailyChallenge();
+    store.getState().openDaily();
+    await store.getState().startDailyChallenge();
+    const state = store.getState();
+    expect(state.screen).toBe('daily'); // não navegou para o jogo
+    expect(state.daily.attempts.attemptsUsed).toBe(1);
+  });
+
+  test('assistir o anúncio libera a tentativa extra', async () => {
+    const storage = createMemoryDailyChallengeStorage();
+    const store = createGameStore({ dailyStorage: storage, dailyBackend: makeFakeDailyBackend() });
+    await store.getState().startDailyChallenge();
+    await store.getState().watchAdForExtraAttempt();
+    expect(store.getState().daily.attempts.extraUnlocked).toBe(true);
+    expect(storage.loadAttempts()?.extraUnlocked).toBe(true);
+  });
+
+  test('anúncio não assistido (provider falso) não libera a extra', async () => {
+    const store = createGameStore({
+      dailyBackend: makeFakeDailyBackend(),
+      adProvider: { requestRewardedAd: async () => false },
+    });
+    await store.getState().startDailyChallenge();
+    await store.getState().watchAdForExtraAttempt();
+    expect(store.getState().daily.attempts.extraUnlocked).toBe(false);
+  });
+
+  test('dia novo zera as tentativas (rollover UTC)', async () => {
+    let now = new Date('2026-08-11T12:00:00Z');
+    const storage = createMemoryDailyChallengeStorage();
+    const store = createGameStore({
+      dailyStorage: storage,
+      dailyBackend: makeFakeDailyBackend(),
+      now: () => now,
+    });
+    await store.getState().startDailyChallenge();
+    await store.getState().watchAdForExtraAttempt();
+    await store.getState().startDailyChallenge();
+    expect(store.getState().daily.attempts.attemptsUsed).toBe(DAILY_MAX_ATTEMPTS);
+    // Dia seguinte: a gratuita volta.
+    now = new Date('2026-08-12T12:00:00Z');
+    store.getState().openDaily();
+    await store.getState().startDailyChallenge();
+    expect(store.getState().screen).toBe('game');
+    expect(store.getState().daily.attempts.attemptsUsed).toBe(1);
+    expect(store.getState().daily.seedDate).toBe('2026-08-12');
+  });
+
+  test('fim da Run diária submete a pontuação e não acumula meta-progressão', async () => {
+    const backend = makeFakeDailyBackend();
+    const store = createGameStore({ dailyBackend: backend });
+    await store.getState().startDailyChallenge();
+    // Run vencedora na Rodada 6 (fim de Run) em modo diário.
+    store.setState({ run: { ...makeRunWithHand(QUAD_TENS), roundNumber: 6 } });
+    for (const card of QUAD_TENS) store.getState().toggleCard(cardKey(card));
+    store.getState().playSelection();
+    const state = store.getState();
+    expect(state.run?.phase).toBe('runWon');
+    // Submetida ao backend com o deviceId do dispositivo.
+    expect(backend.submissions).toHaveLength(1);
+    expect(backend.submissions[0].deviceId).toBe(state.daily.deviceId);
+    expect(backend.submissions[0].score).toBe(state.run!.runScore);
+    // Nada conta para estatísticas ou desbloqueios de meta-progressão.
+    expect(state.progression.stats.runsStarted).toBe(0);
+    expect(state.progression.stats.runsWon).toBe(0);
+    expect(state.progression.stats.bestRunScore).toBe(0);
+    expect(state.recentUnlocks).toHaveLength(0);
+  });
+
+  test('derrota na Run diária também submete a pontuação', async () => {
+    const backend = makeFakeDailyBackend();
+    const store = createGameStore({ dailyBackend: backend });
+    await store.getState().startDailyChallenge();
+    store.setState({ run: { ...makeRunWithHand([spades(1)]), playsRemaining: 1 } });
+    store.getState().toggleCard(cardKey(spades(1)));
+    store.getState().playSelection();
+    expect(store.getState().run?.phase).toBe('runLost');
+    expect(backend.submissions).toHaveLength(1);
+    expect(store.getState().progression.stats.runsStarted).toBe(0);
+  });
+
+  test('falha de backend marca erro e não consome tentativa', async () => {
+    const backend: DailyBackend = {
+      ...makeFakeDailyBackend(),
+      fetchSeed: async () => {
+        throw new Error('rede fora');
+      },
+    };
+    const store = createGameStore({ dailyBackend: backend });
+    store.getState().openDaily();
+    await store.getState().startDailyChallenge();
+    const state = store.getState();
+    expect(state.screen).toBe('daily'); // não navegou para o jogo
+    expect(state.daily.status).toBe('error');
+    expect(state.daily.error).toBe('rede fora');
+    expect(state.daily.attempts.attemptsUsed).toBe(0);
+  });
+
+  test('submissão com falha marca failed e o retry reenvia', async () => {
+    let fail = true;
+    const backend: DailyBackend = {
+      ...makeFakeDailyBackend(),
+      submitScore: async (deviceId, score) => {
+        if (fail) throw new Error('rede fora');
+        return score;
+      },
+    };
+    const store = createGameStore({ dailyBackend: backend });
+    await store.getState().startDailyChallenge();
+    store.setState({ run: { ...makeRunWithHand(QUAD_TENS), roundNumber: 6 } });
+    for (const card of QUAD_TENS) store.getState().toggleCard(cardKey(card));
+    store.getState().playSelection();
+    // a submissão falhou no fim da Run
+    await Promise.resolve();
+    expect(store.getState().daily.submitStatus).toBe('failed');
+    // retry com rede de volta
+    fail = false;
+    await store.getState().submitDailyScore(store.getState().run!.runScore);
+    expect(store.getState().daily.submitStatus).toBe('submitted');
+  });
+
+  test('fetchLeaderboard (opt-in) guarda a resposta e a falha aparece no estado', async () => {
+    const store = createGameStore({ dailyBackend: makeFakeDailyBackend() });
+    await store.getState().fetchLeaderboard();
+    expect(store.getState().daily.leaderboard?.own?.score).toBe(4242);
+    expect(store.getState().daily.leaderboard?.top).toHaveLength(1);
+    const failing = createGameStore({
+      dailyBackend: {
+        ...makeFakeDailyBackend(),
+        fetchLeaderboard: async () => {
+          throw new Error('sem leaderboard');
+        },
+      },
+    });
+    await failing.getState().fetchLeaderboard();
+    expect(failing.getState().daily.leaderboardError).toBe('sem leaderboard');
+    expect(failing.getState().daily.leaderboard).toBeNull();
   });
 });
 
