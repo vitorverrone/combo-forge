@@ -3,8 +3,9 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { activeRelics, cardKey, currentMultiplier, getForger } from '../engine';
 
 import { CardView } from './CardView';
-import { PATTERN_NAME, relicDescription } from './format';
+import { PATTERN_NAME } from './format';
 import { PhaseScreen } from './PhaseScreen';
+import { RelicRow } from './RelicRow';
 import { colors } from './theme';
 import { MAX_SELECTION, selectionPreview, useGameStore } from '../store/gameStore';
 
@@ -49,17 +50,7 @@ export function GameScreen() {
           <Pill label="Combo" value={`×${multiplier}`} accent />
         </View>
 
-        {relics.length > 0 && (
-          <View style={styles.relicRow}>
-            {relics.map((relic) => (
-              <View key={relic.id} style={styles.relicChip}>
-                <Text style={styles.relicChipText} numberOfLines={1}>
-                  {relic.name} · {relicDescription(relic)}
-                </Text>
-              </View>
-            ))}
-          </View>
-        )}
+        <RelicRow relics={relics} />
 
         <View style={styles.preview}>
           {preview !== null ? (
@@ -208,22 +199,6 @@ const styles = StyleSheet.create({
   },
   pillValueAccent: {
     color: colors.gold,
-  },
-  relicRow: {
-    marginTop: 10,
-    gap: 6,
-  },
-  relicChip: {
-    borderRadius: 8,
-    backgroundColor: '#241b33',
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  relicChipText: {
-    color: colors.textDim,
-    fontSize: 12,
   },
   preview: {
     marginTop: 14,

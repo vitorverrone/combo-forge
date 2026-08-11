@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { getForger, RunState } from '../engine';
+import { activeRelics, getForger, RunState } from '../engine';
 
+import { RelicRow } from './RelicRow';
 import { colors } from './theme';
 import { useGameStore } from '../store/gameStore';
 
@@ -49,6 +50,8 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
       </View>
 
       <Text style={styles.runTotal}>Run total: {run.runScore} pts</Text>
+
+      <RelicRow relics={activeRelics(run.startingRelic, run.relics)} />
 
       <Pressable
         accessibilityLabel="Try again immediately"

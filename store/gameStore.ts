@@ -22,6 +22,7 @@ import {
   DEFAULT_DDA_CONFIG,
   discard,
   DdaStorage,
+  applyForgeOffer as engineApplyForgeOffer,
   evaluatePlay,
   ForgerId,
   isEasyWin,
@@ -60,6 +61,12 @@ export interface GameState {
   readonly clearSelection: () => void;
   readonly playSelection: () => void;
   readonly discardSelection: () => void;
+  /**
+   * Aplica a oferta de Forja escolhida (índice em run.forgeOffers). Ofertas
+   * de carta exigem a carta alvo do Baralho; a de Relíquia, só o índice.
+   * Encerra a fase 'forging' e volta para 'roundWon' (pronto para nextRound).
+   */
+  readonly applyForgeOffer: (offerIndex: number, targetCard?: Card) => void;
   /** Avança para a próxima Rodada após vencer e forjar (fase 'roundWon'). */
   readonly nextRound: () => void;
   /** Reinicia imediatamente uma nova Run (novo seed, mesmo Forjador). */
@@ -180,6 +187,17 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
         set({ run: nextRun, selectedKeys: [], lastEvents: [] });
       } catch {
         // Sem Descarte restante (defesa da UI): estado permanece intacto
+      }
+    },
+
+    applyForgeOffer: (offerIndex, targetCard) => {
+      const { run } = get();
+      if (run === null || run.phase !== 'forging') return;
+      try {
+        const result = engineApplyForgeOffer(run, offerIndex, targetCard);
+        set({ run: result.run, selectedKeys: [], lastEvents: result.events });
+      } catch {
+        // Oferta/carta inválida (defesa da UI): estado permanece intacto
       }
     },
 

@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { getForger, RunState } from '../engine';
+import { activeRelics, getForger, RunState } from '../engine';
 
+import { RelicRow } from './RelicRow';
 import { colors } from './theme';
 import { useGameStore } from '../store/gameStore';
 
@@ -33,6 +34,8 @@ export function RoundWonScreen({ run }: RoundWonScreenProps) {
           <Text style={[styles.statValue, styles.marginValue]}>+{run.score - run.target}</Text>
         </View>
       </View>
+
+      <RelicRow relics={activeRelics(run.startingRelic, run.relics)} />
 
       <Text style={styles.forgerNote}>
         {getForger(run.forger).name} · Run total {run.runScore} pts

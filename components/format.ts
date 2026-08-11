@@ -51,6 +51,20 @@ export function forgeEffectLabel(effect: ForgeEffect): string {
   }
 }
 
+/** Descrição legível de um Efeito de Forja (ex.: "Adds +2 to the card's value"). */
+export function forgeEffectDescription(effect: ForgeEffect): string {
+  switch (effect.kind) {
+    case 'valueBonus':
+      return `Adds +${effect.amount} to the card's value`;
+    case 'multiplier':
+      return `Multiplies the card's value by ×${effect.multiplier}`;
+    case 'wildcard':
+      return 'Counts as any value and suit to form patterns';
+    case 'trigger':
+      return `Adds +${effect.bonus} pts when played on play ${effect.triggerPlay} of a round`;
+  }
+}
+
 export function relicDescription(relic: Relic | undefined): string {
   if (relic === undefined) return 'No starting relic — pure skill.';
   switch (relic.effect.kind) {
