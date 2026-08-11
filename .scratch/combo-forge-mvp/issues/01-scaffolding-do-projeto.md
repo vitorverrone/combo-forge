@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] App Expo (TypeScript) inicializa e roda no simulador iOS/Android, exibindo uma tela com o título do jogo
 - [ ] Pacote do motor de regras (TypeScript puro, sem dependência de React Native, Skia, Reanimated, Zustand ou SQLite) existe como módulo isolado, importável pelo app
