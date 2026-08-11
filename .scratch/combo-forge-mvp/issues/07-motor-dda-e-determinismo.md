@@ -4,7 +4,7 @@
 
 **Blocked by:** 04 — Motor: Rodada, Meta e Combo, 06 — Motor: Relíquias e Forjadores
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Ajustes de −10%/+10% na Meta são aplicados a partir do histórico persistido por Rodada
 - [ ] "Vitória fácil" é definida por margem ≥ 30% acima da Meta com 1+ Jogada sobrando
