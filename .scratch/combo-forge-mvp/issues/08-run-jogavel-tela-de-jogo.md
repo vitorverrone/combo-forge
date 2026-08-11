@@ -4,7 +4,7 @@
 
 **Blocked by:** 04 — Motor: Rodada, Meta e Combo
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Tela de início de Run permite escolher o Forjador (Aprendiz sempre disponível; Martelo e Bigorna apenas se desbloqueados) e mostra a Relíquia de largada
 - [ ] A Mão de 7 cartas é renderizada; selecionar 2–5 cartas mostra o Padrão reconhecido e o Valor-Base antes de confirmar
