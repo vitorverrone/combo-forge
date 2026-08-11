@@ -15,6 +15,7 @@ import {
   utcDateIso,
 } from '../engine';
 
+import { createAppAdProvider } from '../services/ads';
 import { createAppDailyBackend } from '../services/supabase';
 import { createAppShopProvider } from '../services/revenuecat';
 
@@ -31,6 +32,7 @@ export function initializeSqlitePersistence(): void {
       ddaStorage,
       dailyStorage,
       dailyBackend: createAppDailyBackend(),
+      adProvider: createAppAdProvider(),
       shopStorage,
       shopProvider: createAppShopProvider(),
       breakStorage,

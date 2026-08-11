@@ -400,6 +400,42 @@ describe('Desafio Diário (ticket 13)', () => {
     expect(store.getState().daily.attempts.extraUnlocked).toBe(false);
   });
 
+  test('falha do anúncio (provider rejeita) não quebra nem libera a extra', async () => {
+    const store = createGameStore({
+      dailyBackend: makeFakeDailyBackend(),
+      adProvider: {
+        requestRewardedAd: async () => {
+          throw new Error('anúncio fora do ar');
+        },
+      },
+    });
+    await store.getState().startDailyChallenge();
+    await store.getState().watchAdForExtraAttempt();
+    const state = store.getState();
+    // Fluxo intacto: sem recompensa, sem loading preso e sem tentativa gasta.
+    expect(state.daily.attempts.extraUnlocked).toBe(false);
+    expect(state.daily.adLoading).toBe(false);
+    expect(state.daily.attempts.attemptsUsed).toBe(1); // só a gratuita
+  });
+
+  test('o anúncio é opcional: a tentativa gratuita funciona com anúncio indisponível', async () => {
+    const store = createGameStore({
+      dailyBackend: makeFakeDailyBackend(),
+      adProvider: {
+        requestRewardedAd: async () => {
+          throw new Error('sem anúncios');
+        },
+      },
+    });
+    await store.getState().startDailyChallenge();
+    // Gratuita jogável, Run do dia normal (mesmo seed, mesmo Forjador).
+    const state = store.getState();
+    expect(state.screen).toBe('game');
+    expect(state.runMode).toBe('daily');
+    expect(state.run?.seed).toBe(424242);
+    expect(state.daily.attempts.attemptsUsed).toBe(1);
+  });
+
   test('dia novo zera as tentativas (rollover UTC)', async () => {
     let now = new Date('2026-08-11T12:00:00Z');
     const storage = createMemoryDailyChallengeStorage();
