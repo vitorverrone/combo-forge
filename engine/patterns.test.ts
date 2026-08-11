@@ -1,4 +1,4 @@
-import { Card } from './cards';
+import { Card, ForgeEffect, ForgedCard } from './cards';
 import { evaluatePlay, identifyPattern, PatternKind } from './patterns';
 
 const spades = (value: number): Card => ({ suit: 'spades', value });
@@ -111,6 +111,71 @@ describe('evaluatePlay (Valor-Base = bônus do Padrão + soma dos Valores)', () 
 
   test('Full House: 55 + (7+7+7+3+3) = 82', () => {
     expect(evaluatePlay([card(7), hearts(7), diamonds(7), card(3), hearts(3)]).baseValue).toBe(82);
+  });
+});
+
+describe('Cartas Forjadas no Valor-Base (ticket 05)', () => {
+  const forged = (card: Card, effects: ForgeEffect[]): ForgedCard => ({ card, effects });
+
+  test('+Valor soma fixa ao Valor da carta', () => {
+    const f = [forged(spades(7), [{ kind: 'valueBonus', amount: 2 }])];
+    // par de 7s: 5 + 7 + (7+2) = 21
+    expect(evaluatePlay([spades(7), hearts(7)], { forgedCards: f }).baseValue).toBe(21);
+  });
+
+  test('Multiplicador: a carta vale ×2', () => {
+    const f = [forged(spades(7), [{ kind: 'multiplier', multiplier: 2 }])];
+    // par de 7s: 5 + 7 + (7×2) = 26
+    expect(evaluatePlay([spades(7), hearts(7)], { forgedCards: f }).baseValue).toBe(26);
+  });
+
+  test('empilhamento resolve somas antes de multiplicadores, independente da ordem de aplicação', () => {
+    const a = [forged(spades(7), [{ kind: 'valueBonus', amount: 2 }, { kind: 'multiplier', multiplier: 2 }])];
+    const b = [forged(spades(7), [{ kind: 'multiplier', multiplier: 2 }, { kind: 'valueBonus', amount: 2 }])];
+    // (7+2)×2 = 18; par de 7s: 5 + 7 + 18 = 30
+    expect(evaluatePlay([spades(7), hearts(7)], { forgedCards: a }).baseValue).toBe(30);
+    expect(evaluatePlay([spades(7), hearts(7)], { forgedCards: b }).baseValue).toBe(30);
+  });
+
+  test('Curinga conta como qualquer Valor para formar Padrões', () => {
+    const f = [forged(spades(7), [{ kind: 'wildcard' }])];
+    const evaluation = evaluatePlay([spades(7), hearts(7), diamonds(7)], { forgedCards: f });
+    // curinga = 7 → trinca: 25 + 7+7+7 = 46
+    expect(evaluation.pattern.kind).toBe(PatternKind.ThreeOfAKind);
+    expect(evaluation.baseValue).toBe(46);
+  });
+
+  test('Curinga completa Sequência valendo a maior soma possível', () => {
+    const f = [forged(clubs(5), [{ kind: 'wildcard' }])];
+    const evaluation = evaluatePlay([clubs(6), clubs(7), clubs(8), clubs(9), clubs(5)], { forgedCards: f });
+    // curinga = 10 → sequência: 40 + 6+7+8+9+10 = 80
+    expect(evaluation.pattern.kind).toBe(PatternKind.Straight);
+    expect(evaluation.baseValue).toBe(80);
+  });
+
+  test('Curinga não forma Sequência quando valores reais se repetem (melhor é Trinca)', () => {
+    const f = [forged(clubs(5), [{ kind: 'wildcard' }])];
+    const evaluation = evaluatePlay([spades(7), hearts(7), clubs(8), clubs(9), clubs(5)], { forgedCards: f });
+    // curinga = 7 → trinca: 25 + 7+7+7+8+9 = 63
+    expect(evaluation.pattern.kind).toBe(PatternKind.ThreeOfAKind);
+    expect(evaluation.baseValue).toBe(63);
+  });
+
+  test('Gatilho concede o bônus apenas quando a condição é satisfeita', () => {
+    const f = [forged(spades(7), [{ kind: 'trigger', triggerPlay: 3, bonus: 20 }])];
+    // 3ª Jogada: 5 + (7+20) + 7 = 39; 2ª Jogada: sem bônus → 5 + 7 + 7 = 19
+    expect(evaluatePlay([spades(7), hearts(7)], { forgedCards: f, playNumber: 3 }).baseValue).toBe(39);
+    expect(evaluatePlay([spades(7), hearts(7)], { forgedCards: f, playNumber: 2 }).baseValue).toBe(19);
+  });
+
+  test('identifyPattern considera Curingas', () => {
+    const f = [forged(spades(7), [{ kind: 'wildcard' }])];
+    expect(identifyPattern([spades(7), hearts(7), diamonds(7)], f)).toBe(PatternKind.ThreeOfAKind);
+  });
+
+  test('Carta Forjada sem efeitos não altera a avaliação', () => {
+    const f = [forged(spades(7), [])];
+    expect(evaluatePlay([spades(7), hearts(7)], { forgedCards: f }).baseValue).toBe(19);
   });
 });
 

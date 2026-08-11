@@ -17,6 +17,54 @@ export interface Card {
   readonly value: number;
 }
 
+/** Identidade única de uma carta no Baralho: `naipe:valor`. */
+export function cardKey(card: Card): string {
+  return `${card.suit}:${card.value}`;
+}
+
+// ---------------------------------------------------------------------------
+// Efeitos de Forja e Cartas Forjadas (metadados por cima da carta)
+//
+// A identidade da carta é `naipe:valor` e nunca muda; os Efeitos de Forja são
+// metadados permanentes da Run aplicados sempre que a carta entra numa Jogada.
+// ---------------------------------------------------------------------------
+
+export type ForgeEffectKind = 'valueBonus' | 'multiplier' | 'wildcard' | 'trigger';
+
+/** +Valor: soma fixa ao Valor da carta. */
+export interface ValueBonusEffect {
+  readonly kind: 'valueBonus';
+  readonly amount: number;
+}
+
+/** Multiplicador: a carta vale ×2 ou ×3. */
+export interface MultiplierEffect {
+  readonly kind: 'multiplier';
+  readonly multiplier: 2 | 3;
+}
+
+/** Curinga: conta como qualquer Valor e qualquer Naipe para formar Padrões. */
+export interface WildcardEffect {
+  readonly kind: 'wildcard';
+}
+
+/** Gatilho: bônus apenas quando a condição é satisfeita (ex.: 3ª Jogada da Rodada). */
+export interface TriggerEffect {
+  readonly kind: 'trigger';
+  /** Número da Jogada dentro da Rodada (1–4) que dispara o bônus. */
+  readonly triggerPlay: number;
+  readonly bonus: number;
+}
+
+export type ForgeEffect = ValueBonusEffect | MultiplierEffect | WildcardEffect | TriggerEffect;
+
+/** Carta Forjada: uma carta do Baralho com um ou mais Efeitos de Forja empilhados. */
+export interface ForgedCard {
+  readonly card: Card;
+  /** Efeitos na ordem em que foram aplicados; a resolução sempre soma antes de multiplicar. */
+  readonly effects: readonly ForgeEffect[];
+}
+
 export const MIN_CARD_VALUE = 1;
 export const MAX_CARD_VALUE = 10;
 

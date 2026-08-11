@@ -8,7 +8,7 @@
  * serializável, sem referências de UI.
  */
 
-import { Card, SUITS } from './cards';
+import { Card, cardKey, SUITS } from './cards';
 import { Rng } from './random';
 
 export const HAND_SIZE = 7;
@@ -48,6 +48,11 @@ export function createDeck(): Card[] {
 /** Estado inicial: o Baralho completo ainda não embaralhado, Mão vazia. */
 export function initialDeckState(): DeckState {
   return { drawPile: createDeck(), discardPile: [], hand: [], discardsRemaining: 0 };
+}
+
+/** True se a carta é uma das 40 identidades do Baralho (alvo válido de Forja). */
+export function isDeckCard(card: Card): boolean {
+  return createDeck().some((deckCard) => cardKey(deckCard) === cardKey(card));
 }
 
 /** Fisher–Yates determinístico usando a fonte de aleatoriedade injetada. */
@@ -123,22 +128,18 @@ function removeFromHand(
   selected: readonly Card[],
 ): { removed: Card[]; nextHand: Card[] } {
   if (selected.length === 0) throw new Error('Seleção vazia: escolha ao menos uma carta.');
-  const selectedIds = new Set(selected.map(cardId));
+  const selectedIds = new Set(selected.map(cardKey));
   if (selectedIds.size !== selected.length) throw new Error('Seleção contém cartas duplicadas.');
   const removed: Card[] = [];
   const nextHand: Card[] = [];
   for (const card of state.hand) {
-    if (selectedIds.has(cardId(card))) {
+    if (selectedIds.has(cardKey(card))) {
       removed.push(card);
-      selectedIds.delete(cardId(card));
+      selectedIds.delete(cardKey(card));
     } else {
       nextHand.push(card);
     }
   }
   if (selectedIds.size > 0) throw new Error('Seleção contém cartas que não estão na Mão.');
   return { removed, nextHand };
-}
-
-function cardId(card: Card): string {
-  return `${card.suit}:${card.value}`;
 }

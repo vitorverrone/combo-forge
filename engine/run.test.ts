@@ -38,6 +38,10 @@ function makeRun(hand: readonly Card[], overrides: Partial<RunState> = {}): RunS
     runScore: 0,
     target: baseTarget(1),
     phase: 'playing',
+    seed: 0,
+    forgedCards: [],
+    relics: [],
+    forgeOffers: [],
     ...overrides,
   };
 }
@@ -57,7 +61,7 @@ describe('baseTarget (curva 50 × 1,7^(R−1))', () => {
 
 describe('startRun', () => {
   test('inicia Rodada 1 com 4 Jogadas, Mão de 7 e Meta 50', () => {
-    const run = startRun(createSeededRng(1));
+    const run = startRun(1);
     expect(run.roundNumber).toBe(1);
     expect(run.playsRemaining).toBe(PLAYS_PER_ROUND);
     expect(run.score).toBe(0);
@@ -68,7 +72,7 @@ describe('startRun', () => {
   });
 
   test('currentMultiplier: 1ª Jogada ×1, 4ª ×4', () => {
-    let run = startRun(createSeededRng(2));
+    let run = startRun(2);
     expect(currentMultiplier(run)).toBe(1);
     run = { ...run, playsRemaining: 3 };
     expect(currentMultiplier(run)).toBe(2);
@@ -109,15 +113,17 @@ describe('makePlay: pontuação = Valor-Base × Multiplicador', () => {
     expect(next.playsRemaining).toBe(0);
   });
 
-  test('Jogada vence a Rodada ao atingir a Meta mesmo com Jogadas sobrando', () => {
+  test('Jogada vence a Rodada ao atingir a Meta mesmo com Jogadas sobrando; 1ª–5ª Rodada entra na Forja', () => {
     const run = makeRun([spades(7), hearts(7), diamonds(7), spades(8), hearts(8), diamonds(8)]);
     const { run: next, events } = makePlay(run, [spades(7), hearts(7), diamonds(7)], createSeededRng(6));
     // 46 ≥ 50? Não — ainda não vence. Segunda jogada: 49×2 = 98 → total 144 ≥ 50
     expect(next.phase).toBe('playing');
     const second = makePlay(next, [spades(8), hearts(8), diamonds(8)], createSeededRng(6));
-    expect(second.run.phase).toBe('roundWon');
+    expect(second.run.phase).toBe('forging');
     expect(second.run.playsRemaining).toBe(2);
+    expect(second.run.forgeOffers).toHaveLength(3);
     expect(eventsOfType(second.events, 'roundWon')).toHaveLength(1);
+    expect(eventsOfType(second.events, 'forgeOffers')).toHaveLength(1);
   });
 });
 
@@ -135,14 +141,16 @@ describe('fim da Rodada e fim da Run', () => {
     expect(eventsOfType(events, 'runLost')).toHaveLength(1);
   });
 
-  test('vencer a Rodada 6 dispara roundWon + runWon', () => {
+  test('vencer a Rodada 6 dispara roundWon + runWon, sem Forja', () => {
     const hand = [spades(10), hearts(10), diamonds(10), clubs(10), spades(9), hearts(9), diamonds(9)];
     const run = makeRun(hand, { roundNumber: 6, target: 50 }); // target artificial baixo
     const { run: next, events } = makePlay(run, hand.slice(0, 4), createSeededRng(9));
     // quadra de 10s: 110 ≥ 50 → round vencida na Rodada 6 → run vencida
     expect(next.phase).toBe('runWon');
+    expect(next.forgeOffers).toHaveLength(0);
     expect(eventsOfType(events, 'roundWon')).toHaveLength(1);
     expect(eventsOfType(events, 'runWon')).toHaveLength(1);
+    expect(eventsOfType(events, 'forgeOffers')).toHaveLength(0);
   });
 
   test('jogar após a Rodada vencida lança erro', () => {
@@ -202,6 +210,7 @@ describe('startNextRound', () => {
 
   test('startNextRound fora da fase roundWon lança erro', () => {
     expect(() => startNextRound(makeRun([], { phase: 'playing' }), createSeededRng(14))).toThrow();
+    expect(() => startNextRound(makeRun([], { phase: 'forging' }), createSeededRng(14))).toThrow();
     expect(() => startNextRound(makeRun([], { phase: 'runWon' }), createSeededRng(14))).toThrow();
     expect(() => startNextRound(makeRun([], { phase: 'runLost' }), createSeededRng(14))).toThrow();
   });
@@ -214,7 +223,7 @@ describe('startNextRound', () => {
 
 describe('serialização', () => {
   test('estado da Run é serializável', () => {
-    const run = startRun(createSeededRng(16));
+    const run = startRun(16);
     expect(JSON.parse(JSON.stringify(run))).toEqual(run);
   });
 });
