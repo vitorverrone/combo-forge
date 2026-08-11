@@ -43,7 +43,7 @@ Um dos quatro efeitos aplicáveis a uma carta via Forja: +Valor (soma fixa ao Va
 _Evitar_: Efeito especial, habilidade de carta
 
 **Relíquia**:
-Um item passivo que altera uma regra global da Run (ex.: "Espadas valem o dobro"). Adquirido via Forja, com máximo de 3 ativas por Run.
+Um item passivo que altera uma regra global da Run, adquirido via Forja, com máximo de 3 ativas por Run. O pool do MVP tem 10, em 4 categorias: Naipe (multiplica um naipe), Padrão (fortalece um Padrão), Mecânica (ajustes suaves, ex.: +1 Descarte ou +1 carta na Mão — nunca +1 Jogada) e Combo (mexe no Multiplicador de Combo).
 _Evitar_: Artefato, item, power-up
 
 **Mão**:
