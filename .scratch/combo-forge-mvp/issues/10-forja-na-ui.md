@@ -4,7 +4,7 @@
 
 **Blocked by:** 05 — Motor: Forja e Cartas Forjadas, 09 — Fim de Rodada e derrota
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Após vencer a Rodada, a Forja exibe 3 ofertas distintas e legíveis
 - [ ] Escolher uma oferta de carta mostra em qual carta do Baralho o efeito será aplicado e exige confirmação
