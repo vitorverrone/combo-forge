@@ -23,8 +23,12 @@ O conjunto fixo de cartas disponíveis na Run. As cartas jogadas são recicladas
 _Evitar_: Deck, baralho consumível
 
 **Mão**:
-O subconjunto de cartas do Baralho que o jogador segura e a partir do qual seleciona as cartas de uma Jogada. Reabastece pelo Baralho após cada Jogada.
+O subconjunto de 7 cartas do Baralho que o jogador segura e a partir do qual seleciona as cartas de uma Jogada. Reabastece pelo Baralho após cada Jogada ou Descarte.
 _Evitar_: Hand (em inglês), baralho (Mão é um subconjunto, não o deck inteiro)
+
+**Descarte**:
+A ação de trocar cartas da Mão antes de jogar: as cartas escolhidas voltam ao Baralho e o mesmo número é comprado. Há 2 Descarte por Rodada, compartilhados entre as 4 Jogadas; os não usados são perdidos.
+_Evitar_: Troca, redraw, swap
 
 **Rodada**:
 Uma unidade da Run com uma Meta de pontos e exatamente 4 Jogadas disponíveis. É vencida quando a pontuação acumulada atinge a Meta antes das Jogadas se esgotarem.
