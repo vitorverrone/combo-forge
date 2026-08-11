@@ -1,5 +1,5 @@
 import { Card, ForgeEffect } from './cards';
-import { createDeck, DeckState } from './deck';
+import { createDeck, DeckState, DISCARDS_PER_ROUND, HAND_SIZE } from './deck';
 import { ForgeOffer, forgeCard, forgeOfferSeed, generateForgeOffers } from './forge';
 import { createSeededRng, Rng } from './random';
 import { RELIC_CAP, RELIC_POOL } from './relics';
@@ -42,6 +42,8 @@ function makeRun(hand: readonly Card[], overrides: Partial<RunState> = {}): RunS
     seed: 0,
     forgedCards: [],
     relics: [],
+    startingRelic: undefined,
+    forger: 'apprentice',
     forgeOffers: [],
     ...overrides,
   };
@@ -260,6 +262,35 @@ describe('fluxo da Forja entre Rodadas', () => {
     expect(next.forgeOffers).toHaveLength(0);
     expect(eventsOfType(events, 'forgeOffers')).toHaveLength(0);
     expect(eventsOfType(events, 'runWon')).toHaveLength(1);
+  });
+});
+
+describe('Relíquias de Mecânica na estrutura (ticket 06)', () => {
+  test('+1 Descarte adquirido via Forja vale a partir da Rodada seguinte', () => {
+    const run = makeRun(QUAD_TENS, { phase: 'forging', forgeOffers: [{ type: 'relic', relic: RELIC_POOL[6] }] });
+    const forged = applyForgeOffer(run, 0).run;
+    const next = startNextRound(forged, createSeededRng(2));
+    expect(next.deck.discardsRemaining).toBe(DISCARDS_PER_ROUND + 1);
+    expect(next.deck.hand).toHaveLength(HAND_SIZE);
+  });
+
+  test('+1 carta na Mão adquirido via Forja vale a partir da Rodada seguinte', () => {
+    const run = makeRun(QUAD_TENS, { phase: 'forging', forgeOffers: [{ type: 'relic', relic: RELIC_POOL[7] }] });
+    const forged = applyForgeOffer(run, 0).run;
+    const next = startNextRound(forged, createSeededRng(2));
+    expect(next.deck.hand).toHaveLength(HAND_SIZE + 1);
+  });
+
+  test('a Relíquia de largada do Forjador não conta para o teto de ofertas', () => {
+    const run = makeRun(QUAD_TENS, {
+      forger: 'hammer',
+      startingRelic: RELIC_POOL[0],
+      relics: RELIC_POOL.slice(0, RELIC_CAP),
+    });
+    // 3 adquiridas + 1 de largada: a Forja vira a oferta de Relíquia em carta
+    const { run: won } = makePlay(run, QUAD_TENS, createSeededRng(3));
+    expect(won.forgeOffers).toHaveLength(3);
+    expect(won.forgeOffers.every((o) => o.type === 'cardEffect')).toBe(true);
   });
 });
 

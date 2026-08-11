@@ -1,26 +1,33 @@
 /**
- * Rodada, Meta, Multiplicador de Combo e Forja.
+ * Rodada, Meta, Multiplicador de Combo, Forja, Relíquias e Forjadores.
  *
  * Uma Run tem ROUNDS_PER_RUN Rodadas; cada Rodada tem PLAYS_PER_ROUND
  * Jogadas. A Jogada pontua Valor-Base × Multiplicador de Combo (×1 na 1ª,
- * ×4 na 4ª, zerando a cada Rodada). A Meta segue a curva base e a Rodada é
- * vencida ao atingir a Meta antes de esgotar as Jogadas; esgotar sem atingir
- * perde a Run.
+ * ×4 na 4ª, zerando a cada Rodada; Relíquias de Combo alteram o
+ * Multiplicador). A Meta segue a curva base e a Rodada é vencida ao atingir
+ * a Meta antes de esgotar as Jogadas; esgotar sem atingir perde a Run.
  *
  * Ao vencer uma Rodada (1ª à 5ª) a Run entra na fase 'forging' com 3 ofertas
  * de Forja geradas de uma stream própria do seed da Run (ver forge.ts);
  * vencer a 6ª Rodada encerra a Run em vitória, sem Forja. Aplicar uma oferta
  * (applyForgeOffer) transforma a carta escolhida numa Carta Forjada ou
  * adquire uma Relíquia — efeitos permanentes na Run, carregados entre
- * Rodadas. Estado serializável, sem referências de UI.
+ * Rodadas.
+ *
+ * Relíquias e Forjadores (ticket 06): o Forjador escolhido no startRun traz
+ * uma Relíquia exclusiva de largada (fora do teto de 3) e as Relíquias
+ * aplicam regras à pontuação (Naipe/Padrão), à estrutura da Rodada
+ * (Mecânica: Mão/Descarte) e ao Multiplicador de Combo. Estado serializável,
+ * sem referências de UI.
  */
 
 import { Card, ForgedCard } from './cards';
-import { DeckState, discardCards, initialDeckState, isDeckCard, playCards, startRound } from './deck';
+import { DeckState, discardCards, initialDeckState, isDeckCard, playCards, RoundStructure, startRound } from './deck';
 import { ForgeOffer, forgeCard, forgeOfferSeed, generateForgeOffers } from './forge';
+import { ForgerId, getForger } from './forgers';
 import { evaluatePlay } from './patterns';
 import { createSeededRng, Rng } from './random';
-import { Relic, RELIC_CAP } from './relics';
+import { activeRelics, comboMultiplier, Relic, RELIC_CAP, scoreModifiers, structureModifiers } from './relics';
 
 export const PLAYS_PER_ROUND = 4;
 export const ROUNDS_PER_RUN = 6;
@@ -44,8 +51,12 @@ export interface RunState {
   readonly phase: RunPhase;
   /** Cartas Forjadas da Run (permanentes, aplicadas em toda Jogada). */
   readonly forgedCards: readonly ForgedCard[];
-  /** Relíquias ativas da Run (máx. RELIC_CAP). */
+  /** Relíquias adquiridas via Forja (máx. RELIC_CAP). */
   readonly relics: readonly Relic[];
+  /** Relíquia exclusiva de largada do Forjador (fora do teto de 3). */
+  readonly startingRelic?: Relic;
+  /** Forjador escolhido no início da Run. */
+  readonly forger: ForgerId;
   /** Ofertas da Forja atual (preenchido apenas na fase 'forging'). */
   readonly forgeOffers: readonly ForgeOffer[];
 }
@@ -78,20 +89,40 @@ export function baseTarget(roundNumber: number): number {
   return Math.round(BASE_TARGET * Math.pow(TARGET_GROWTH, roundNumber - 1));
 }
 
-/** Multiplicador de Combo da próxima Jogada: ×1 na 1ª, ×4 na 4ª da Rodada. */
-export function currentMultiplier(run: RunState): number {
+/** Número (1-based) da próxima Jogada dentro da Rodada. */
+export function currentPlayNumber(run: RunState): number {
   return PLAYS_PER_ROUND - run.playsRemaining + 1;
 }
 
-/** Inicia uma nova Run (Rodada 1) a partir do seed — determina embaralhamento e Forjas. */
-export function startRun(seed: number): RunState {
-  return startRoundState(initialDeckState(), 1, createSeededRng(seed), 0, seed);
+/** Multiplicador de Combo da próxima Jogada (Relíquias de Combo alteram). */
+export function currentMultiplier(run: RunState): number {
+  return comboMultiplier(currentPlayNumber(run), activeRelics(run.startingRelic, run.relics));
+}
+
+/**
+ * Inicia uma nova Run (Rodada 1) a partir do seed — determina embaralhamento
+ * e Forjas — com o Forjador escolhido (padrão: Aprendiz). A Relíquia
+ * exclusiva de largada do Forjador entra fora do teto de 3.
+ */
+export function startRun(seed: number, forgerId: ForgerId = 'apprentice'): RunState {
+  const forger = getForger(forgerId);
+  return startRoundState(
+    initialDeckState(),
+    1,
+    createSeededRng(seed),
+    0,
+    seed,
+    [],
+    [],
+    forger.startingRelic,
+    forger.id,
+  );
 }
 
 /**
  * Avança para a próxima Rodada (reciclando o deck), carregando Cartas
- * Forjadas e Relíquias. Válido apenas após a Rodada atual ter sido vencida
- * e a Forja aplicada (fase 'roundWon').
+ * Forjadas, Relíquias e o Forjador. Válido apenas após a Rodada atual ter
+ * sido vencida e a Forja aplicada (fase 'roundWon').
  */
 export function startNextRound(run: RunState, rng: Rng): RunState {
   if (run.phase !== 'roundWon') {
@@ -100,7 +131,17 @@ export function startNextRound(run: RunState, rng: Rng): RunState {
   if (run.roundNumber >= ROUNDS_PER_RUN) {
     throw new Error('A Run já terminou (todas as Rodadas foram vencidas).');
   }
-  return startRoundState(run.deck, run.roundNumber + 1, rng, run.runScore, run.seed, run.forgedCards, run.relics);
+  return startRoundState(
+    run.deck,
+    run.roundNumber + 1,
+    rng,
+    run.runScore,
+    run.seed,
+    run.forgedCards,
+    run.relics,
+    run.startingRelic,
+    run.forger,
+  );
 }
 
 function startRoundState(
@@ -111,10 +152,12 @@ function startRoundState(
   seed: number,
   forgedCards: readonly ForgedCard[] = [],
   relics: readonly Relic[] = [],
+  startingRelic?: Relic,
+  forger: ForgerId = 'apprentice',
 ): RunState {
   return {
     seed,
-    deck: startRound(previousDeck, rng),
+    deck: startRound(previousDeck, rng, runStructureOf(startingRelic, relics)),
     roundNumber,
     playsRemaining: PLAYS_PER_ROUND,
     score: 0,
@@ -123,6 +166,8 @@ function startRoundState(
     phase: 'playing',
     forgedCards,
     relics,
+    startingRelic,
+    forger,
     forgeOffers: [],
   };
 }
@@ -136,15 +181,16 @@ export function discard(run: RunState, selected: readonly Card[], rng: Rng): Run
   if (run.phase !== 'playing') {
     throw new Error(`Não é possível descartar na fase '${run.phase}'.`);
   }
-  return { ...run, deck: discardCards(run.deck, selected, rng) };
+  return { ...run, deck: discardCards(run.deck, selected, rng, runStructure(run).handSize) };
 }
 
 /**
- * Joga as cartas selecionadas: pontua Valor-Base (com Efeitos de Forja) ×
- * Multiplicador de Combo, move as cartas para o descarte, reabastece a Mão e
- * avalia o fim da Rodada e da Run. Vencer a Rodada R (1–5) gera as ofertas
- * de Forja e entra na fase 'forging'; vencer a 6ª encerra a Run em vitória.
- * Retorna o novo estado e os eventos emitidos.
+ * Joga as cartas selecionadas: pontua Valor-Base (com Efeitos de Forja e
+ * Relíquias de Naipe/Padrão) × Multiplicador de Combo (com Relíquias de
+ * Combo), move as cartas para o descarte, reabastece a Mão e avalia o fim da
+ * Rodada e da Run. Vencer a Rodada R (1–5) gera as ofertas de Forja e entra
+ * na fase 'forging'; vencer a 6ª encerra a Run em vitória. Retorna o novo
+ * estado e os eventos emitidos.
  */
 export function makePlay(
   run: RunState,
@@ -158,14 +204,17 @@ export function makePlay(
     throw new Error('Nenhuma Jogada restante nesta Rodada.');
   }
 
+  const relics = activeRelics(run.startingRelic, run.relics);
+  const playNumber = currentPlayNumber(run);
   const evaluation = evaluatePlay(selected, {
     forgedCards: run.forgedCards,
-    playNumber: currentMultiplier(run),
+    playNumber,
+    modifiers: scoreModifiers(relics),
   });
-  const multiplier = currentMultiplier(run);
+  const multiplier = comboMultiplier(playNumber, relics);
   const points = evaluation.baseValue * multiplier;
 
-  const deck = playCards(run.deck, selected, rng);
+  const deck = playCards(run.deck, selected, rng, runStructure(run).handSize);
   const playsRemaining = run.playsRemaining - 1;
   const score = run.score + points;
 
@@ -216,8 +265,9 @@ export function makePlay(
 /**
  * Aplica a oferta de Forja escolhida: um Efeito de Forja na carta alvo
  * (transformando-a numa Carta Forjada, empilhando efeitos) ou a aquisição da
- * Relíquia (respeitando o teto). Encerra a fase 'forging' e volta para
- * 'roundWon', pronta para startNextRound.
+ * Relíquia (respeitando o teto de RELIC_CAP — a de largada do Forjador fica
+ * fora). Encerra a fase 'forging' e volta para 'roundWon', pronta para
+ * startNextRound.
  */
 export function applyForgeOffer(
   run: RunState,
@@ -247,6 +297,15 @@ export function applyForgeOffer(
     throw new Error(`Teto de ${RELIC_CAP} Relíquias ativas atingido.`);
   }
   return forgeApplied(run, run.forgedCards, [...run.relics, offer.relic], offerIndex);
+}
+
+/** Estrutura da Rodada derivada das Relíquias ativas (Mecânica). */
+function runStructure(run: RunState): RoundStructure {
+  return runStructureOf(run.startingRelic, run.relics);
+}
+
+function runStructureOf(startingRelic: Relic | undefined, relics: readonly Relic[]): RoundStructure {
+  return structureModifiers(activeRelics(startingRelic, relics));
 }
 
 function forgeApplied(

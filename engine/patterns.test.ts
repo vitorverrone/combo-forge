@@ -1,5 +1,5 @@
 import { Card, ForgeEffect, ForgedCard } from './cards';
-import { evaluatePlay, identifyPattern, PatternKind } from './patterns';
+import { evaluatePlay, identifyPattern, PatternKind, ScoreModifiers } from './patterns';
 
 const spades = (value: number): Card => ({ suit: 'spades', value });
 const hearts = (value: number): Card => ({ suit: 'hearts', value });
@@ -176,6 +176,28 @@ describe('Cartas Forjadas no Valor-Base (ticket 05)', () => {
   test('Carta Forjada sem efeitos não altera a avaliação', () => {
     const f = [forged(spades(7), [])];
     expect(evaluatePlay([spades(7), hearts(7)], { forgedCards: f }).baseValue).toBe(19);
+  });
+});
+
+describe('Relíquias no Valor-Base (ticket 06)', () => {
+  test('Relíquia de Naipe multiplica a contribuição das cartas do Naipe', () => {
+    const mods: ScoreModifiers = { suitMultipliers: { spades: 2 } };
+    // par de 7s (7♠, 7♥): 5 + 7×2 + 7 = 26
+    expect(evaluatePlay([spades(7), hearts(7)], { modifiers: mods }).baseValue).toBe(26);
+  });
+
+  test('Relíquia de Padrão soma ao bônus do Padrão', () => {
+    const mods: ScoreModifiers = { patternBonuses: { [PatternKind.Pair]: 10 } };
+    const evaluation = evaluatePlay([spades(7), hearts(7)], { modifiers: mods });
+    expect(evaluation.pattern.bonus).toBe(15);
+    expect(evaluation.baseValue).toBe(29); // (5+10) + 7 + 7
+  });
+
+  test('Naipe e Padrão combinam com Efeitos de Forja', () => {
+    const forgedCards: ForgedCard[] = [{ card: spades(7), effects: [{ kind: 'multiplier', multiplier: 2 }] }];
+    const mods: ScoreModifiers = { suitMultipliers: { spades: 2 }, patternBonuses: { [PatternKind.Pair]: 10 } };
+    // 7♠ forjada ×2 e ×2 do Naipe: 7×2×2 = 28; 7♥ = 7; par: (5+10) + 28 + 7 = 50
+    expect(evaluatePlay([spades(7), hearts(7)], { forgedCards, modifiers: mods }).baseValue).toBe(50);
   });
 });
 

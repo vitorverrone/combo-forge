@@ -17,6 +17,16 @@ export const DECK_SIZE = 40;
 const MIN_CARD_VALUE = 1;
 const MAX_CARD_VALUE = 10;
 
+/**
+ * Estrutura ajustável da Rodada (ticket 06): Relíquias de Mecânica podem
+ * aumentar a Mão (+1 carta) e os Descarte (+1 por Rodada) — nunca +1 Jogada.
+ * Campos omitidos usam os valores padrão (HAND_SIZE / DISCARDS_PER_ROUND).
+ */
+export interface RoundStructure {
+  readonly handSize?: number;
+  readonly discardsPerRound?: number;
+}
+
 export interface DeckState {
   /** Cartas disponíveis para compra (fim da lista = topo). */
   readonly drawPile: readonly Card[];
@@ -67,20 +77,27 @@ export function shuffle<T>(items: readonly T[], rng: Rng): T[] {
 
 /**
  * Inicia (ou recicla) uma Rodada: junta todas as cartas do estado anterior
- * (reciclagem), reembaralha, compra a Mão de 7 e reinicia os Descarte.
+ * (reciclagem), reembaralha, compra a Mão e reinicia os Descarte — com a
+ * estrutura padrão ou a ajustada por Relíquias de Mecânica (ticket 06).
  */
-export function startRound(previous: DeckState, rng: Rng): DeckState {
+export function startRound(previous: DeckState, rng: Rng, structure: RoundStructure = {}): DeckState {
   const allCards = [...previous.drawPile, ...previous.discardPile, ...previous.hand];
   return drawToHand(
-    { drawPile: shuffle(allCards, rng), discardPile: [], hand: [], discardsRemaining: DISCARDS_PER_ROUND },
+    {
+      drawPile: shuffle(allCards, rng),
+      discardPile: [],
+      hand: [],
+      discardsRemaining: structure.discardsPerRound ?? DISCARDS_PER_ROUND,
+    },
     rng,
+    structure.handSize ?? HAND_SIZE,
   );
 }
 
-/** Compra do drawPile até encher a Mão (HAND_SIZE), reembaralhando o discardPile se necessário. */
-export function drawToHand(state: DeckState, rng: Rng): DeckState {
+/** Compra do drawPile até encher a Mão (handSize), reembaralhando o discardPile se necessário. */
+export function drawToHand(state: DeckState, rng: Rng, handSize = HAND_SIZE): DeckState {
   let { drawPile, discardPile, hand } = state;
-  while (hand.length < HAND_SIZE) {
+  while (hand.length < handSize) {
     if (drawPile.length === 0) {
       if (discardPile.length === 0) break;
       drawPile = shuffle(discardPile, rng);
@@ -96,7 +113,12 @@ export function drawToHand(state: DeckState, rng: Rng): DeckState {
  * Ação de Descarte: devolve as cartas escolhidas da Mão ao discardPile e
  * compra o mesmo número. Consome 1 Descarte da Rodada (máx. DISCARDS_PER_ROUND).
  */
-export function discardCards(state: DeckState, selected: readonly Card[], rng: Rng): DeckState {
+export function discardCards(
+  state: DeckState,
+  selected: readonly Card[],
+  rng: Rng,
+  handSize = HAND_SIZE,
+): DeckState {
   if (selected.length === 0) throw new Error('Descarte precisa de pelo menos uma carta.');
   if (state.discardsRemaining <= 0) throw new Error('Nenhum Descarte restante nesta Rodada.');
   const { removed, nextHand } = removeFromHand(state, selected);
@@ -106,7 +128,7 @@ export function discardCards(state: DeckState, selected: readonly Card[], rng: R
     discardPile: [...state.discardPile, ...removed],
     discardsRemaining: state.discardsRemaining - 1,
   };
-  return drawToHand(moved, rng);
+  return drawToHand(moved, rng, handSize);
 }
 
 /**
@@ -115,11 +137,17 @@ export function discardCards(state: DeckState, selected: readonly Card[], rng: R
  * Rodada (que compõe esta função com o cálculo de pontos) — inclusive a
  * validação de tamanho da Jogada (1–5 cartas, ver evaluatePlay).
  */
-export function playCards(state: DeckState, selected: readonly Card[], rng: Rng): DeckState {
+export function playCards(
+  state: DeckState,
+  selected: readonly Card[],
+  rng: Rng,
+  handSize = HAND_SIZE,
+): DeckState {
   const { removed, nextHand } = removeFromHand(state, selected);
   return drawToHand(
     { ...state, hand: nextHand, discardPile: [...state.discardPile, ...removed] },
     rng,
+    handSize,
   );
 }
 

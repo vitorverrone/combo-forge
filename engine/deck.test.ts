@@ -167,6 +167,30 @@ describe('reciclagem (startRound após uma Rodada)', () => {
   });
 });
 
+describe('estrutura ajustável da Rodada (ticket 06)', () => {
+  test('startRound aceita Mão maior e mais Descarte por Rodada', () => {
+    const state = startRound(initialDeckState(), createSeededRng(20), { handSize: 8, discardsPerRound: 3 });
+    expect(state.hand).toHaveLength(8);
+    expect(state.discardsRemaining).toBe(3);
+    expect(state.drawPile).toHaveLength(DECK_SIZE - 8);
+  });
+
+  test('drawToHand reabastece até o tamanho configurado', () => {
+    let state = startRound(initialDeckState(), createSeededRng(21), { handSize: 8 });
+    state = { ...state, hand: state.hand.slice(0, 5) };
+    state = drawToHand(state, createSeededRng(21), 8);
+    expect(state.hand).toHaveLength(8);
+  });
+
+  test('discardCards e playCards reabastecem até o tamanho configurado', () => {
+    let state = startRound(initialDeckState(), createSeededRng(22), { handSize: 8 });
+    state = discardCards(state, state.hand.slice(0, 1), createSeededRng(22), 8);
+    expect(state.hand).toHaveLength(8);
+    state = playCards(state, state.hand.slice(0, 2), createSeededRng(22), 8);
+    expect(state.hand).toHaveLength(8);
+  });
+});
+
 describe('serialização', () => {
   test('estado é serializável (sem referências de UI ou funções)', () => {
     const state = startRound(initialDeckState(), createSeededRng(12));
