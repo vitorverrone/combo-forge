@@ -27,7 +27,7 @@ A família de uma carta. Há 4 no jogo (Espadas, Copas, Ouros, Paus). Por si só
 _Evitar_: Suit, cor (cor é detalhe de renderização)
 
 **Valor**:
-O número de uma carta, de 1 a 10. Entra na soma do Valor-Base e na formação de Sequências.
+O número de uma carta, de 1 a 10. Entra na soma do Valor-Base e na formação de Sequências. O Ás (Valor 1) pode contar como 11 apenas para formar Sequências.
 _Evitar_: Rank
 
 **Forja**:
@@ -55,7 +55,7 @@ A ação de trocar cartas da Mão antes de jogar: as cartas escolhidas voltam ao
 _Evitar_: Troca, redraw, swap
 
 **Padrão**:
-A configuração das cartas de uma Jogada que define o bônus do Valor-Base. Os padrões do jogo são: Carta Alta (fallback de 1 carta), Par, Dois Pares, Trinca, Sequência (5 cartas em ordem, naipes livres, incluindo Ás–5 e 10–Ás), Full House e Quadra. A Jogada pontua o melhor Padrão formado pelas cartas selecionadas (2–5 cartas, ou 1 para Carta Alta) e todas as cartas selecionadas somam seus valores ao bônus.
+A configuração das cartas de uma Jogada que define o bônus do Valor-Base. Os padrões do jogo são: Carta Alta (fallback de 1 carta), Par, Dois Pares, Trinca, Sequência (5 cartas em ordem, naipes livres, incluindo Ás–5 e 10–Ás), Full House e Quadra. A Jogada pontua o melhor Padrão formado pelas cartas selecionadas (2–5 cartas, ou 1 para Carta Alta) e todas as cartas selecionadas somam seus valores ao bônus. Na soma do Valor-Base o Ás conta sempre seu Valor impresso (1), mesmo quando participa de uma Sequência como 11.
 _Evitar_: Mão (Mão é o conjunto disponível; Padrão é a configuração jogada), combinação
 
 **Rodada**:

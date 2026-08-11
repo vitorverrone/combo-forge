@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 — Scaffolding do projeto
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Cada um dos 7 Padrões é reconhecido com o bônus correto (tabela sintonizável: Carta Alta 0, Par 5, Dois Pares 15, Trinca 25, Sequência 40, Full House 55, Quadra 70)
 - [ ] Uma Jogada de 2–5 cartas pontua o melhor Padrão formado pelas cartas selecionadas; cartas extras além do mínimo do Padrão somam seus Valores
