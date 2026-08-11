@@ -33,6 +33,7 @@ import {
   RunEvent,
   RunState,
   scoreModifiers,
+  startNextRound,
   startRun as engineStartRun,
 } from '../engine';
 
@@ -59,6 +60,10 @@ export interface GameState {
   readonly clearSelection: () => void;
   readonly playSelection: () => void;
   readonly discardSelection: () => void;
+  /** Avança para a próxima Rodada após vencer e forjar (fase 'roundWon'). */
+  readonly nextRound: () => void;
+  /** Reinicia imediatamente uma nova Run (novo seed, mesmo Forjador). */
+  readonly restartRun: () => void;
   readonly backToStart: () => void;
 }
 
@@ -176,6 +181,17 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       } catch {
         // Sem Descarte restante (defesa da UI): estado permanece intacto
       }
+    },
+
+    nextRound: () => {
+      const { run, rng } = get();
+      if (run === null || rng === null || run.phase !== 'roundWon') return;
+      set({ run: startNextRound(run, rng), selectedKeys: [], lastEvents: [] });
+    },
+
+    restartRun: () => {
+      // Nova Run com novo seed e o mesmo Forjador, sem passar pela tela inicial.
+      get().startRun();
     },
 
     backToStart: () =>

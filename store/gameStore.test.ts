@@ -166,6 +166,57 @@ describe('ações despachadas para o motor', () => {
   });
 });
 
+describe('fim de Rodada e derrota', () => {
+  test('nextRound avança da fase roundWon para a Rodada seguinte', () => {
+    const store = createGameStore({ seed: () => 11 });
+    store.getState().startRun();
+    // Simula a Rodada 1 vencida e forjada: fase roundWon pronta para avançar.
+    store.setState({
+      run: { ...store.getState().run!, phase: 'roundWon' },
+    });
+    store.getState().nextRound();
+    const state = store.getState();
+    expect(state.run?.roundNumber).toBe(2);
+    expect(state.run?.phase).toBe('playing');
+    expect(state.run?.score).toBe(0);
+    expect(state.run?.playsRemaining).toBe(PLAYS_PER_ROUND);
+    // O avanço não devolve para a tela inicial nem zera a stream.
+    expect(state.screen).toBe('game');
+    expect(state.rng).not.toBeNull();
+  });
+
+  test('nextRound ignora fases que não sejam roundWon', () => {
+    const store = createGameStore({ seed: () => 12 });
+    store.getState().startRun();
+    const runBefore = store.getState().run;
+    store.getState().nextRound();
+    expect(store.getState().run).toBe(runBefore);
+  });
+
+  test('restartRun inicia nova Run com novo seed, mesmo Forjador e Mão nova', () => {
+    let seed = 100;
+    const store = createGameStore({ seed: () => seed });
+    store.getState().chooseForger('anvil');
+    store.getState().startRun();
+    const firstSeed = store.getState().run!.seed;
+    const firstHand = store.getState().run!.deck.hand.map(cardKey);
+    // Encerra em derrota (fase runLost) para reiniciar a partir dela.
+    store.setState({ run: { ...store.getState().run!, phase: 'runLost' } });
+    seed = 200;
+    store.getState().restartRun();
+    const state = store.getState();
+    expect(state.screen).toBe('game');
+    expect(state.run?.phase).toBe('playing');
+    expect(state.run?.forger).toBe('anvil');
+    expect(state.run?.roundNumber).toBe(1);
+    expect(state.run?.score).toBe(0);
+    // Novo seed → novo embaralhamento (baralho reciclado, Mão diferente).
+    expect(state.run!.seed).not.toBe(firstSeed);
+    expect(state.run!.seed).toBe(200);
+    expect(state.run!.deck.hand.map(cardKey)).not.toEqual(firstHand);
+  });
+});
+
 describe('persistRoundEnd (DDA persistido ao fim da Rodada)', () => {
   test('vitória fácil com Jogada sobrando acumula easyWins', () => {
     const run = makeRunWithHand([spades(7), hearts(7)]);
