@@ -4,10 +4,10 @@
 
 **Blocked by:** 01 — Scaffolding do projeto
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Entidades do backend para seed diário, submissões e leaderboard semanal existem
-- [ ] O endpoint de seed retorna o seed do dia de forma determinística para todos os jogadores
-- [ ] O endpoint de submissão registra a pontuação (uma por tentativa válida por dia)
-- [ ] O leaderboard semanal devolve a posição própria + top 10
-- [ ] URL e chaves de acesso estão documentadas como variáveis de ambiente (nada hardcoded)
+- [x] Entidades do backend para seed diário, submissões e leaderboard semanal existem
+- [x] O endpoint de seed retorna o seed do dia de forma determinística para todos os jogadores
+- [x] O endpoint de submissão registra a pontuação (uma por tentativa válida por dia)
+- [x] O leaderboard semanal devolve a posição própria + top 10
+- [x] URL e chaves de acesso estão documentadas como variáveis de ambiente (nada hardcoded)
