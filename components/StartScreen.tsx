@@ -1,4 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
   canPlayDaily,
@@ -17,6 +18,7 @@ import { colors } from './theme';
 import { useGameStore } from '../store/gameStore';
 
 export function StartScreen() {
+  const insets = useSafeAreaInsets();
   const forger = useGameStore((state) => state.forger);
   const chooseForger = useGameStore((state) => state.chooseForger);
   const startRun = useGameStore((state) => state.startRun);
@@ -33,7 +35,7 @@ export function StartScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.navRow}>
+      <View style={[styles.navRow, { top: insets.top + 18 }]}>
         <Pressable
           accessibilityLabel="Open profile"
           onPress={openProfile}

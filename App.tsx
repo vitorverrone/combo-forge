@@ -1,5 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { BreakReminderBanner } from './components/BreakReminderBanner';
 import { CollectionScreen } from './components/CollectionScreen';
@@ -22,7 +23,8 @@ export default function App() {
   const screen = useGameStore((state) => state.screen);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaProvider>
+      <View style={styles.container}>
       {screen === 'start' && <StartScreen />}
       {screen === 'game' && <GameScreen />}
       {screen === 'profile' && <ProfileScreen />}
@@ -33,7 +35,8 @@ export default function App() {
       <BreakReminderBanner />
       <GameFeedback />
       <StatusBar style="light" />
-    </View>
+      </View>
+    </SafeAreaProvider>
   );
 }
 
