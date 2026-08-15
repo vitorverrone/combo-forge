@@ -417,7 +417,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     },
 
     purchaseCosmetic: async (itemId) => {
-      const { shop } = get();
+      const { shop, shopProvider, shopStorage } = get();
       if (shop.purchasing !== null || isOwned(shop.owned, itemId)) return;
       set({ shop: { ...shop, purchasing: itemId, error: null } });
       try {
@@ -447,12 +447,12 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     equipCosmetic: (itemId) => {
       const owned = engineEquipItem(get().shop.owned, itemId);
       if (owned === get().shop.owned) return; // não comprado ou inválido
-      shopStorage.save(owned);
+      get().shopStorage.save(owned);
       set({ shop: { ...get().shop, owned } });
     },
 
     restorePurchases: async () => {
-      const { shop } = get();
+      const { shop, shopProvider, shopStorage } = get();
       if (shop.restoring) return;
       set({ shop: { ...shop, restoring: true, error: null } });
       try {

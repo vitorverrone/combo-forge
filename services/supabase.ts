@@ -32,7 +32,15 @@ export function isSupabaseConfigured(): boolean {
 export function createSupabaseDailyBackend(): DailyBackend | null {
   if (!isSupabaseConfigured()) return null;
 
-  const client = createClient(SUPABASE_URL as string, SUPABASE_ANON_KEY as string);
+  let client;
+  try {
+    client = createClient(SUPABASE_URL as string, SUPABASE_ANON_KEY as string);
+  } catch {
+    // URL inválida (ex.: placeholder do .env.example ainda não preenchido):
+    // trata como não configurado — o Desafio Diário fica indisponível em
+    // vez de derrubar o bootstrap inteiro (que injeta loja e demais ports).
+    return null;
+  }
 
   return {
     fetchSeed: async (dateIso: string): Promise<number> => {
