@@ -521,8 +521,8 @@ describe('Desafio Diário (ticket 13)', () => {
     store.setState({ run: { ...makeRunWithHand(QUAD_TENS), roundNumber: 6 } });
     for (const card of QUAD_TENS) store.getState().toggleCard(cardKey(card));
     store.getState().playSelection();
-    // a submissão falhou no fim da Run
-    await Promise.resolve();
+    // a submissão falhou no fim da Run (drena a cadeia store → fluxo → backend)
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(store.getState().daily.submitStatus).toBe('failed');
     // retry com rede de volta
     fail = false;

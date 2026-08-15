@@ -5,9 +5,11 @@
  * motor (RunState) e estado de UI (tela, seleção de cartas), (b) despacha as
  * ações do jogador para o motor puro com a stream de RNG contínua que ele
  * mesmo criou no startRun, (c) persiste o histórico DDA ao fim de cada
- * Rodada e (d) acumula estatísticas de perfil e reivindica desbloqueios de
+ * Rodada, (d) acumula estatísticas de perfil e reivindica desbloqueios de
  * meta-progressão ao fim de cada Run (funções puras de progression.ts),
- * persistindo via port injetado (memória nos testes; SQLite no app).
+ * persistindo via port injetado (memória nos testes; SQLite no app) e (e)
+ * delega a orquestração de IO do Desafio Diário ao fluxo (store/dailyFlow.ts),
+ * aplicando o patch que ele devolve.
  * Tudo o que a UI precisa ler vem de funções puras do motor.
  */
 
@@ -17,15 +19,11 @@ import { createStore, StoreApi } from 'zustand/vanilla';
 import {
   activeRelics,
   AdProvider,
-  ALL_UNLOCKS,
-  canPlayDaily,
-  canWatchExtraAd,
   Card,
   cardKey,
   claimOption as engineClaimOption,
   claimReachedSingles,
   computeUnlocks,
-  consumeDailyAttempt,
   createDevAdProvider,
   createDeviceId,
   createInitialDailyAttempts,
@@ -35,10 +33,8 @@ import {
   createSeededRng,
   createUnavailableDailyBackend,
   currentPlayNumber,
-  DailyAttempts,
   DailyBackend,
   DailyChallengeStorage,
-  DailyLeaderboard,
   dailyAttemptsForDay,
   DEFAULT_DDA_CONFIG,
   DEFAULT_PROGRESSION,
@@ -68,10 +64,15 @@ import {
   scoreModifiers,
   startNextRound,
   startRun as engineStartRun,
-  unlockExtraAttempt,
   utcDateIso,
-  withBestSubmitted,
 } from '../engine';
+
+import {
+  DailyFlowDeps,
+  DailyFlowResult,
+  DailyState,
+  runDailyCommand,
+} from './dailyFlow';
 
 import {
   BreakHistory,
@@ -107,28 +108,6 @@ export type RunMode = 'normal' | 'daily';
 
 /** Máximo de cartas selecionáveis (tamanho máximo de uma Jogada). */
 export const MAX_SELECTION = 5;
-
-export interface DailyState {
-  /** Tentativas do dia (persistidas entre sessões). */
-  readonly attempts: DailyAttempts;
-  /** UUID opaco do dispositivo (persistido; identidade no leaderboard). */
-  readonly deviceId: string;
-  /** Seed do dia em cache (null até a primeira busca do dia). */
-  readonly seed: number | null;
-  /** Data a que o seed em cache se refere (YYYY-MM-DD, UTC). */
-  readonly seedDate: string;
-  /** Busca do seed / início da Run do dia. */
-  readonly status: 'idle' | 'loading' | 'ready' | 'error';
-  readonly error: string | null;
-  /** Anúncio recompensado da tentativa extra. */
-  readonly adLoading: boolean;
-  /** Submissão da pontuação ao fim da Run. */
-  readonly submitStatus: 'idle' | 'submitting' | 'submitted' | 'failed';
-  /** Leaderboard semanal (opt-in; null até o jogador abrir). */
-  readonly leaderboard: DailyLeaderboard | null;
-  readonly leaderboardLoading: boolean;
-  readonly leaderboardError: string | null;
-}
 
 export interface ShopState {
   /** Itens comprados + equipados (persistido entre sessões). */
@@ -302,6 +281,38 @@ export function persistRoundEnd(
       persistDda(storage, run.dda, { roundNumber: event.roundNumber, won: false, easyWin: false });
     }
   }
+}
+
+/** Ports do fluxo do Desafio Diário a partir do estado atual do store. */
+function dailyFlowDeps(state: GameState, now: () => Date): DailyFlowDeps {
+  return {
+    storage: state.dailyStorage,
+    backend: state.dailyBackend,
+    adProvider: state.adProvider,
+    now,
+  };
+}
+
+/**
+ * Patch do GameState para o resultado do fluxo do Desafio Diário. Navega
+ * para o jogo e monta a Run quando o comando 'start' a iniciou; senão só
+ * atualiza o estado do Desafio.
+ */
+function applyDailyResult(result: DailyFlowResult): Partial<GameState> {
+  if (result.run === null || result.rng === null) {
+    return { daily: result.daily };
+  }
+  return {
+    daily: result.daily,
+    run: result.run,
+    rng: result.rng,
+    screen: 'game',
+    runMode: 'daily',
+    selectedKeys: [],
+    lastEvents: [],
+    recentUnlocks: [],
+    unlockChoice: null,
+  };
 }
 
 export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
@@ -487,118 +498,32 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     },
 
     startDailyChallenge: async () => {
-      const { daily } = get();
-      const today = utcDateIso(now());
-      const attempts = dailyAttemptsForDay(daily.attempts, today);
-      if (!canPlayDaily(attempts)) return;
-      set({ daily: { ...daily, attempts, status: 'loading', error: null } });
-      try {
-        // Seed do dia: reusa o cache do dia ou busca no backend (mesmo seed
-        // para todos os jogadores — comparação justa, ADR 0003).
-        let seed = daily.seed;
-        if (seed === null || daily.seedDate !== today) {
-          seed = await dailyBackend.fetchSeed(today);
-        }
-        const nextAttempts = consumeDailyAttempt(attempts);
-        dailyStorage.saveAttempts(nextAttempts);
-        const rng = createSeededRng(seed);
-        // Forjador fixo (Aprendiz) + pools completos (ALL_UNLOCKS) + DDA off:
-        // a Run do dia é idêntica para todos os jogadores.
-        const run = engineStartRun(seed, {
-          forger: 'apprentice',
-          ddaConfig: { ...DEFAULT_DDA_CONFIG, enabled: false },
-          unlocks: ALL_UNLOCKS,
-          rng,
-        });
-        set({
-          screen: 'game',
-          runMode: 'daily',
-          run,
-          rng,
-          selectedKeys: [],
-          lastEvents: [],
-          recentUnlocks: [],
-          unlockChoice: null,
-          daily: {
-            ...daily,
-            attempts: nextAttempts,
-            seed,
-            seedDate: today,
-            status: 'ready',
-            error: null,
-            submitStatus: 'idle',
-          },
-        });
-      } catch (error) {
-        dailyStorage.saveAttempts(attempts);
-        set({
-          daily: {
-            ...daily,
-            attempts,
-            status: 'error',
-            error: error instanceof Error ? error.message : String(error),
-          },
-        });
-      }
+      const result = await runDailyCommand(get().daily, dailyFlowDeps(get(), now), {
+        type: 'start',
+      });
+      set(applyDailyResult(result));
     },
 
     watchAdForExtraAttempt: async () => {
-      const { daily } = get();
-      const attempts = dailyAttemptsForDay(daily.attempts, utcDateIso(now()));
-      if (!canWatchExtraAd(attempts)) return;
-      set({ daily: { ...daily, attempts, adLoading: true } });
-      try {
-        const watched = await adProvider.requestRewardedAd();
-        if (watched) {
-          const nextAttempts = unlockExtraAttempt(attempts);
-          dailyStorage.saveAttempts(nextAttempts);
-          set({ daily: { ...daily, attempts: nextAttempts, adLoading: false } });
-        } else {
-          set({ daily: { ...daily, attempts, adLoading: false } });
-        }
-      } catch {
-        // Falha do provider (sem anúncio no momento): mantém o estado.
-        set({ daily: { ...daily, attempts, adLoading: false } });
-      }
+      const result = await runDailyCommand(get().daily, dailyFlowDeps(get(), now), {
+        type: 'watchAd',
+      });
+      set({ daily: result.daily });
     },
 
     submitDailyScore: async (score: number) => {
-      const { daily } = get();
-      if (daily.submitStatus === 'submitting' || daily.submitStatus === 'submitted') return;
-      const attempts = dailyAttemptsForDay(daily.attempts, utcDateIso(now()));
-      set({ daily: { ...daily, attempts, submitStatus: 'submitting' } });
-      try {
-        // O servidor guarda a melhor pontuação do dia do dispositivo.
-        const stored = await dailyBackend.submitScore(daily.deviceId, score);
-        const nextAttempts = withBestSubmitted(attempts, stored);
-        dailyStorage.saveAttempts(nextAttempts);
-        set({
-          daily: { ...daily, attempts: nextAttempts, submitStatus: 'submitted' },
-        });
-      } catch {
-        set({ daily: { ...daily, attempts, submitStatus: 'failed' } });
-      }
+      const result = await runDailyCommand(get().daily, dailyFlowDeps(get(), now), {
+        type: 'submit',
+        score,
+      });
+      set({ daily: result.daily });
     },
 
     fetchLeaderboard: async () => {
-      const { daily } = get();
-      const attempts = dailyAttemptsForDay(daily.attempts, utcDateIso(now()));
-      set({ daily: { ...daily, attempts, leaderboardLoading: true, leaderboardError: null } });
-      try {
-        const leaderboard = await dailyBackend.fetchLeaderboard(daily.deviceId);
-        set({
-          daily: { ...daily, attempts, leaderboard, leaderboardLoading: false },
-        });
-      } catch (error) {
-        set({
-          daily: {
-            ...daily,
-            attempts,
-            leaderboardLoading: false,
-            leaderboardError: error instanceof Error ? error.message : String(error),
-          },
-        });
-      }
+      const result = await runDailyCommand(get().daily, dailyFlowDeps(get(), now), {
+        type: 'fetchLeaderboard',
+      });
+      set({ daily: result.daily });
     },
 
     toggleCard: (key) => {
