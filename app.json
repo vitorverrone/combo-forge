@@ -4,6 +4,7 @@
     "slug": "combo-forge",
     "version": "1.0.0",
     "orientation": "portrait",
+    "scheme": "comboforge",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,

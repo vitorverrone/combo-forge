@@ -195,11 +195,39 @@ EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID=<admob rewarded ad unit id>
 
 ---
 
-## 5. Build de desenvolvimento e teste integrado
+## 5. Build de desenvolvimento e teste integrado (EAS)
 
-- [ ] Criar `eas.json` (ainda não existe) com perfis `development`, `preview` e
-      `production` (ex.: `expo prebuild` + `eas build --profile development`).
-- [ ] Subir um development build num device físico e rodar o fluxo completo:
+O `eas.json` já existe com os perfis `development`, `preview` e `production`
+(`environment` de cada um: `development` / `preview` / `production`).
+
+### Como as variáveis chegam ao build
+
+O EAS **não lê o `.env` local nos builds em nuvem** — as `EXPO_PUBLIC_*` são
+injetadas de **EAS Environment Variables** (por ambiente). Os providers do app
+caem no fallback de dev quando a variável não existe, então:
+
+- **`development`** — não precisa de variáveis: usa os fallbacks de dev
+  (Desafio Diário indisponível, loja simulada, anúncio dev).
+- **`preview`/`production`** — criar as variáveis reais por ambiente:
+  ```bash
+  eas env:set --name EXPO_PUBLIC_SUPABASE_URL --value <url> --environment preview --visibility plaintext
+  eas env:set --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <anon key> --environment preview --visibility plaintext
+  eas env:set --name EXPO_PUBLIC_REVENUECAT_API_KEY --value <sdk key> --environment preview --visibility plaintext
+  eas env:set --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID --value <ad unit id> --environment preview --visibility plaintext
+  # repetir com --environment production para o perfil de store
+  ```
+  (São chaves públicas por design — embutidas no bundle — por isso
+  `plaintext`; nada de secret no código do cliente.)
+
+### Rodar os builds
+
+- [ ] `eas build --profile development --platform android|ios` — dev client
+      (`expo-dev-client` já instalado; deep-link via scheme `comboforge`).
+- [ ] `eas build --profile preview --platform android|ios` — build interno para
+      testadores (com as chaves reais de `preview`).
+- [ ] `eas build --profile production --platform android|ios` — build de loja
+      (`distribution: store`, `autoIncrement` no número de build).
+- [ ] Subir o development build num device físico e rodar o fluxo completo:
       1. Run normal (motor + DDA + Forja + derrota/restart).
       2. Desafio Diário: buscar seed → jogar → submeter → ver ranking (posição
          própria + top 10).
