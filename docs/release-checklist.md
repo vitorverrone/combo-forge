@@ -124,13 +124,34 @@ para monetizar de verdade.
 
 ### Verificar
 
-- [ ] Rodar em **development build** (Expo Go roda o SDK em "Preview API Mode"
-      com mocks JS — compra real não acontece lá). Ver seção 5.
-- [ ] Na loja: preços vêm do RevenueCat (`ShopOffering.price`), não o `devPrice`
-      do catálogo.
-- [ ] Comprar um item → some do catálogo e aparece em "owned" (persistido em
-      SQLite).
+- [x] Rodar em **development build** (Expo Go roda o SDK em "Preview API Mode"
+      com mocks JS — compra real não acontece lá). Ver seção 5. Validado em
+      dev build Android no emulador (`expo run:android`) em 2026-08-15.
+- [x] Na loja: preços vêm do RevenueCat (`ShopOffering.price`), não o `devPrice`
+      do catálogo — validado com **Test Store API key** (preços simulados;
+      para preços reais, chave pública `goog_...` + Play Console).
+- [x] Comprar um item → some do catálogo e aparece em "owned" (persistido em
+      SQLite — sobrevive a restart do app).
 - [ ] Testar `Restore` (restaurar compras) → itens voltam ao estado owned.
+
+#### Validação no emulador (2026-08-15, dev build local)
+
+- Test Store: 4 produtos cadastrados no dashboard + offering atual com os 4
+  packages (um por tipo de intervalo — Weekly/Monthly/Three Months/Lifetime —
+  porque o RC limita 1 package por tipo por offering; o app ignora o tipo e só
+  casa `productId` com o catálogo).
+- Bugs corrigidos nessa validação:
+  - `store/gameStore.ts`: `purchaseCosmetic`/`equipCosmetic`/`restorePurchases`
+    usavam o provider/storage do closure (dev/memória) em vez dos injetados via
+    `get()` — a compra era simulada pelo provider dev e nada persistia no
+    SQLite.
+  - `services/supabase.ts`: URL do Supabase inválida derrubava o bootstrap
+    inteiro (loja ficava presa no provider dev silenciosamente) em vez de
+    degradar para "Desafio Diário indisponível".
+- Nota de build local (não versionado): `android/local.properties` (sdk.dir com
+  barras normais) e pin `kotlin-gradle-plugin:2.2.20` no `android/build.gradle`
+  (o RN fixa Kotlin 2.1.20, que não lê o metadata 2.3.0 da play-services-ads
+  25.4.0). `expo prebuild` regenera ambos — reaplicar se o build quebrar.
 
 ---
 
