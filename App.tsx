@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { BreakReminderBanner } from './components/BreakReminderBanner';
 import { CollectionScreen } from './components/CollectionScreen';
@@ -25,16 +25,21 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <View style={styles.container}>
-      {screen === 'start' && <StartScreen />}
-      {screen === 'game' && <GameScreen />}
-      {screen === 'profile' && <ProfileScreen />}
-      {screen === 'collection' && <CollectionScreen />}
-      {screen === 'daily' && <DailyChallengeScreen />}
-      {screen === 'shop' && <ShopScreen />}
-      <UnlockChoiceModal />
-      <BreakReminderBanner />
-      <GameFeedback />
-      <StatusBar style="light" />
+        {/* SafeAreaView (topo) mantém o conteúdo abaixo da barra de status —
+            o app roda edge-to-edge no Android (API 35+). As sobreposições
+            (modais/banners) ficam fora de propósito. */}
+        <SafeAreaView edges={['top']} style={styles.container}>
+          {screen === 'start' && <StartScreen />}
+          {screen === 'game' && <GameScreen />}
+          {screen === 'profile' && <ProfileScreen />}
+          {screen === 'collection' && <CollectionScreen />}
+          {screen === 'daily' && <DailyChallengeScreen />}
+          {screen === 'shop' && <ShopScreen />}
+        </SafeAreaView>
+        <UnlockChoiceModal />
+        <BreakReminderBanner />
+        <GameFeedback />
+        <StatusBar style="light" />
       </View>
     </SafeAreaProvider>
   );
