@@ -48,3 +48,11 @@ yarn-error.*
 # Editor
 .vscode/
 .idea/
+
+# Per-project skill installation (symlinks in .claude/skills/ point into
+# .agents/skills/ with absolute paths tied to this machine; skills-lock.json
+# is the reinstall record) — not portable, regenerable, not committed.
+.agents/
+agent/
+.claude/
+skills-lock.json
