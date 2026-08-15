@@ -1,4 +1,5 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { colors } from './theme';
 import { useGameStore } from '../store/gameStore';
@@ -8,13 +9,14 @@ import { useGameStore } from '../store/gameStore';
  * intervalo curto. É apenas uma sugestão dismissível — nunca bloqueia o jogo.
  */
 export function BreakReminderBanner() {
+  const insets = useSafeAreaInsets();
   const suggestion = useGameStore((state) => state.breakSuggestion);
   const dismiss = useGameStore((state) => state.dismissBreakReminder);
 
   if (!suggestion) return null;
 
   return (
-    <View style={styles.overlay}>
+    <View style={[styles.overlay, { paddingTop: insets.top + 16 }]}>
       <View style={styles.banner}>
         <Text style={styles.title}>☕ Time for a break?</Text>
         <Text style={styles.body}>
