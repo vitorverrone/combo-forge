@@ -85,3 +85,7 @@ _Evitar_: Progressão, unlocks, meta-jogo (meta-jogo é o sistema mais amplo)
 **Run**:
 Uma sessão completa de jogo, da Rodada 1 até a derrota ou até vencer a 6ª Rodada. Ao falhar, reinicia-se imediatamente uma nova Run.
 _Evitar_: Partida, run run (sem repetição)
+
+**Loja**:
+O subsistema de monetização não-intrusiva do jogo: vende cosméticos (skins de Baralho e VFX de combo — 100% visuais, nunca tocam poder de jogo) e a remoção de anúncios (IAP não-consumível que esconde o banner). A orquestração de IO (carga de ofertas, compra, restore, sync de entitlement no launch) vive no fluxo da Loja (store/shopFlow.ts), que devolve a fatia nova para o store aplicar — mesma relação do Desafio Diário com o dailyFlow.
+_Evitar_: Shop, storefront, lojinha
