@@ -5,15 +5,18 @@ produção. Cada seção indica **o que configurar**, **onde** e **como verifica
 que ficou pronto. Sem estas configurações o app funciona, mas com fallbacks de
 desenvolvimento — nada disso é opcional para um release real.
 
-## Estado atual (o que está faltando)
+## Estado atual (consolidado em 2026-08-16)
 
-| Item | Onde está hoje | Consequência sem configurar |
+| Item | Onde está hoje | Próximo passo |
 |---|---|---|
-| Supabase: `.env` preenchido com URL/anon key reais (sem placeholders) | `.env` (não versionado) — verificado 2026-08-16 | Desafio Diário funciona se as migrations foram aplicadas (ainda a validar) |
-| RevenueCat: chave no `.env` é a **Test Store API key** | `.env` → `EXPO_PUBLIC_REVENUECAT_API_KEY` | Loja funciona com preços simulados; preço real e compra real exigem chave pública `goog_...` + IAPs nas lojas |
-| AdMob **Android** configurado (App ID + ad unit reais) mas **sem fill**: request real → `NO_FILL` até o app ser aprovado no AdMob (readiness review + link à loja); **iOS pendente** (Test App ID e sem ad unit) | `.env` / `app.json` → plugin `react-native-google-mobile-ads` | No Android: anúncio só serve após aprovação do app no AdMob. No iOS (quando publicar): trocar App ID + ad unit antes do release |
-| Produtos IAP reais não criados nas lojas (só no RevenueCat/Test Store) | App Store Connect / Play Console | Compra real falha (Test Store só simula) |
-| Identificadores `com.comboforge.app` no `app.json` | `app.json` ✅ | — (falta só validar igualdade nas plataformas, seção 0) |
+| Supabase | ✅ Projeto criado, migrations aplicadas, `.env` real (URL + anon) e Desafio Diário validado de ponta a ponta no app (seed real em release local e no preview do EAS) | `submit_daily_score`/`get_weekly_leaderboard` pendem de um fim de Run (opcional: `verify:backend` com Docker) |
+| RevenueCat | ✅ App + 4 produtos no dashboard, chave **Test Store** no `.env` e no EAS (preços simulados); compra/persistência validadas | Chave pública real (`goog_...`) + 4 IAPs nas lojas + vínculo + testar Restore |
+| AdMob **Android** | ✅ App + unidade rewarded + App ID real no `app.json`, env no `.env` e no EAS; request real validado (NO_FILL esperado até aprovar) | Vincular à loja + readiness review → revalidar recompensa |
+| AdMob **iOS** | ⏳ Pendente (Test App ID, sem ad unit) | Quando publicar na App Store |
+| IAPs reais nas lojas | ❌ Não criados (só no RevenueCat/Test Store) | Play Console / App Store Connect (seção 2) |
+| EAS | ✅ Projeto vinculado (`projectId`), variáveis em preview+production, build preview OK e validado no emulador | `eas build development` e `production` |
+| Identificadores `com.comboforge.app` | ✅ no `app.json` | Validar igualdade em AdMob/RC/ASC/Play (seção 0) |
+| Pin do Kotlin (build de nuvem) | ✅ Versionado via `plugins/withKotlinVersionPin.js` | — |
 
 ---
 
@@ -50,15 +53,17 @@ indisponível no app** (`createUnavailableDailyBackend`).
 
 - [x] Criar projeto em https://supabase.com/dashboard (plano gratuito basta
       para o MVP) — projeto existe (URL real no `.env`, verificado 2026-08-16).
-- [ ] Aplicar as migrations na ordem, via SQL editor ou CLI:
+- [x] Aplicar as migrations na ordem, via SQL editor ou CLI:
       `supabase/migrations/0001_daily_challenge.sql` → `0002_daily_challenge_access.sql`.
       ```bash
       supabase db push   # projeto vinculado (supabase link)
       ```
-- [ ] Confirmar que as três funções RPC existem e estão expostas ao `anon`:
-      `get_daily_seed`, `submit_daily_score`, `get_weekly_leaderboard`
-      (a migration 0002 só dá `EXECUTE` nelas; a tabela permanece inacessível
-      por RLS).
+      (validado de ponta a ponta em 2026-08-16: o app buscou o seed real do dia
+      e iniciou a Run do Desafio no release local e no preview do EAS)
+- [x] `get_daily_seed` exposta ao `anon` e respondendo (provado pelo app acima).
+      `submit_daily_score` / `get_weekly_leaderboard` ainda não exercitadas —
+      dependem de terminar uma Run / abrir o leaderboard (a migration 0002 só
+      dá `EXECUTE` nelas; a tabela permanece inacessível por RLS).
 
 ### Preencher o `.env`
 
@@ -72,17 +77,15 @@ indisponível no app** (`createUnavailableDailyBackend`).
 
 ### Verificar
 
-- [ ] `npm test` — trava o contrato (espelho TS vs. SQL) sem precisar de rede.
+- [x] `npm test` — trava o contrato (espelho TS vs. SQL) sem precisar de rede
+      (verde em 2026-08-16, 303 testes).
 - [ ] `npm run verify:backend` — sobe Postgres 16 em Docker, aplica migrations e
       valida seed/submissão/leaderboard/caminho `anon` de ponta a ponta.
-      (Requer Docker; se não tiver, o `npm test` + curl manual abaixo bastam
-      como smoke test.)
-- [ ] Smoke test manual do contrato:
-      ```bash
-      curl -X POST "$SUPABASE_URL/rest/v1/rpc/get_daily_seed" \
-        -H "apikey: $SUPABASE_ANON_KEY" -H "Content-Type: application/json" \
-        -d '{}'    # → integer (mesmo valor para todos no mesmo dia UTC)
-      ```
+      (Opcional: o seed já foi validado pelo app; este cobre submit/leaderboard
+      sem depender de terminar uma Run.)
+- [x] Smoke test do contrato — **substituído pela validação no app** (2026-08-16):
+      `get_daily_seed` retornou o seed real (Run do Desafio iniciou) em release
+      local e no preview do EAS.
 
 ---
 
@@ -240,8 +243,8 @@ EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID=<admob rewarded ad unit id (androi
 # EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS=<...>  # quando publicar iOS
 ```
 
-- [x] Nenhum valor de `.env` mantém `<...>` placeholder (verificado
-      2026-08-16); porém a variável do AdMob ainda **não existe** — seção 3.
+- [x] Nenhum valor de `.env` mantém `<...>` placeholder (verificado 2026-08-16)
+      e todas as variáveis existem (Supabase, RevenueCat e AdMob Android).
 - [x] `.env` fora do git (confirmado por `git check-ignore .env`).
 
 ---
@@ -320,8 +323,8 @@ caem no fallback de dev quando a variável não existe, então:
   - [ ] `android.package` = package do app.
   - [ ] Produtos em app criados (seção 2).
   - [ ] Data safety form: SDKs de anúncios e analytics declarados.
-  - [ ] App ID do AdMob real no `app.json` (seção 3) — sem isso o app crasha
-        na abertura do build de release.
+  - [x] App ID do AdMob real no `app.json` (seção 3) — validado em build de
+        release sem crash. (Só o Android; iOS fica para a publicação.)
 - [ ] **Assets de loja:** ícone, telas (portrait), descrição, privacy policy URL
       (obrigatória para apps com anúncios/IAP).
 - [ ] **Testes em release build** (não dev): anúncio real, IAP real em sandbox
