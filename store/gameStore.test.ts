@@ -7,7 +7,6 @@ import {
   createDeck,
   COSMETIC_CATALOG,
   createInitialBreakHistory,
-  createInitialShopState,
   createMemoryBreakStorage,
   DEFAULT_BREAK_REMINDER_CONFIG,
   createDevShopProvider,
@@ -551,263 +550,82 @@ describe('Desafio Diário (ticket 13)', () => {
   });
 });
 
-describe('loja cosmética (ticket 14)', () => {
-  test('openShop navega para a loja e carrega as ofertas', async () => {
+describe('loja (delegação para o shopFlow — refactor)', () => {
+  // Smoke tests: provam que as ações do store delegam para o módulo profundo
+  // (store/shopFlow.ts). O comportamento completo da Loja é testado no seam do
+  // módulo (store/shopFlow.test.ts) — aqui só o caminho store → módulo.
+  test('openShop navega para a loja e carrega as ofertas através do store', async () => {
     const store = createGameStore({ shopProvider: createDevShopProvider() });
     store.getState().openShop();
     expect(store.getState().screen).toBe('shop');
-    await Promise.resolve();
+    // Drena a cadeia store → shopFlow → provider (mais de um microtask).
+    await new Promise((resolve) => setTimeout(resolve, 0));
     expect(store.getState().shop.status).toBe('ready');
     // Catálogo cosmético + a oferta de remoção de anúncios (ticket 02).
     expect(store.getState().shop.offerings).toHaveLength(COSMETIC_CATALOG.length + 1);
   });
 
-  test('purchaseCosmetic compra, persiste e auto-equipa a skin', async () => {
+  test('purchaseCosmetic compra e auto-equipa através do store', async () => {
     const storage = createMemoryShopStorage();
     const store = createGameStore({ shopStorage: storage, shopProvider: createDevShopProvider() });
     await store.getState().purchaseCosmetic('skin-obsidian');
-    let state = store.getState();
+    const state = store.getState();
     expect(state.shop.owned.owned).toContain('skin-obsidian');
-    expect(state.shop.owned.equippedDeckSkin).toBe('skin-obsidian'); // aplicada na hora
-    expect(storage.load()?.owned).toContain('skin-obsidian');
-    // VFX não interfere na skin.
-    await store.getState().purchaseCosmetic('vfx-golden-combo');
-    state = store.getState();
-    expect(state.shop.owned.owned).toContain('vfx-golden-combo');
-    expect(state.shop.owned.equippedComboVfx).toBe('vfx-golden-combo');
     expect(state.shop.owned.equippedDeckSkin).toBe('skin-obsidian');
+    expect(storage.load()?.owned).toContain('skin-obsidian');
   });
 
-  test('equipCosmetic equipa apenas itens comprados e troca a skin atual', async () => {
+  test('equipCosmetic equipa através do store', async () => {
     const store = createGameStore({ shopProvider: createDevShopProvider() });
-    // sem comprar, não equipa
-    store.getState().equipCosmetic('skin-obsidian');
-    expect(store.getState().shop.owned.equippedDeckSkin).toBeNull();
     await store.getState().purchaseCosmetic('skin-obsidian');
-    await store.getState().purchaseCosmetic('skin-emerald');
     store.getState().equipCosmetic('skin-obsidian');
     expect(store.getState().shop.owned.equippedDeckSkin).toBe('skin-obsidian');
-    store.getState().equipCosmetic('skin-emerald');
-    expect(store.getState().shop.owned.equippedDeckSkin).toBe('skin-emerald');
   });
 
-  test('purchaseCosmetic ignora item já comprado (sem chamar o provider)', async () => {
-    const provider = createDevShopProvider();
-    const spy = jest.spyOn(provider, 'purchase');
-    const store = createGameStore({ shopProvider: provider });
-    await store.getState().purchaseCosmetic('skin-obsidian');
-    await store.getState().purchaseCosmetic('skin-obsidian');
-    expect(spy).toHaveBeenCalledTimes(1);
-  });
-
-  test('restorePurchases junta compras do servidor às locais', async () => {
-    const store = createGameStore({
-      shopProvider: {
-        ...createDevShopProvider(),
-        restore: async () => ['combo_forge_skin_royal', 'combo_forge_skin_obsidian'],
-      },
-    });
-    await store.getState().purchaseCosmetic('skin-obsidian');
-    await store.getState().restorePurchases();
-    const owned = store.getState().shop.owned.owned;
-    expect(owned).toContain('skin-obsidian');
-    expect(owned).toContain('skin-royal');
-  });
-
-  test('falha do provider marca erro e não adiciona o item', async () => {
-    const store = createGameStore({
-      shopProvider: {
-        ...createDevShopProvider(),
-        purchase: async () => {
-          throw new Error('loja fora do ar');
-        },
-      },
-    });
-    await store.getState().purchaseCosmetic('skin-obsidian');
-    const state = store.getState();
-    expect(state.shop.error).toBe('loja fora do ar');
-    expect(state.shop.owned.owned).toHaveLength(0);
-    expect(state.shop.purchasing).toBeNull();
-  });
-
-  test('item inexistente é rejeitado sem quebrar o estado', async () => {
-    const store = createGameStore({ shopProvider: createDevShopProvider() });
-    await store.getState().purchaseCosmetic('nao-existe');
-    const state = store.getState();
-    expect(state.shop.error).toBeDefined();
-    expect(state.shop.owned.owned).toHaveLength(0);
-    expect(state.shop.purchasing).toBeNull();
-  });
-});
-
-describe('remoção de anúncios (ticket 02)', () => {
-  test('purchaseRemoveAds compra, marca adsRemoved e persiste (mesmo padrão do owned)', async () => {
+  test('purchaseRemoveAds marca adsRemoved através do store', async () => {
     const storage = createMemoryShopStorage();
-    const store = createGameStore({
-      shopStorage: storage,
-      shopProvider: createDevShopProvider(),
-    });
-    expect(store.getState().adsRemoved).toBe(false);
+    const store = createGameStore({ shopStorage: storage, shopProvider: createDevShopProvider() });
     await store.getState().purchaseRemoveAds();
     const state = store.getState();
     expect(state.adsRemoved).toBe(true);
-    expect(state.shop.purchasing).toBeNull();
     expect(storage.load()?.adsRemoved).toBe(true);
   });
 
-  test('cancelamento (provider false) não marca adsRemoved nem persiste', async () => {
+  test('restorePurchases restaura compras e a remoção através do store', async () => {
     const storage = createMemoryShopStorage();
     const store = createGameStore({
       shopStorage: storage,
-      shopProvider: { ...createDevShopProvider(), purchase: async () => false },
-    });
-    await store.getState().purchaseRemoveAds();
-    const state = store.getState();
-    expect(state.adsRemoved).toBe(false);
-    expect(state.shop.purchasing).toBeNull();
-    expect(storage.load()).toBeNull(); // nada persistido
-  });
-
-  test('falha do provider marca erro e não marca adsRemoved', async () => {
-    const store = createGameStore({
       shopProvider: {
         ...createDevShopProvider(),
-        purchase: async () => {
-          throw new Error('loja fora do ar');
-        },
+        restore: async () => ['combo_forge_skin_royal'],
+        hasEntitlement: async (entitlementId) => entitlementId === REMOVE_ADS_ENTITLEMENT_ID,
       },
     });
-    await store.getState().purchaseRemoveAds();
+    await store.getState().restorePurchases();
     const state = store.getState();
-    expect(state.adsRemoved).toBe(false);
-    expect(state.shop.error).toBe('loja fora do ar');
-    expect(state.shop.purchasing).toBeNull();
+    expect(state.shop.owned.owned).toContain('skin-royal');
+    expect(state.adsRemoved).toBe(true); // entitlement reentregue pelo restore
+    expect(storage.load()?.adsRemoved).toBe(true);
   });
 
-  test('já comprado: purchaseRemoveAds não chama o provider de novo', async () => {
-    const provider = createDevShopProvider();
-    const spy = jest.spyOn(provider, 'purchase');
-    const store = createGameStore({ shopProvider: provider });
-    await store.getState().purchaseRemoveAds();
-    await store.getState().purchaseRemoveAds();
-    expect(spy).toHaveBeenCalledTimes(1);
+  test('syncRemoveAdsEntitlement sincroniza através do store', async () => {
+    const storage = createMemoryShopStorage();
+    const store = createGameStore({
+      shopStorage: storage,
+      shopProvider: {
+        ...createDevShopProvider(),
+        hasEntitlement: async (entitlementId) => entitlementId === REMOVE_ADS_ENTITLEMENT_ID,
+      },
+    });
+    await store.getState().syncRemoveAdsEntitlement();
+    expect(store.getState().adsRemoved).toBe(true);
+    expect(storage.load()?.adsRemoved).toBe(true);
   });
 
   test('adsRemoved sobrevive à recriação do store (persistido no boot)', async () => {
     const storage = createMemoryShopStorage();
-    const first = createGameStore({
-      shopStorage: storage,
-      shopProvider: createDevShopProvider(),
-    });
+    const first = createGameStore({ shopStorage: storage, shopProvider: createDevShopProvider() });
     await first.getState().purchaseRemoveAds();
-    // Novo store com o mesmo storage simula o restart do app.
-    const second = createGameStore({
-      shopStorage: storage,
-      shopProvider: createDevShopProvider(),
-    });
-    expect(second.getState().adsRemoved).toBe(true);
-  });
-});
-
-describe('restore da remoção de anúncios (ticket 03)', () => {
-  test('restorePurchases marca adsRemoved quando a entitlement remove_ads vem do restore', async () => {
-    const storage = createMemoryShopStorage();
-    const store = createGameStore({
-      shopStorage: storage,
-      shopProvider: {
-        ...createDevShopProvider(),
-        restore: async () => [],
-        hasEntitlement: async (entitlementId) => entitlementId === REMOVE_ADS_ENTITLEMENT_ID,
-      },
-    });
-    expect(store.getState().adsRemoved).toBe(false);
-    await store.getState().restorePurchases();
-    const state = store.getState();
-    expect(state.adsRemoved).toBe(true);
-    expect(state.shop.restoring).toBe(false);
-    expect(storage.load()?.adsRemoved).toBe(true);
-  });
-
-  test('restorePurchases sem a entitlement não marca adsRemoved', async () => {
-    const storage = createMemoryShopStorage();
-    const store = createGameStore({
-      shopStorage: storage,
-      shopProvider: {
-        ...createDevShopProvider(),
-        restore: async () => [],
-        hasEntitlement: async () => false,
-      },
-    });
-    await store.getState().restorePurchases();
-    const state = store.getState();
-    expect(state.adsRemoved).toBe(false);
-    expect(state.shop.restoring).toBe(false);
-    expect(storage.load()?.adsRemoved ?? false).toBe(false); // sem marcação
-  });
-
-  test('restore sem a entitlement não regride uma remoção já comprada', async () => {
-    const storage = createMemoryShopStorage({
-      ...createInitialShopState(),
-      adsRemoved: true,
-    });
-    const store = createGameStore({
-      shopStorage: storage,
-      shopProvider: { ...createDevShopProvider(), hasEntitlement: async () => false },
-    });
-    expect(store.getState().adsRemoved).toBe(true);
-    await store.getState().restorePurchases();
-    const state = store.getState();
-    expect(state.adsRemoved).toBe(true);
-    expect(storage.load()?.adsRemoved).toBe(true);
-  });
-
-  test('syncRemoveAdsEntitlement marca e persiste quando a entitlement está ativa (launch)', async () => {
-    const storage = createMemoryShopStorage();
-    const store = createGameStore({
-      shopStorage: storage,
-      shopProvider: {
-        ...createDevShopProvider(),
-        hasEntitlement: async (entitlementId) => entitlementId === REMOVE_ADS_ENTITLEMENT_ID,
-      },
-    });
-    await store.getState().syncRemoveAdsEntitlement();
-    const state = store.getState();
-    expect(state.adsRemoved).toBe(true);
-    expect(storage.load()?.adsRemoved).toBe(true);
-  });
-
-  test('syncRemoveAdsEntitlement sem a entitlement não altera nada', async () => {
-    const store = createGameStore({
-      shopProvider: { ...createDevShopProvider(), hasEntitlement: async () => false },
-    });
-    await store.getState().syncRemoveAdsEntitlement();
-    expect(store.getState().adsRemoved).toBe(false);
-  });
-
-  test('syncRemoveAdsEntitlement não regride quando já removido', async () => {
-    const storage = createMemoryShopStorage({
-      ...createInitialShopState(),
-      adsRemoved: true,
-    });
-    const store = createGameStore({
-      shopStorage: storage,
-      shopProvider: { ...createDevShopProvider(), hasEntitlement: async () => false },
-    });
-    await store.getState().syncRemoveAdsEntitlement();
-    expect(store.getState().adsRemoved).toBe(true);
-    expect(storage.load()?.adsRemoved).toBe(true);
-  });
-
-  test('adsRemoved marcado pelo restore sobrevive à recriação do store', async () => {
-    const storage = createMemoryShopStorage();
-    const first = createGameStore({
-      shopStorage: storage,
-      shopProvider: {
-        ...createDevShopProvider(),
-        hasEntitlement: async (entitlementId) => entitlementId === REMOVE_ADS_ENTITLEMENT_ID,
-      },
-    });
-    await first.getState().restorePurchases();
     // Novo store com o mesmo storage simula o restart do app.
     const second = createGameStore({ shopStorage: storage, shopProvider: createDevShopProvider() });
     expect(second.getState().adsRemoved).toBe(true);

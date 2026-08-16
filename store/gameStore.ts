@@ -7,9 +7,10 @@
  * mesmo criou no startRun, (c) persiste o histórico DDA ao fim de cada
  * Rodada, (d) acumula estatísticas de perfil e reivindica desbloqueios de
  * meta-progressão ao fim de cada Run (funções puras de progression.ts),
- * persistindo via port injetado (memória nos testes; SQLite no app) e (e)
- * delega a orquestração de IO do Desafio Diário ao fluxo (store/dailyFlow.ts),
- * aplicando o patch que ele devolve.
+ * persistindo via port injetado (memória nos testes; SQLite no app), (e)
+ * delega a orquestração de IO do Desafio Diário ao fluxo (store/dailyFlow.ts)
+ * e (f) a orquestração de IO da Loja ao fluxo (store/shopFlow.ts), aplicando
+ * as fatias novas que eles devolvem.
  * Tudo o que a UI precisa ler vem de funções puras do motor.
  */
 
@@ -86,23 +87,23 @@ import {
 } from '../engine';
 
 import {
-  COSMETIC_CATALOG,
-  cosmeticItemById,
   createDevShopProvider,
-  createInitialShopState,
   createMemoryShopStorage,
-  equipItem as engineEquipItem,
-  isOwned,
-  mergeOwned,
   normalizeShopState,
   PersistedShop,
-  purchaseItem as enginePurchaseItem,
-  REMOVE_ADS_ENTITLEMENT_ID,
-  REMOVE_ADS_PRODUCT_ID,
-  ShopOffering,
   ShopProvider,
   ShopStorage,
 } from '../engine';
+
+import {
+  equipCosmetic as equipCosmeticFlow,
+  runShopCommand,
+  ShopFlowDeps,
+  ShopFlowState,
+  ShopState,
+} from './shopFlow';
+
+export type { ShopState } from './shopFlow';
 
 export type Screen = 'start' | 'game' | 'profile' | 'collection' | 'daily' | 'shop';
 
@@ -111,20 +112,6 @@ export type RunMode = 'normal' | 'daily';
 
 /** Máximo de cartas selecionáveis (tamanho máximo de uma Jogada). */
 export const MAX_SELECTION = 5;
-
-export interface ShopState {
-  /** Itens comprados + equipados (persistido entre sessões). */
-  readonly owned: PersistedShop;
-  /** Ofertas (preços) carregadas do provider; vazio até loadShop. */
-  readonly offerings: readonly ShopOffering[];
-  /** Carga das ofertas. */
-  readonly status: 'idle' | 'loading' | 'ready' | 'error';
-  readonly error: string | null;
-  /** Item com compra em andamento (id) ou null. */
-  readonly purchasing: string | null;
-  /** Restauração de compras em andamento. */
-  readonly restoring: boolean;
-}
 
 export interface GameState {
   readonly screen: Screen;
@@ -416,134 +403,36 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       void get().loadShop();
     },
 
+    // As ações da Loja delegam para o fluxo (store/shopFlow.ts): o store
+    // aplica a fatia nova que o comando devolve — mesma relação do Desafio
+    // Diário com o dailyFlow. Nenhuma regra de compra vive aqui.
     loadShop: async () => {
-      const { shop, shopProvider } = get();
-      set({ shop: { ...shop, status: 'loading', error: null } });
-      try {
-        const offerings = await shopProvider.loadOfferings();
-        set({ shop: { ...get().shop, offerings, status: 'ready' } });
-      } catch (error) {
-        set({
-          shop: {
-            ...get().shop,
-            status: 'error',
-            error: error instanceof Error ? error.message : String(error),
-          },
-        });
-      }
+      set(await runShopCommand(shopFlowSlice(get()), shopFlowDeps(get()), { type: 'load' }));
     },
 
     purchaseCosmetic: async (itemId) => {
-      const { shop, shopProvider, shopStorage } = get();
-      if (shop.purchasing !== null || isOwned(shop.owned, itemId)) return;
-      set({ shop: { ...shop, purchasing: itemId, error: null } });
-      try {
-        const productId = requireCatalogProductId(itemId);
-        const purchased = await shopProvider.purchase(productId);
-        if (purchased) {
-          // A skin comprada é equipada na hora (aplicada ao Baralho nas
-          // próximas Runs — ticket 14); VFX de combo idem.
-          let owned = enginePurchaseItem(get().shop.owned, itemId);
-          owned = engineEquipItem(owned, itemId);
-          shopStorage.save(owned);
-          set({ shop: { ...get().shop, owned, purchasing: null } });
-        } else {
-          set({ shop: { ...get().shop, purchasing: null } });
-        }
-      } catch (error) {
-        set({
-          shop: {
-            ...get().shop,
-            purchasing: null,
-            error: error instanceof Error ? error.message : String(error),
-          },
-        });
-      }
+      set(
+        await runShopCommand(shopFlowSlice(get()), shopFlowDeps(get()), {
+          type: 'purchaseCosmetic',
+          itemId,
+        }),
+      );
     },
 
     equipCosmetic: (itemId) => {
-      const owned = engineEquipItem(get().shop.owned, itemId);
-      if (owned === get().shop.owned) return; // não comprado ou inválido
-      get().shopStorage.save(owned);
-      set({ shop: { ...get().shop, owned } });
+      set(equipCosmeticFlow(shopFlowSlice(get()), shopFlowDeps(get()), itemId));
     },
 
     purchaseRemoveAds: async () => {
-      const { shop, shopProvider, shopStorage } = get();
-      // Uma compra por vez (mesmo busy do catálogo) e não recompra.
-      if (shop.purchasing !== null || get().adsRemoved) return;
-      set({ shop: { ...shop, purchasing: REMOVE_ADS_PRODUCT_ID, error: null } });
-      try {
-        const purchased = await shopProvider.purchase(REMOVE_ADS_PRODUCT_ID);
-        if (purchased) {
-          // Marca a remoção no estado persistido (mesmo blob da loja) e no
-          // estado do store — o banner some na hora (ADR 0004).
-          const owned = { ...get().shop.owned, adsRemoved: true };
-          shopStorage.save(owned);
-          set({ shop: { ...get().shop, owned, purchasing: null }, adsRemoved: true });
-        } else {
-          // Cancelamento pelo jogador: sem marcar nada.
-          set({ shop: { ...get().shop, purchasing: null } });
-        }
-      } catch (error) {
-        set({
-          shop: {
-            ...get().shop,
-            purchasing: null,
-            error: error instanceof Error ? error.message : String(error),
-          },
-        });
-      }
+      set(await runShopCommand(shopFlowSlice(get()), shopFlowDeps(get()), { type: 'purchaseRemoveAds' }));
     },
 
     syncRemoveAdsEntitlement: async () => {
-      const { shop, shopProvider, shopStorage } = get();
-      // Já removido: nada a sincronizar (e nunca regride).
-      if (get().adsRemoved) return;
-      try {
-        const active = await shopProvider.hasEntitlement(REMOVE_ADS_ENTITLEMENT_ID);
-        if (active) {
-          const owned = { ...get().shop.owned, adsRemoved: true };
-          shopStorage.save(owned);
-          set({ shop: { ...get().shop, owned }, adsRemoved: true });
-        }
-      } catch {
-        // Provider indisponível/sem rede no launch: nada muda agora; o botão
-        // "Restaurar compras" da Loja e o próximo launch tentam de novo.
-      }
+      set(await runShopCommand(shopFlowSlice(get()), shopFlowDeps(get()), { type: 'syncEntitlement' }));
     },
 
     restorePurchases: async () => {
-      const { shop, shopProvider, shopStorage } = get();
-      if (shop.restoring) return;
-      set({ shop: { ...shop, restoring: true, error: null } });
-      try {
-        const productIds = await shopProvider.restore();
-        const catalogId = (productId: string) =>
-          COSMETIC_CATALOG.find((item) => item.productId === productId)?.id;
-        const itemIds = productIds
-          .map(catalogId)
-          .filter((id): id is string => id !== undefined);
-        let owned = mergeOwned(get().shop.owned, itemIds);
-        // Remoção de anúncios (ticket 03): a entitlement remove_ads reentregue
-        // pelo restore também marca adsRemoved — sem a entitlement, nada muda
-        // (o restore nunca regride uma compra já feita).
-        const removeAdsActive = await shopProvider.hasEntitlement(REMOVE_ADS_ENTITLEMENT_ID);
-        if (removeAdsActive) owned = { ...owned, adsRemoved: true };
-        shopStorage.save(owned);
-        set({
-          shop: { ...get().shop, owned, restoring: false },
-          adsRemoved: owned.adsRemoved,
-        });
-      } catch (error) {
-        set({
-          shop: {
-            ...get().shop,
-            restoring: false,
-            error: error instanceof Error ? error.message : String(error),
-          },
-        });
-      }
+      set(await runShopCommand(shopFlowSlice(get()), shopFlowDeps(get()), { type: 'restore' }));
     },
 
     chooseForger: (forger) => {
@@ -779,13 +668,14 @@ function advanceBreakReminder(
   };
 }
 
-/** productId do catálogo para o item (defesa da UI); lança se inexistente. */
-function requireCatalogProductId(itemId: string): string {
-  const item = cosmeticItemById(itemId);
-  if (item === undefined) {
-    throw new Error(`Item cosmético inexistente: ${itemId}.`);
-  }
-  return item.productId;
+/** Ports da Loja a partir do estado atual do store (mesmo padrão do dailyFlow). */
+function shopFlowDeps(state: GameState): ShopFlowDeps {
+  return { storage: state.shopStorage, provider: state.shopProvider };
+}
+
+/** Fatia da Loja (estado + remoção de anúncios) a partir do estado atual. */
+function shopFlowSlice(state: GameState): ShopFlowState {
+  return { shop: state.shop, adsRemoved: state.adsRemoved };
 }
 
 /** Store singleton usado pela UI (memória; o app injeta SQLite no boot). */
