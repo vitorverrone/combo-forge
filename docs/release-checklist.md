@@ -285,8 +285,12 @@ caem no fallback de dev quando a variável não existe, então:
 
 - [ ] `eas build --profile development --platform android|ios` — dev client
       (`expo-dev-client` já instalado; deep-link via scheme `comboforge`).
-- [ ] `eas build --profile preview --platform android|ios` — build interno para
-      testadores (com as chaves reais de `preview`).
+- [x] `eas build --profile preview --platform android` (2026-08-16) — build
+      interno para testadores. O 1º build falhou (`EAS_BUILD_UNKNOWN_GRADLE_ERROR`
+      — metadata Kotlin 2.3.0 do play-services-ads vs compilador 2.1.x); fix via
+      `plugins/withKotlinVersionPin.js` (commit `8483d25`). Build OK depois; as
+      4 variáveis reais confirmadas no bundle do APK baixado (ad unit AdMob,
+      Supabase URL, RevenueCat Test Store key).
 - [ ] `eas build --profile production --platform android|ios` — build de loja
       (`distribution: store`, `autoIncrement` no número de build).
 - [ ] Subir o development build num device físico e rodar o fluxo completo:
