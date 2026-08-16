@@ -12,7 +12,13 @@
     },
     "android": {
       "predictiveBackGestureEnabled": false,
-      "package": "com.comboforge.app"
+      "package": "com.comboforge.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
     },
     "plugins": [
       "expo-sqlite",
@@ -32,6 +38,12 @@
           }
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "e1c84c4c-b160-4fa8-ae87-4054fd87299c"
+      }
+    },
+    "owner": "vitorverrones-team"
   }
 }
