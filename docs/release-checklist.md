@@ -10,8 +10,10 @@ desenvolvimento — nada disso é opcional para um release real.
 | Item | Onde está hoje | Próximo passo |
 |---|---|---|
 | Supabase | ✅ Projeto criado, migrations aplicadas, `.env` real (URL + anon) e Desafio Diário validado de ponta a ponta no app (seed real em release local e no preview do EAS) | `submit_daily_score`/`get_weekly_leaderboard` pendem de um fim de Run (opcional: `verify:backend` com Docker) |
-| RevenueCat | ✅ App + 4 produtos no dashboard, chave **Test Store** no `.env` e no EAS (preços simulados); compra/persistência validadas | Chave pública real (`goog_...`) + 4 IAPs nas lojas + vínculo + testar Restore |
-| AdMob **Android** | ✅ App + unidade rewarded + App ID real no `app.json`, env no `.env` e no EAS; request real validado (NO_FILL esperado até aprovar) | Vincular à loja + readiness review → revalidar recompensa |
+| RevenueCat | ✅ App + 4 cosméticos no dashboard, chave **Test Store** no `.env` e no EAS (preços simulados); compra/persistência validadas | Criar o produto `combo_forge_remove_ads` (Remove Ads) no dashboard + chave pública real (`goog_...`) + 5 IAPs nas lojas + vínculo + testar Restore real |
+| AdMob **Android** | ✅ App + unidade rewarded + App ID real no `app.json`, env no `.env` e no EAS; request real validado (NO_FILL esperado até aprovar) | Vincular à loja + readiness review → revalidar recompensa; criar ad unit de **banner** + env `EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID` |
+| Banner em todas as telas (ticket banner-01) | ✅ Implementado e validado no emulador (dev build: `Test Ad` no rodapé de todas as telas, reserva de 50dp, sem sobreposição) | Ad unit de banner no AdMob + env (seção 3) |
+| Remove Ads (tickets 02/03) | ✅ Implementado e validado no emulador (provider dev: compra esconde o banner na hora e persiste; restore não regride; sync no launch) | Produto `combo_forge_remove_ads` no RevenueCat + IAPs nas lojas (seção 2) |
 | AdMob **iOS** | ⏳ Pendente (Test App ID, sem ad unit) | Quando publicar na App Store |
 | IAPs reais nas lojas | ❌ Não criados (só no RevenueCat/Test Store) | Play Console / App Store Connect (seção 2) |
 | EAS | ✅ Projeto vinculado (`projectId`), variáveis em preview+production, build preview OK e validado no emulador | `eas build development` e `production` |
@@ -78,7 +80,7 @@ indisponível no app** (`createUnavailableDailyBackend`).
 ### Verificar
 
 - [x] `npm test` — trava o contrato (espelho TS vs. SQL) sem precisar de rede
-      (verde em 2026-08-16, 303 testes).
+      (verde em 2026-08-16, 329 testes).
 - [ ] `npm run verify:backend` — sobe Postgres 16 em Docker, aplica migrations e
       valida seed/submissão/leaderboard/caminho `anon` de ponta a ponta.
       (Opcional: o seed já foi validado pelo app; este cobre submit/leaderboard
@@ -89,11 +91,13 @@ indisponível no app** (`createUnavailableDailyBackend`).
 
 ---
 
-## 2. RevenueCat (loja cosmética — ticket 14)
+## 2. RevenueCat (loja — cosméticos + remoção de anúncios — tickets 14, 02/03)
 
-A loja só vende cosméticos (4 itens do `COSMETIC_CATALOG`). **Sem a chave, o
-app usa o provider dev (compra sempre simulada)** — navegável em dev, inútil
-para monetizar de verdade.
+A loja vende cosméticos (4 itens do `COSMETIC_CATALOG` — 100% visuais) e a
+remoção de anúncios (IAP não-consumível `combo_forge_remove_ads`, **fora** do
+catálogo por design — não é cosmético, ADR 0004). **Sem a chave, o app usa o
+provider dev (compra sempre simulada)** — navegável em dev, inútil para
+monetizar de verdade.
 
 ### Criar o app no RevenueCat
 
@@ -111,15 +115,24 @@ para monetizar de verdade.
   | `combo_forge_skin_royal` | Royal Deck | $1.99 |
   | `combo_forge_vfx_golden_combo` | Golden Combo | $0.99 |
 
+- [ ] Produto não-consumível **`combo_forge_remove_ads`** (Remove Ads, US$2,99)
+      criado no dashboard do RevenueCat — **ação humana pendente**: os tickets
+      02/03 foram validados no emulador com o provider dev (compra simulada).
+      Criar com o productId exato + package no offering de Test Store para
+      validar o fluxo real (preço do provider + compra/restore) com a chave
+      Test Store.
+
 - [ ] Vincular os produtos de loja (App Store Connect / Play Console) a cada
       produto do RevenueCat (pagina de produto → Store Integration).
 
 ### Criar os IAPs nas lojas (pré-requisito do vínculo)
 
-- [ ] **App Store Connect:** criar 4 In-App Purchases consumíveis com os mesmos
-      identificadores, preço e textos localizados; aceitar o contrato pago.
-- [ ] **Play Console:** criar 4 produtos no Google Play Billing (produtos em
-      app) com os mesmos IDs, preço e descrições; preencher a declaração de
+- [ ] **App Store Connect:** criar os 5 IAPs (4 cosméticos consumíveis + o
+      não-consumível `combo_forge_remove_ads`) com os mesmos identificadores,
+      preço e textos localizados; aceitar o contrato pago.
+- [ ] **Play Console:** criar os 5 produtos no Google Play Billing (produtos em
+      app) com os mesmos IDs, preço e descrições (4 consumíveis + 1
+      não-consumível `combo_forge_remove_ads`); preencher a declaração de
       produtos em app.
 
 ### Preencher o `.env`
@@ -140,7 +153,14 @@ para monetizar de verdade.
       para preços reais, chave pública `goog_...` + Play Console).
 - [x] Comprar um item → some do catálogo e aparece em "owned" (persistido em
       SQLite — sobrevive a restart do app).
-- [ ] Testar `Restore` (restaurar compras) → itens voltam ao estado owned.
+- [x] Comprar "Remove Ads" → banner some na hora e permanece oculto após
+      restart (validado no emulador com provider dev, tickets 02/03).
+- [x] `Restore` implementado e validado em dev (ticket 03): sem entitlement não
+      altera; com a compra feita não regride; sync automático no launch
+      (emulador, provider dev).
+- [ ] Testar `Restore` **real** (Test Store key): cosméticos voltam ao "owned"
+      + a entitlement `remove_ads` reentregue → banner oculto (depende de
+      criar o produto no dashboard — acima).
 
 #### Validação no emulador (2026-08-15, dev build local)
 
@@ -152,7 +172,8 @@ para monetizar de verdade.
   - `store/gameStore.ts`: `purchaseCosmetic`/`equipCosmetic`/`restorePurchases`
     usavam o provider/storage do closure (dev/memória) em vez dos injetados via
     `get()` — a compra era simulada pelo provider dev e nada persistia no
-    SQLite.
+    SQLite. (Esses fluxos hoje vivem em `store/shopFlow.ts` — refactor de
+    2026-08-16; o fix permanece.)
   - `services/supabase.ts`: URL do Supabase inválida derrubava o bootstrap
     inteiro (loja ficava presa no provider dev silenciosamente) em vez de
     degradar para "Desafio Diário indisponível".
@@ -192,6 +213,10 @@ O config plugin hoje usa os **Test App IDs do Google**:
       `com.comboforge.app`; fluxo "unpublished" — app ainda não publicado).
       O app iOS fica pendente até publicar na App Store.
 - [x] Criar a unidade de anúncio **Rewarded** do Android (2026-08-16).
+- [ ] Criar a unidade de anúncio **Banner** do Android (separada da rewarded;
+      mesmo app) — **ação humana pendente** (ticket banner-01). Sem ela o
+      banner em produção fica oculto (degrade sem quebrar: `shouldShowBanner`
+      sem ad unit = oculto); em dev o `TestIds.ADAPTIVE_BANNER` sempre carrega.
 - [x] Substituir o **App ID do Android** no `app.json` (validado com
       `npx expo config --type public`):
   ```json
@@ -208,6 +233,8 @@ O config plugin hoje usa os **Test App IDs do Google**:
 - [x] `EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID` preenchido no `.env`
       (2026-08-16) = `ca-app-pub-7753200620000515/2212947942`.
       O `_IOS` fica para a publicação na App Store.
+- [ ] `EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID` preenchido no `.env`
+      (quando criar a ad unit de banner — seção acima).
 
 ### Verificar
 
@@ -221,6 +248,10 @@ O config plugin hoje usa os **Test App IDs do Google**:
       for aprovado (fluxo "unpublished"/app readiness review). Degradação
       graciosa validada: sem anúncio o fluxo resolve `false`, a UI volta
       intacta e não crasha (tentativas seguem 1/2, botão reabilitado).
+- [x] **Banner em dev (2026-08-16, emulador):** `Test Ad` visível no rodapé de
+      todas as telas (início, loja, Desafio Diário), reserva de 50dp, sem
+      sobreposição (ticket banner-01); some na hora após comprar Remove Ads e
+      permanece oculto após restart (tickets 02/03).
 - [ ] **Após aprovação do app no AdMob** (vincular à loja + readiness review):
       assistir ao anúncio até o fim libera a tentativa extra. A lógica de
       recompensa/desistência já é coberta por `store/dailyFlow.test.ts`;
@@ -240,11 +271,14 @@ EXPO_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon public key>
 EXPO_PUBLIC_REVENUECAT_API_KEY=<revenuecat public sdk key>
 EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID=<admob rewarded ad unit id (android)>
+# EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID=<admob banner ad unit id (android)>  # quando criar a ad unit (seção 3)
 # EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS=<...>  # quando publicar iOS
 ```
 
 - [x] Nenhum valor de `.env` mantém `<...>` placeholder (verificado 2026-08-16)
-      e todas as variáveis existem (Supabase, RevenueCat e AdMob Android).
+      e todas as variáveis existem (Supabase, RevenueCat e AdMob Android
+      rewarded). A variável de banner (`EXPO_PUBLIC_ADMOB_BANNER_..._ANDROID`)
+      ainda não existe — esperado, depende da ad unit de banner (seção 3).
 - [x] `.env` fora do git (confirmado por `git check-ignore .env`).
 
 ---
@@ -279,6 +313,7 @@ caem no fallback de dev quando a variável não existe, então:
   eas env:set --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <anon key> --environment preview --visibility plaintext
   eas env:set --name EXPO_PUBLIC_REVENUECAT_API_KEY --value <sdk key> --environment preview --visibility plaintext
   eas env:set --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID --value <ad unit id android> --environment preview --visibility plaintext
+  eas env:set --name EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID --value <banner ad unit id android> --environment preview --visibility plaintext   # quando criar a ad unit de banner
   eas env:set --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS --value <ad unit id ios> --environment preview --visibility plaintext   # quando publicar iOS
   ```
   (São chaves públicas por design — embutidas no bundle — por isso
@@ -300,14 +335,15 @@ caem no fallback de dev quando a variável não existe, então:
       1. Run normal (motor + DDA + Forja + derrota/restart).
       2. Desafio Diário: buscar seed → jogar → submeter → ver ranking (posição
          própria + top 10).
-      3. Loja: ver preços reais do RevenueCat, comprar e restaurar.
+      3. Loja: ver preços reais do RevenueCat, comprar e restaurar (cosméticos
+         + Remove Ads).
       4. Anúncio: tentativa extra via anúncio recompensado concluído.
 - [x] Sem device físico disponível: o build **preview** (assinatura do EAS) foi
       validado no emulador Android em 2026-08-16 com as variáveis injetadas
       pela nuvem: Desafio Diário com seed real (Supabase do EAS), persistência
       de tentativas e botão WATCH AD disparando request real (NO_FILL até o
       AdMob aprovar o app).
-- [x] `npm run typecheck` limpo e `npm test` verde (16 suites, 303 testes) —
+- [x] `npm run typecheck` limpo e `npm test` verde (18 suites, 329 testes) —
       verificado 2026-08-16.
 
 ---
@@ -327,9 +363,10 @@ caem no fallback de dev quando a variável não existe, então:
         release sem crash. (Só o Android; iOS fica para a publicação.)
 - [ ] **Assets de loja:** ícone, telas (portrait), descrição, privacy policy URL
       (obrigatória para apps com anúncios/IAP).
-- [ ] **Testes em release build** (não dev): anúncio real, IAP real em sandbox
-      (iOS: Sandbox tester; Android: licença de teste), restore, fluxo do
-      Desafio Diário com o Supabase de produção.
+- [ ] **Testes em release build** (não dev): anúncio real (rewarded + banner),
+      IAP real em sandbox (iOS: Sandbox tester; Android: licença de teste),
+      restore (incluindo a reentrega do `remove_ads`), fluxo do Desafio Diário
+      com o Supabase de produção.
 
 ---
 
@@ -340,5 +377,8 @@ caem no fallback de dev quando a variável não existe, então:
 | Supabase | `createUnavailableDailyBackend` (Desafio indisponível) | `services/supabase.ts` |
 | RevenueCat | `createDevShopProvider` (compra simulada) | `services/revenuecat.ts` |
 | AdMob | `createDevAdProvider` (anúncio sempre ok) | `services/ads.ts` |
+| Banner (visibilidade) | oculto sem ad unit ou com remoção comprada (`shouldShowBanner`) | `engine/adProvider.ts`, `components/AdBanner.tsx` |
+| Loja (orquestração) | — (fluxo com ports injetados) | `store/shopFlow.ts` |
 | Produtos da loja | `COSMETIC_CATALOG` (productIds obrigatórios) | `engine/shop.ts` |
+| Remoção de anúncios | `REMOVE_ADS_PRODUCT_ID`/`REMOVE_ADS_ENTITLEMENT_ID` (fora do catálogo) | `engine/shop.ts` |
 | Contrato Supabase | — | `supabase/README.md`, `supabase/contract.ts` |
