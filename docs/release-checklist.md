@@ -9,10 +9,11 @@ desenvolvimento — nada disso é opcional para um release real.
 
 | Item | Onde está hoje | Consequência sem configurar |
 |---|---|---|
-| `.env` com placeholders (`<project-ref>`, `<anon public key>`, chaves vazias) | `.env` (não versionado) | Desafio Diário indisponível; loja e anúncio em modo dev |
-| `app.json` sem `ios.bundleIdentifier` / `android.package` | `app.json` | Não existe build assinável; AdMob/RevenueCat não têm app a vincular |
-| AdMob com **Test App IDs** do Google | `app.json` → plugin `react-native-google-mobile-ads` | Em release: crash nativo no start ou anúncio real não serve |
-| Produtos IAP não criados nas lojas | RevenueCat / App Store / Play Console | Compra real falha (provider dev só simula) |
+| Supabase: `.env` preenchido com URL/anon key reais (sem placeholders) | `.env` (não versionado) — verificado 2026-08-16 | Desafio Diário funciona se as migrations foram aplicadas (ainda a validar) |
+| RevenueCat: chave no `.env` é a **Test Store API key** | `.env` → `EXPO_PUBLIC_REVENUECAT_API_KEY` | Loja funciona com preços simulados; preço real e compra real exigem chave pública `goog_...` + IAPs nas lojas |
+| AdMob: **não configurado** (variável nem existe no `.env`; App IDs de teste no `app.json`) | `.env` / `app.json` → plugin `react-native-google-mobile-ads` | Em release: crash nativo no start ou anúncio real não serve |
+| Produtos IAP reais não criados nas lojas (só no RevenueCat/Test Store) | App Store Connect / Play Console | Compra real falha (Test Store só simula) |
+| Identificadores `com.comboforge.app` no `app.json` | `app.json` ✅ | — (falta só validar igualdade nas plataformas, seção 0) |
 
 ---
 
@@ -47,8 +48,8 @@ indisponível no app** (`createUnavailableDailyBackend`).
 
 ### Criar o projeto e aplicar as migrations
 
-- [ ] Criar projeto em https://supabase.com/dashboard (plano gratuito basta
-      para o MVP).
+- [x] Criar projeto em https://supabase.com/dashboard (plano gratuito basta
+      para o MVP) — projeto existe (URL real no `.env`, verificado 2026-08-16).
 - [ ] Aplicar as migrations na ordem, via SQL editor ou CLI:
       `supabase/migrations/0001_daily_challenge.sql` → `0002_daily_challenge_access.sql`.
       ```bash
@@ -61,13 +62,13 @@ indisponível no app** (`createUnavailableDailyBackend`).
 
 ### Preencher o `.env`
 
-- [ ] `SUPABASE_URL` = `https://<project-ref>.supabase.co`
-      (Dashboard → Settings → API → Project URL).
-- [ ] `SUPABASE_ANON_KEY` = chave `anon` pública (Dashboard → Settings → API →
-      Project API keys). É pública por design — embutida no bundle do app.
-- [ ] Espelhar no prefixo do cliente Expo (obrigatório para o bundle):
+- [x] `SUPABASE_URL` = URL real do projeto (verificado 2026-08-16, sem
+      placeholder).
+- [x] `SUPABASE_ANON_KEY` = chave `anon` pública preenchida (verificado
+      2026-08-16).
+- [x] Espelhado no prefixo do cliente Expo (obrigatório para o bundle):
       `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_ANON_KEY` com os
-      mesmos valores.
+      mesmos valores (verificado 2026-08-16).
 
 ### Verificar
 
@@ -93,10 +94,12 @@ para monetizar de verdade.
 
 ### Criar o app no RevenueCat
 
-- [ ] Criar o app em https://app.revenuecat.com usando o bundle identifier da
-      seção 0 (um app por plataforma: iOS e Android).
-- [ ] Criar os 4 produtos com **exatamente** os `productId` do catálogo
-      (`engine/shop.ts` — o provider filtra as ofertas por eles):
+- [x] App criado em https://app.revenuecat.com usando o bundle identifier da
+      seção 0 — configurado e validado em dev build (Test Store API key
+      funcionando, 2026-08-15/16).
+- [x] 4 produtos criados com **exatamente** os `productId` do catálogo
+      (`engine/shop.ts` — o provider filtra as ofertas por eles; 4 packages
+      cadastrados no offering de Test Store):
 
   | productId | Nome exibido | Preço de referência |
   |---|---|---|
@@ -118,9 +121,11 @@ para monetizar de verdade.
 
 ### Preencher o `.env`
 
-- [ ] `EXPO_PUBLIC_REVENUECAT_API_KEY` = chave pública do app
-      (RevenueCat → app → Settings → API Keys → Public SDK key). Pública por
-      design, embutida no bundle.
+- [x] `EXPO_PUBLIC_REVENUECAT_API_KEY` preenchida — por enquanto com a
+      **Test Store API key** (preços simulados). Para preços reais, trocar
+      pela chave pública do app (RevenueCat → app → Settings → API Keys →
+      Public SDK key, formato `goog_...`) + Play Console/App Store Connect
+      com produtos reais. Pública por design, embutida no bundle.
 
 ### Verificar
 
@@ -149,9 +154,11 @@ para monetizar de verdade.
     inteiro (loja ficava presa no provider dev silenciosamente) em vez de
     degradar para "Desafio Diário indisponível".
 - Nota de build local (não versionado): `android/local.properties` (sdk.dir com
-  barras normais) e pin `kotlin-gradle-plugin:2.2.20` no `android/build.gradle`
-  (o RN fixa Kotlin 2.1.20, que não lê o metadata 2.3.0 da play-services-ads
-  25.4.0). `expo prebuild` regenera ambos — reaplicar se o build quebrar.
+  barras normais). O pin do Kotlin agora vai pelo plugin `expo-build-properties`
+  no `app.json` (`kotlinVersion: 2.2.20` — o RN fixa Kotlin 2.1.20, que não lê
+  o metadata 2.3.0 da play-services-ads 25.4.0); mudança adicionada em
+  2026-08-16, ainda não commitada (working tree). `expo prebuild` regenera o
+  `local.properties` — reaplicar se o build quebrar.
 
 ---
 
@@ -186,6 +193,8 @@ O config plugin hoje usa os **Test App IDs do Google**:
 
 - [ ] `EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID` = ID da unidade rewarded
       (AdMob → sua app → Ad units → Ad unit ID).
+      ⚠️ **Variável ausente do `.env`** (verificado 2026-08-16) — AdMob ainda
+      não foi configurado em nenhuma etapa.
 
 ### Verificar
 
@@ -211,8 +220,9 @@ EXPO_PUBLIC_REVENUECAT_API_KEY=<revenuecat public sdk key>
 EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID=<admob rewarded ad unit id>
 ```
 
-- [ ] Nenhum valor de `.env` mantém `<...>` placeholder.
-- [ ] `.env` fora do git (`git status` limpo para ele).
+- [x] Nenhum valor de `.env` mantém `<...>` placeholder (verificado
+      2026-08-16); porém a variável do AdMob ainda **não existe** — seção 3.
+- [x] `.env` fora do git (confirmado por `git check-ignore .env`).
 
 ---
 
@@ -254,8 +264,8 @@ caem no fallback de dev quando a variável não existe, então:
          própria + top 10).
       3. Loja: ver preços reais do RevenueCat, comprar e restaurar.
       4. Anúncio: tentativa extra via anúncio recompensado concluído.
-- [ ] Confirmar `npm run typecheck` e `npm test` verdes (303 testes) antes de
-      qualquer build de release.
+- [x] `npm run typecheck` limpo e `npm test` verde (16 suites, 303 testes) —
+      verificado 2026-08-16.
 
 ---
 
