@@ -11,7 +11,7 @@ desenvolvimento — nada disso é opcional para um release real.
 |---|---|---|
 | Supabase: `.env` preenchido com URL/anon key reais (sem placeholders) | `.env` (não versionado) — verificado 2026-08-16 | Desafio Diário funciona se as migrations foram aplicadas (ainda a validar) |
 | RevenueCat: chave no `.env` é a **Test Store API key** | `.env` → `EXPO_PUBLIC_REVENUECAT_API_KEY` | Loja funciona com preços simulados; preço real e compra real exigem chave pública `goog_...` + IAPs nas lojas |
-| AdMob **Android** configurado (App ID + ad unit rewarded reais no `app.json`/`.env`); **iOS pendente** (Test App ID e sem ad unit) | `.env` / `app.json` → plugin `react-native-google-mobile-ads` | No Android: anúncio real serve. No iOS (quando publicar): trocar App ID + ad unit antes do release |
+| AdMob **Android** configurado (App ID + ad unit reais) mas **sem fill**: request real → `NO_FILL` até o app ser aprovado no AdMob (readiness review + link à loja); **iOS pendente** (Test App ID e sem ad unit) | `.env` / `app.json` → plugin `react-native-google-mobile-ads` | No Android: anúncio só serve após aprovação do app no AdMob. No iOS (quando publicar): trocar App ID + ad unit antes do release |
 | Produtos IAP reais não criados nas lojas (só no RevenueCat/Test Store) | App Store Connect / Play Console | Compra real falha (Test Store só simula) |
 | Identificadores `com.comboforge.app` no `app.json` | `app.json` ✅ | — (falta só validar igualdade nas plataformas, seção 0) |
 
@@ -205,11 +205,20 @@ O config plugin hoje usa os **Test App IDs do Google**:
 
 ### Verificar
 
-- [ ] Em dev (NODE_ENV ≠ production) o SDK usa o `TestIds.REWARDED` oficial —
-      não gasta impressão real. Comportamento esperado.
-- [ ] Em build de produção: assistir ao anúncio até o fim libera a 1 tentativa
-      extra do Desafio Diário; desistir/falhar não quebra o fluxo (o código
-      resolve `false` e a UI volta ao estado anterior).
+- [x] Em dev (NODE_ENV ≠ production) o SDK usa o `TestIds.REWARDED` oficial —
+      não gasta impressão real (por design do código; validado no dev build).
+- [x] **Release build (2026-08-16, emulador Android):** bundle embute o ad unit
+      real (`ca-app-pub-7753200620000515/2212947942`); app abre sem crash com
+      o App ID real; o botão WATCH AD aparece após usar a gratuita e dispara
+      um request real ao AdMob (emulador = test device automático). Resultado:
+      **`Ad failed to load: 3` (NO_FILL)** — esperado enquanto o app AdMob não
+      for aprovado (fluxo "unpublished"/app readiness review). Degradação
+      graciosa validada: sem anúncio o fluxo resolve `false`, a UI volta
+      intacta e não crasha (tentativas seguem 1/2, botão reabilitado).
+- [ ] **Após aprovação do app no AdMob** (vincular à loja + readiness review):
+      assistir ao anúncio até o fim libera a tentativa extra. A lógica de
+      recompensa/desistência já é coberta por `store/dailyFlow.test.ts`;
+      falta só validar com anúncio servindo.
 
 ---
 
