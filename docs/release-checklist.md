@@ -11,7 +11,7 @@ desenvolvimento — nada disso é opcional para um release real.
 |---|---|---|
 | Supabase: `.env` preenchido com URL/anon key reais (sem placeholders) | `.env` (não versionado) — verificado 2026-08-16 | Desafio Diário funciona se as migrations foram aplicadas (ainda a validar) |
 | RevenueCat: chave no `.env` é a **Test Store API key** | `.env` → `EXPO_PUBLIC_REVENUECAT_API_KEY` | Loja funciona com preços simulados; preço real e compra real exigem chave pública `goog_...` + IAPs nas lojas |
-| AdMob: **não configurado** (variável nem existe no `.env`; App IDs de teste no `app.json`) | `.env` / `app.json` → plugin `react-native-google-mobile-ads` | Em release: crash nativo no start ou anúncio real não serve |
+| AdMob **Android** configurado (App ID + ad unit rewarded reais no `app.json`/`.env`); **iOS pendente** (Test App ID e sem ad unit) | `.env` / `app.json` → plugin `react-native-google-mobile-ads` | No Android: anúncio real serve. No iOS (quando publicar): trocar App ID + ad unit antes do release |
 | Produtos IAP reais não criados nas lojas (só no RevenueCat/Test Store) | App Store Connect / Play Console | Compra real falha (Test Store só simula) |
 | Identificadores `com.comboforge.app` no `app.json` | `app.json` ✅ | — (falta só validar igualdade nas plataformas, seção 0) |
 
@@ -182,15 +182,16 @@ O config plugin hoje usa os **Test App IDs do Google**:
 - App nativo **crasha no start** sem um App ID válido da sua conta;
 - Com App ID de teste, o Ad Unit real **não serve anúncios** (só os de teste).
 
-- [ ] Criar o app no https://apps.admob.com com o bundle identifier da seção 0
-      (Android e iOS separadamente).
-- [ ] Criar uma unidade de anúncio **Rewarded** por plataforma.
-- [ ] Pegar o **App ID** de cada plataforma (AdMob → App settings) e substituir
-      no `app.json`:
+- [x] Criar o app **Android** em https://apps.admob.com (2026-08-16, package
+      `com.comboforge.app`; fluxo "unpublished" — app ainda não publicado).
+      O app iOS fica pendente até publicar na App Store.
+- [x] Criar a unidade de anúncio **Rewarded** do Android (2026-08-16).
+- [x] Substituir o **App ID do Android** no `app.json` (validado com
+      `npx expo config --type public`):
   ```json
   ["react-native-google-mobile-ads", {
-    "androidAppId": "ca-app-pub-XXXXXXXX~YYYYYYYYYY",
-    "iosAppId": "ca-app-pub-XXXXXXXX~ZZZZZZZZZZ"
+    "androidAppId": "ca-app-pub-7753200620000515~2190419729",
+    "iosAppId": "ca-app-pub-3940256099942544~1458002511"  // ← trocar quando publicar iOS
   }]
   ```
 - [ ] (Opcional mas recomendado) adicionar o `ios`/`android` do AdMob aos
@@ -198,11 +199,9 @@ O config plugin hoje usa os **Test App IDs do Google**:
 
 ### Preencher o `.env`
 
-- [ ] `EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID` = ID da unidade rewarded
-      do Android (AdMob → sua app → Ad units → Ad unit ID).
-      ⚠️ **Variável ausente do `.env`** (verificado 2026-08-16) — AdMob ainda
-      não foi configurado. `scripts/setup-admob.sh` (wizard) preenche isto e o
-      App ID no `app.json`; o `_IOS` fica para a publicação na App Store.
+- [x] `EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID` preenchido no `.env`
+      (2026-08-16) = `ca-app-pub-7753200620000515/2212947942`.
+      O `_IOS` fica para a publicação na App Store.
 
 ### Verificar
 
