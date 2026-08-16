@@ -37,7 +37,8 @@
             "kotlinVersion": "2.2.20"
           }
         }
-      ]
+      ],
+      "./plugins/withKotlinVersionPin"
     ],
     "extra": {
       "eas": {
