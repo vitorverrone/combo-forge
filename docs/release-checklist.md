@@ -167,6 +167,13 @@ para monetizar de verdade.
 O único anúncio é o recompensado opt-in da tentativa extra do Desafio Diário.
 **Sem configurar, o provider dev responde (anúncio sempre concluído)**.
 
+> **Configuração guiada:** `scripts/setup-admob.sh` é um wizard que abre o
+> dashboard, captura o App ID + ad unit rewarded do **Android** e grava no
+> `app.json` + `.env` automaticamente. Os passos abaixo são o manual
+> equivalente. Ad unit IDs são por plataforma (`EXPO_PUBLIC_..._ANDROID` /
+> `_IOS`), selecionados via `Platform.OS` em `services/ads.ts`; o iOS fica
+> para quando o app for publicado na App Store.
+
 ### ⚠️ Trocar os Test App IDs do `app.json` (crítico para release)
 
 O config plugin hoje usa os **Test App IDs do Google**:
@@ -191,10 +198,11 @@ O config plugin hoje usa os **Test App IDs do Google**:
 
 ### Preencher o `.env`
 
-- [ ] `EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID` = ID da unidade rewarded
-      (AdMob → sua app → Ad units → Ad unit ID).
+- [ ] `EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID` = ID da unidade rewarded
+      do Android (AdMob → sua app → Ad units → Ad unit ID).
       ⚠️ **Variável ausente do `.env`** (verificado 2026-08-16) — AdMob ainda
-      não foi configurado em nenhuma etapa.
+      não foi configurado. `scripts/setup-admob.sh` (wizard) preenche isto e o
+      App ID no `app.json`; o `_IOS` fica para a publicação na App Store.
 
 ### Verificar
 
@@ -217,7 +225,8 @@ SUPABASE_ANON_KEY=<anon public key>
 EXPO_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon public key>
 EXPO_PUBLIC_REVENUECAT_API_KEY=<revenuecat public sdk key>
-EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID=<admob rewarded ad unit id>
+EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID=<admob rewarded ad unit id (android)>
+# EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS=<...>  # quando publicar iOS
 ```
 
 - [x] Nenhum valor de `.env` mantém `<...>` placeholder (verificado
@@ -244,7 +253,8 @@ caem no fallback de dev quando a variável não existe, então:
   eas env:set --name EXPO_PUBLIC_SUPABASE_URL --value <url> --environment preview --visibility plaintext
   eas env:set --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <anon key> --environment preview --visibility plaintext
   eas env:set --name EXPO_PUBLIC_REVENUECAT_API_KEY --value <sdk key> --environment preview --visibility plaintext
-  eas env:set --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID --value <ad unit id> --environment preview --visibility plaintext
+  eas env:set --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID --value <ad unit id android> --environment preview --visibility plaintext
+  eas env:set --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS --value <ad unit id ios> --environment preview --visibility plaintext   # quando publicar iOS
   # repetir com --environment production para o perfil de store
   ```
   (São chaves públicas por design — embutidas no bundle — por isso
