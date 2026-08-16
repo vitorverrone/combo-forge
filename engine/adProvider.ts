@@ -6,21 +6,26 @@
  * aqui fica apenas a abstração que a UI e o store consomem, com uma
  * implementação de desenvolvimento que simula o anúncio concluído.
  *
- * Também vive aqui a regra pura de visibilidade do banner (ticket banner-01):
- * o banner full-width de 50dp aparece quando há um ad unit de banner
- * disponível para a plataforma atual. Sem ad unit (produção sem env), o
- * banner fica oculto e o jogo segue intacto — anúncio nunca é obrigatório.
+ * Também vive aqui a regra pura de visibilidade do banner (ticket
+ * banner-01/02): o banner full-width de 50dp aparece quando há um ad unit de
+ * banner disponível para a plataforma atual e a remoção de anúncios não foi
+ * comprada. Sem ad unit (produção sem env) ou com a compra feita, o banner
+ * fica oculto e o jogo segue intacto — anúncio nunca é obrigatório.
  */
 
 /**
- * Deve exibir o banner de anúncios? Regra pura: visível quando há um ad
- * unit de banner para usar. Type guard: quando true, adUnitId é uma string
- * não vazia — o narrowing flui para o componente. A origem do ad unit (env
- * da plataforma / TestId em dev) fica no serviço de ads; aqui apenas a
+ * Deve exibir o banner de anúncios? Regra pura (ticket banner-01/02):
+ * visível quando há um ad unit de banner para usar E a remoção de anúncios
+ * não foi comprada. Type guard: quando true, adUnitId é uma string não
+ * vazia — o narrowing flui para o componente. A origem do ad unit (env da
+ * plataforma / TestId em dev) fica no serviço de ads; aqui apenas a
  * decisão, testável sem dependências.
  */
-export function shouldShowBanner(adUnitId: string | undefined): adUnitId is string {
-  return Boolean(adUnitId);
+export function shouldShowBanner(
+  adsRemoved: boolean,
+  adUnitId: string | undefined,
+): adUnitId is string {
+  return !adsRemoved && Boolean(adUnitId);
 }
 
 /**

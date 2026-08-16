@@ -91,7 +91,19 @@ export const COSMETIC_CATALOG: readonly CosmeticItem[] = [
   },
 ];
 
-/** Estado persistido da loja (comprado + equipado). */
+/**
+ * Remoção de anúncios (ticket 02): IAP não-consumível "Remove Ads" (US$2,99),
+ * FORA do COSMETIC_CATALOG — não é cosmético, então a garantia explícita do
+ * catálogo ("itens 100% visuais, nunca tocam poder de jogo") permanece.
+ * Vive no RevenueCat como entitlement própria (ADR 0004).
+ */
+export const REMOVE_ADS_PRODUCT_ID = 'combo_forge_remove_ads';
+/** Entitlement do RevenueCat que a compra ativa (check no port). */
+export const REMOVE_ADS_ENTITLEMENT_ID = 'remove_ads';
+/** Preço exibido quando o provider real não está configurado (dev). */
+export const REMOVE_ADS_DEV_PRICE = '$2.99';
+
+/** Estado persistido da loja (comprado + equipado + remoção de anúncios). */
 export interface PersistedShop {
   /** ids dos itens comprados (COSMETIC_CATALOG). */
   readonly owned: readonly string[];
@@ -99,10 +111,31 @@ export interface PersistedShop {
   readonly equippedDeckSkin: string | null;
   /** VFX de combo equipado (id) ou null (clássico). */
   readonly equippedComboVfx: string | null;
+  /**
+   * Remoção de anúncios comprada (entitlement ativa). Não é um item do
+   * catálogo, mas persiste com o resto do estado da loja (mesmo port
+   * ShopStorage, mesmo padrão do owned).
+   */
+  readonly adsRemoved: boolean;
 }
 
 export function createInitialShopState(): PersistedShop {
-  return { owned: [], equippedDeckSkin: null, equippedComboVfx: null };
+  return {
+    owned: [],
+    equippedDeckSkin: null,
+    equippedComboVfx: null,
+    adsRemoved: false,
+  };
+}
+
+/**
+ * Estado carregado do storage, normalizado: saves antigos (antes da remoção
+ * de anúncios) não têm adsRemoved — o default false é aplicado sem perder o
+ * resto. Null (sem save) vira o estado inicial.
+ */
+export function normalizeShopState(state: PersistedShop | null): PersistedShop {
+  if (state === null) return createInitialShopState();
+  return { ...createInitialShopState(), ...state };
 }
 
 /** Item do catálogo pelo id (undefined se não existir). */
@@ -174,8 +207,8 @@ export interface ShopOffering {
 
 /**
  * Port do provider de compras (RevenueCat no app — services/revenuecat.ts;
- * dev simulado nos testes). Só lida com productId do catálogo; nunca decide
- * regra de jogo.
+ * dev simulado nos testes). Lida com productId do catálogo e da remoção de
+ * anúncios; nunca decide regra de jogo.
  */
 export interface ShopProvider {
   /** Ofertas disponíveis (productId + preço formatado). */
@@ -185,19 +218,37 @@ export interface ShopProvider {
    * o jogador cancelou. Rejeita em falha de loja/rede.
    */
   purchase(productId: string): Promise<boolean>;
+  /**
+   * A entitlement está ativa (compra válida do não-consumível)? Check usado
+   * na sincronização de restore/launch (ticket 03) — o store reflete o
+   * resultado como adsRemoved.
+   */
+  hasEntitlement(entitlementId: string): Promise<boolean>;
   /** Restaura compras do dispositivo; devolve os productIds comprados. */
   restore(): Promise<readonly string[]>;
 }
 
-/** Provider de desenvolvimento: ofertas do catálogo, compra sempre aceita. */
+/**
+ * Provider de desenvolvimento: ofertas do catálogo + remove_ads a US$2,99,
+ * compra sempre aceita. A compra simulada do remove_ads marca a entitlement
+ * (espelha o comportamento real do RevenueCat, testável sem SDK).
+ */
 export function createDevShopProvider(): ShopProvider {
+  let removeAdsEntitlement = false;
   return {
-    loadOfferings: async () =>
-      COSMETIC_CATALOG.map((item) => ({
+    loadOfferings: async () => [
+      ...COSMETIC_CATALOG.map((item) => ({
         productId: item.productId,
         price: item.devPrice,
       })),
-    purchase: async () => true,
+      { productId: REMOVE_ADS_PRODUCT_ID, price: REMOVE_ADS_DEV_PRICE },
+    ],
+    purchase: async (productId) => {
+      if (productId === REMOVE_ADS_PRODUCT_ID) removeAdsEntitlement = true;
+      return true;
+    },
+    hasEntitlement: async (entitlementId) =>
+      entitlementId === REMOVE_ADS_ENTITLEMENT_ID && removeAdsEntitlement,
     restore: async () => [],
   };
 }

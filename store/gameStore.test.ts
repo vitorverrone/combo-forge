@@ -556,7 +556,8 @@ describe('loja cosmética (ticket 14)', () => {
     expect(store.getState().screen).toBe('shop');
     await Promise.resolve();
     expect(store.getState().shop.status).toBe('ready');
-    expect(store.getState().shop.offerings).toHaveLength(COSMETIC_CATALOG.length);
+    // Catálogo cosmético + a oferta de remoção de anúncios (ticket 02).
+    expect(store.getState().shop.offerings).toHaveLength(COSMETIC_CATALOG.length + 1);
   });
 
   test('purchaseCosmetic compra, persiste e auto-equipa a skin', async () => {
@@ -634,6 +635,75 @@ describe('loja cosmética (ticket 14)', () => {
     expect(state.shop.error).toBeDefined();
     expect(state.shop.owned.owned).toHaveLength(0);
     expect(state.shop.purchasing).toBeNull();
+  });
+});
+
+describe('remoção de anúncios (ticket 02)', () => {
+  test('purchaseRemoveAds compra, marca adsRemoved e persiste (mesmo padrão do owned)', async () => {
+    const storage = createMemoryShopStorage();
+    const store = createGameStore({
+      shopStorage: storage,
+      shopProvider: createDevShopProvider(),
+    });
+    expect(store.getState().adsRemoved).toBe(false);
+    await store.getState().purchaseRemoveAds();
+    const state = store.getState();
+    expect(state.adsRemoved).toBe(true);
+    expect(state.shop.purchasing).toBeNull();
+    expect(storage.load()?.adsRemoved).toBe(true);
+  });
+
+  test('cancelamento (provider false) não marca adsRemoved nem persiste', async () => {
+    const storage = createMemoryShopStorage();
+    const store = createGameStore({
+      shopStorage: storage,
+      shopProvider: { ...createDevShopProvider(), purchase: async () => false },
+    });
+    await store.getState().purchaseRemoveAds();
+    const state = store.getState();
+    expect(state.adsRemoved).toBe(false);
+    expect(state.shop.purchasing).toBeNull();
+    expect(storage.load()).toBeNull(); // nada persistido
+  });
+
+  test('falha do provider marca erro e não marca adsRemoved', async () => {
+    const store = createGameStore({
+      shopProvider: {
+        ...createDevShopProvider(),
+        purchase: async () => {
+          throw new Error('loja fora do ar');
+        },
+      },
+    });
+    await store.getState().purchaseRemoveAds();
+    const state = store.getState();
+    expect(state.adsRemoved).toBe(false);
+    expect(state.shop.error).toBe('loja fora do ar');
+    expect(state.shop.purchasing).toBeNull();
+  });
+
+  test('já comprado: purchaseRemoveAds não chama o provider de novo', async () => {
+    const provider = createDevShopProvider();
+    const spy = jest.spyOn(provider, 'purchase');
+    const store = createGameStore({ shopProvider: provider });
+    await store.getState().purchaseRemoveAds();
+    await store.getState().purchaseRemoveAds();
+    expect(spy).toHaveBeenCalledTimes(1);
+  });
+
+  test('adsRemoved sobrevive à recriação do store (persistido no boot)', async () => {
+    const storage = createMemoryShopStorage();
+    const first = createGameStore({
+      shopStorage: storage,
+      shopProvider: createDevShopProvider(),
+    });
+    await first.getState().purchaseRemoveAds();
+    // Novo store com o mesmo storage simula o restart do app.
+    const second = createGameStore({
+      shopStorage: storage,
+      shopProvider: createDevShopProvider(),
+    });
+    expect(second.getState().adsRemoved).toBe(true);
   });
 });
 
