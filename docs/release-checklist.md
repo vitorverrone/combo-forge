@@ -299,6 +299,11 @@ caem no fallback de dev quando a variável não existe, então:
          própria + top 10).
       3. Loja: ver preços reais do RevenueCat, comprar e restaurar.
       4. Anúncio: tentativa extra via anúncio recompensado concluído.
+- [x] Sem device físico disponível: o build **preview** (assinatura do EAS) foi
+      validado no emulador Android em 2026-08-16 com as variáveis injetadas
+      pela nuvem: Desafio Diário com seed real (Supabase do EAS), persistência
+      de tentativas e botão WATCH AD disparando request real (NO_FILL até o
+      AdMob aprovar o app).
 - [x] `npm run typecheck` limpo e `npm test` verde (16 suites, 303 testes) —
       verificado 2026-08-16.
 
