@@ -3,8 +3,11 @@
  * AdProvider (engine/adProvider.ts) com o SDK react-native-google-mobile-ads
  * (AdMob), consumido pelo Desafio Diário (tentativa extra via anúncio).
  *
- * Config via EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID (ver .env.example). Sem o
- * env, devolve o provider dev (anúncio sempre concluído) — o jogo funciona
+ * Config via EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID / _IOS (ver
+ * .env.example). Ad unit IDs são por plataforma e o EAS injeta env por
+ * ambiente (não por plataforma), então cada plataforma tem a sua variável,
+ * selecionada em runtime via Platform.OS. Sem o env da plataforma atual,
+ * devolve o provider dev (anúncio sempre concluído) — o jogo funciona
  * integralmente sem anúncios (nunca são obrigatórios). Em desenvolvimento o
  * SDK usa o TestId oficial de rewarded (não gasta impressões reais).
  *
@@ -13,13 +16,21 @@
  * fluxo do jogo (a UI mostra o estado anterior).
  */
 
+import { Platform } from 'react-native';
+
 import { AdProvider, createDevAdProvider } from '../engine';
 
-const AD_UNIT_ID = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID;
+const AD_UNIT_ANDROID = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID;
+const AD_UNIT_IOS = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS;
 
-/** Env do anúncio recompensado configurado? */
+/** Ad unit ID da plataforma atual (Android é o padrão; iOS exige variável própria). */
+function adUnitIdForPlatform(): string | undefined {
+  return Platform.OS === 'ios' ? AD_UNIT_IOS : AD_UNIT_ANDROID;
+}
+
+/** Env do anúncio recompensado configurado para esta plataforma? */
 export function isAdMobConfigured(): boolean {
-  return Boolean(AD_UNIT_ID);
+  return Boolean(adUnitIdForPlatform());
 }
 
 /**
@@ -27,8 +38,9 @@ export function isAdMobConfigured(): boolean {
  * Mesmo padrão dos demais serviços do app (Supabase, RevenueCat).
  */
 export function createAppAdProvider(): AdProvider {
-  if (!isAdMobConfigured()) return createDevAdProvider();
-  return { requestRewardedAd: () => requestAdMobRewarded(AD_UNIT_ID as string) };
+  const adUnitId = adUnitIdForPlatform();
+  if (adUnitId === undefined) return createDevAdProvider();
+  return { requestRewardedAd: () => requestAdMobRewarded(adUnitId) };
 }
 
 /**
