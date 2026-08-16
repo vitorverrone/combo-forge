@@ -2,6 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
+import { AdBanner } from './components/AdBanner';
 import { BreakReminderBanner } from './components/BreakReminderBanner';
 import { CollectionScreen } from './components/CollectionScreen';
 import { DailyChallengeScreen } from './components/DailyChallengeScreen';
@@ -36,6 +37,10 @@ export default function App() {
           {screen === 'daily' && <DailyChallengeScreen />}
           {screen === 'shop' && <ShopScreen />}
         </SafeAreaView>
+        {/* Banner full-width de 50dp no rodapé de todas as telas (ticket
+            banner-01). Oculto quando não há ad unit para a plataforma (regra
+            pura shouldShowBanner) — anúncio nunca é obrigatório. */}
+        <AdBanner />
         <UnlockChoiceModal />
         <BreakReminderBanner />
         <GameFeedback />

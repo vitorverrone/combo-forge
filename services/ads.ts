@@ -23,6 +23,9 @@ import { AdProvider, createDevAdProvider } from '../engine';
 const AD_UNIT_ANDROID = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID;
 const AD_UNIT_IOS = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS;
 
+const BANNER_UNIT_ANDROID = process.env.EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID;
+const BANNER_UNIT_IOS = process.env.EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_IOS;
+
 /** Ad unit ID da plataforma atual (Android é o padrão; iOS exige variável própria). */
 function adUnitIdForPlatform(): string | undefined {
   return Platform.OS === 'ios' ? AD_UNIT_IOS : AD_UNIT_ANDROID;
@@ -31,6 +34,15 @@ function adUnitIdForPlatform(): string | undefined {
 /** Env do anúncio recompensado configurado para esta plataforma? */
 export function isAdMobConfigured(): boolean {
   return Boolean(adUnitIdForPlatform());
+}
+
+/**
+ * Ad unit de banner real da plataforma atual (produção). Em dev o componente
+ * usa o TestId oficial de banner adaptativo do SDK (sempre carrega); aqui
+ * apenas o env da plataforma, sem depender do módulo nativo do SDK.
+ */
+export function bannerAdUnitId(): string | undefined {
+  return Platform.OS === 'ios' ? BANNER_UNIT_IOS : BANNER_UNIT_ANDROID;
 }
 
 /**
