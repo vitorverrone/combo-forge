@@ -54,6 +54,11 @@ export function initializeSqlitePersistence(): void {
       },
       adsRemoved: loadedShop.adsRemoved,
     });
+    // Sincronização automática no launch (ticket 03): o RevenueCat reentrega
+    // a entitlement remove_ads ao configurar — reflete adsRemoved sem
+    // interação do jogador. Fire-and-forget: falha silenciosa (o botão
+    // "Restaurar compras" da Loja e o próximo launch tentam de novo).
+    void gameStore.getState().syncRemoveAdsEntitlement();
   } catch {
     // SQLite indisponível (ex.: plataforma sem suporte): mantém os ports em
     // memória do store singleton — a sessão continua jogável, só sem

@@ -97,6 +97,7 @@ import {
   normalizeShopState,
   PersistedShop,
   purchaseItem as enginePurchaseItem,
+  REMOVE_ADS_ENTITLEMENT_ID,
   REMOVE_ADS_PRODUCT_ID,
   ShopOffering,
   ShopProvider,
@@ -188,6 +189,12 @@ export interface GameState {
   readonly purchaseRemoveAds: () => Promise<void>;
   /** Equipa um item comprado (skin de baralho ou VFX de combo). */
   readonly equipCosmetic: (itemId: string) => void;
+  /**
+   * Sincroniza a entitlement remove_ads com o provider (launch, ticket 03):
+   * marca adsRemoved quando o RevenueCat reentrega a entitlement, sem
+   * interação do jogador. Nunca regride uma remoção já ativa.
+   */
+  readonly syncRemoveAdsEntitlement: () => Promise<void>;
   /** Restaura compras do dispositivo (novo aparelho). */
   readonly restorePurchases: () => Promise<void>;
   /** Dispensa o lembrete de pausa atual (cooldown; o jogo nunca é bloqueado). */
@@ -489,6 +496,23 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       }
     },
 
+    syncRemoveAdsEntitlement: async () => {
+      const { shop, shopProvider, shopStorage } = get();
+      // Já removido: nada a sincronizar (e nunca regride).
+      if (get().adsRemoved) return;
+      try {
+        const active = await shopProvider.hasEntitlement(REMOVE_ADS_ENTITLEMENT_ID);
+        if (active) {
+          const owned = { ...get().shop.owned, adsRemoved: true };
+          shopStorage.save(owned);
+          set({ shop: { ...get().shop, owned }, adsRemoved: true });
+        }
+      } catch {
+        // Provider indisponível/sem rede no launch: nada muda agora; o botão
+        // "Restaurar compras" da Loja e o próximo launch tentam de novo.
+      }
+    },
+
     restorePurchases: async () => {
       const { shop, shopProvider, shopStorage } = get();
       if (shop.restoring) return;
@@ -500,9 +524,17 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
         const itemIds = productIds
           .map(catalogId)
           .filter((id): id is string => id !== undefined);
-        const owned = mergeOwned(get().shop.owned, itemIds);
+        let owned = mergeOwned(get().shop.owned, itemIds);
+        // Remoção de anúncios (ticket 03): a entitlement remove_ads reentregue
+        // pelo restore também marca adsRemoved — sem a entitlement, nada muda
+        // (o restore nunca regride uma compra já feita).
+        const removeAdsActive = await shopProvider.hasEntitlement(REMOVE_ADS_ENTITLEMENT_ID);
+        if (removeAdsActive) owned = { ...owned, adsRemoved: true };
         shopStorage.save(owned);
-        set({ shop: { ...get().shop, owned, restoring: false } });
+        set({
+          shop: { ...get().shop, owned, restoring: false },
+          adsRemoved: owned.adsRemoved,
+        });
       } catch (error) {
         set({
           shop: {

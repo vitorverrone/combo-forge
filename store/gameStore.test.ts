@@ -7,6 +7,7 @@ import {
   createDeck,
   COSMETIC_CATALOG,
   createInitialBreakHistory,
+  createInitialShopState,
   createMemoryBreakStorage,
   DEFAULT_BREAK_REMINDER_CONFIG,
   createDevShopProvider,
@@ -30,6 +31,7 @@ import {
   RELIC_POOL,
   PatternKind,
   PLAYS_PER_ROUND,
+  REMOVE_ADS_ENTITLEMENT_ID,
   RunEvent,
   RunState,
 } from '../engine';
@@ -703,6 +705,111 @@ describe('remoção de anúncios (ticket 02)', () => {
       shopStorage: storage,
       shopProvider: createDevShopProvider(),
     });
+    expect(second.getState().adsRemoved).toBe(true);
+  });
+});
+
+describe('restore da remoção de anúncios (ticket 03)', () => {
+  test('restorePurchases marca adsRemoved quando a entitlement remove_ads vem do restore', async () => {
+    const storage = createMemoryShopStorage();
+    const store = createGameStore({
+      shopStorage: storage,
+      shopProvider: {
+        ...createDevShopProvider(),
+        restore: async () => [],
+        hasEntitlement: async (entitlementId) => entitlementId === REMOVE_ADS_ENTITLEMENT_ID,
+      },
+    });
+    expect(store.getState().adsRemoved).toBe(false);
+    await store.getState().restorePurchases();
+    const state = store.getState();
+    expect(state.adsRemoved).toBe(true);
+    expect(state.shop.restoring).toBe(false);
+    expect(storage.load()?.adsRemoved).toBe(true);
+  });
+
+  test('restorePurchases sem a entitlement não marca adsRemoved', async () => {
+    const storage = createMemoryShopStorage();
+    const store = createGameStore({
+      shopStorage: storage,
+      shopProvider: {
+        ...createDevShopProvider(),
+        restore: async () => [],
+        hasEntitlement: async () => false,
+      },
+    });
+    await store.getState().restorePurchases();
+    const state = store.getState();
+    expect(state.adsRemoved).toBe(false);
+    expect(state.shop.restoring).toBe(false);
+    expect(storage.load()?.adsRemoved ?? false).toBe(false); // sem marcação
+  });
+
+  test('restore sem a entitlement não regride uma remoção já comprada', async () => {
+    const storage = createMemoryShopStorage({
+      ...createInitialShopState(),
+      adsRemoved: true,
+    });
+    const store = createGameStore({
+      shopStorage: storage,
+      shopProvider: { ...createDevShopProvider(), hasEntitlement: async () => false },
+    });
+    expect(store.getState().adsRemoved).toBe(true);
+    await store.getState().restorePurchases();
+    const state = store.getState();
+    expect(state.adsRemoved).toBe(true);
+    expect(storage.load()?.adsRemoved).toBe(true);
+  });
+
+  test('syncRemoveAdsEntitlement marca e persiste quando a entitlement está ativa (launch)', async () => {
+    const storage = createMemoryShopStorage();
+    const store = createGameStore({
+      shopStorage: storage,
+      shopProvider: {
+        ...createDevShopProvider(),
+        hasEntitlement: async (entitlementId) => entitlementId === REMOVE_ADS_ENTITLEMENT_ID,
+      },
+    });
+    await store.getState().syncRemoveAdsEntitlement();
+    const state = store.getState();
+    expect(state.adsRemoved).toBe(true);
+    expect(storage.load()?.adsRemoved).toBe(true);
+  });
+
+  test('syncRemoveAdsEntitlement sem a entitlement não altera nada', async () => {
+    const store = createGameStore({
+      shopProvider: { ...createDevShopProvider(), hasEntitlement: async () => false },
+    });
+    await store.getState().syncRemoveAdsEntitlement();
+    expect(store.getState().adsRemoved).toBe(false);
+  });
+
+  test('syncRemoveAdsEntitlement não regride quando já removido', async () => {
+    const storage = createMemoryShopStorage({
+      ...createInitialShopState(),
+      adsRemoved: true,
+    });
+    const store = createGameStore({
+      shopStorage: storage,
+      shopProvider: { ...createDevShopProvider(), hasEntitlement: async () => false },
+    });
+    await store.getState().syncRemoveAdsEntitlement();
+    expect(store.getState().adsRemoved).toBe(true);
+    expect(storage.load()?.adsRemoved).toBe(true);
+  });
+
+  test('adsRemoved marcado pelo restore sobrevive à recriação do store', async () => {
+    const storage = createMemoryShopStorage();
+    const first = createGameStore({
+      shopStorage: storage,
+      shopProvider: {
+        ...createDevShopProvider(),
+        hasEntitlement: async (entitlementId) => entitlementId === REMOVE_ADS_ENTITLEMENT_ID,
+      },
+    });
+    await first.getState().restorePurchases();
+    // Novo store com o mesmo storage simula o restart do app.
+    const second = createGameStore({ shopStorage: storage, shopProvider: createDevShopProvider() });
     expect(second.getState().adsRemoved).toBe(true);
   });
 });
