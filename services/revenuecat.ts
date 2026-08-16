@@ -17,6 +17,7 @@ import Purchases from 'react-native-purchases';
 import {
   COSMETIC_CATALOG,
   createDevShopProvider,
+  REMOVE_ADS_PRODUCT_ID,
   ShopOffering,
   ShopProvider,
 } from '../engine';
@@ -42,18 +43,22 @@ export function createRevenueCatShopProvider(): ShopProvider | null {
     configured = true;
   };
 
-  /** Mapeia o catálogo local para o pacote do offering atual. */
+  /** Mapeia o catálogo local (cosméticos + remove_ads) para o offering atual. */
   const currentPackages = async () => {
     ensureConfigured();
     const offerings = await Purchases.getOfferings();
     return offerings.current?.availablePackages ?? [];
   };
 
+  const isCatalogProduct = (productId: string): boolean =>
+    COSMETIC_CATALOG.some((item) => item.productId === productId) ||
+    productId === REMOVE_ADS_PRODUCT_ID;
+
   return {
     loadOfferings: async (): Promise<ShopOffering[]> => {
       const packages = await currentPackages();
       return packages
-        .filter((pkg) => COSMETIC_CATALOG.some((item) => item.productId === pkg.product.identifier))
+        .filter((pkg) => isCatalogProduct(pkg.product.identifier))
         .map((pkg) => ({
           productId: pkg.product.identifier,
           price: pkg.product.priceString,
@@ -76,6 +81,12 @@ export function createRevenueCatShopProvider(): ShopProvider | null {
         }
         throw error;
       }
+    },
+
+    hasEntitlement: async (entitlementId: string): Promise<boolean> => {
+      ensureConfigured();
+      const info = await Purchases.getCustomerInfo();
+      return Boolean(info.entitlements.active[entitlementId]);
     },
 
     restore: async (): Promise<string[]> => {

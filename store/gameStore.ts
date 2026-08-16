@@ -94,8 +94,10 @@ import {
   equipItem as engineEquipItem,
   isOwned,
   mergeOwned,
+  normalizeShopState,
   PersistedShop,
   purchaseItem as enginePurchaseItem,
+  REMOVE_ADS_PRODUCT_ID,
   ShopOffering,
   ShopProvider,
   ShopStorage,
@@ -154,6 +156,11 @@ export interface GameState {
   readonly shop: ShopState;
   readonly shopStorage: ShopStorage;
   readonly shopProvider: ShopProvider;
+  /**
+   * Remoção de anúncios comprada (ticket 02): banner oculto em todas as
+   * telas. Persistida via ShopStorage (mesmo padrão do owned da loja).
+   */
+  readonly adsRemoved: boolean;
   /** Lembrete gentil de pausa (ticket 15) — sugere, nunca bloqueia. */
   readonly breakSuggestion: boolean;
   readonly breakHistory: BreakHistory;
@@ -177,6 +184,8 @@ export interface GameState {
   readonly loadShop: () => Promise<void>;
   /** Compra um item cosmético (IAP via provider). */
   readonly purchaseCosmetic: (itemId: string) => Promise<void>;
+  /** Compra a remoção de anúncios (IAP não-consumível, ticket 02). */
+  readonly purchaseRemoveAds: () => Promise<void>;
   /** Equipa um item comprado (skin de baralho ou VFX de combo). */
   readonly equipCosmetic: (itemId: string) => void;
   /** Restaura compras do dispositivo (novo aparelho). */
@@ -326,7 +335,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
 
   const shopStorage = deps.shopStorage ?? createMemoryShopStorage();
   const shopProvider = deps.shopProvider ?? createDevShopProvider();
-  const initialShop = deps.initialShop ?? shopStorage.load() ?? createInitialShopState();
+  const initialShop = deps.initialShop ?? normalizeShopState(shopStorage.load());
   const breakStorage = deps.breakStorage ?? createMemoryBreakStorage();
   const breakNow = deps.breakNow ?? (() => Date.now());
   const initialBreakHistory = breakStorage.load() ?? createInitialBreakHistory();
@@ -383,6 +392,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     },
     shopStorage,
     shopProvider,
+    adsRemoved: initialShop.adsRemoved,
     breakSuggestion: false,
     breakHistory: initialBreakHistory,
     breakStorage,
@@ -449,6 +459,34 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       if (owned === get().shop.owned) return; // não comprado ou inválido
       get().shopStorage.save(owned);
       set({ shop: { ...get().shop, owned } });
+    },
+
+    purchaseRemoveAds: async () => {
+      const { shop, shopProvider, shopStorage } = get();
+      // Uma compra por vez (mesmo busy do catálogo) e não recompra.
+      if (shop.purchasing !== null || get().adsRemoved) return;
+      set({ shop: { ...shop, purchasing: REMOVE_ADS_PRODUCT_ID, error: null } });
+      try {
+        const purchased = await shopProvider.purchase(REMOVE_ADS_PRODUCT_ID);
+        if (purchased) {
+          // Marca a remoção no estado persistido (mesmo blob da loja) e no
+          // estado do store — o banner some na hora (ADR 0004).
+          const owned = { ...get().shop.owned, adsRemoved: true };
+          shopStorage.save(owned);
+          set({ shop: { ...get().shop, owned, purchasing: null }, adsRemoved: true });
+        } else {
+          // Cancelamento pelo jogador: sem marcar nada.
+          set({ shop: { ...get().shop, purchasing: null } });
+        }
+      } catch (error) {
+        set({
+          shop: {
+            ...get().shop,
+            purchasing: null,
+            error: error instanceof Error ? error.message : String(error),
+          },
+        });
+      }
     },
 
     restorePurchases: async () => {

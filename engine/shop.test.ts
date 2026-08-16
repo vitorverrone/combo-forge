@@ -7,7 +7,11 @@ import {
   equipItem,
   isOwned,
   mergeOwned,
+  normalizeShopState,
+  PersistedShop,
   purchaseItem,
+  REMOVE_ADS_ENTITLEMENT_ID,
+  REMOVE_ADS_PRODUCT_ID,
 } from './shop';
 
 describe('catálogo cosmético (ticket 14)', () => {
@@ -80,10 +84,45 @@ describe('provider dev', () => {
   test('lista ofertas do catálogo com preço e compra sempre aceita', async () => {
     const provider = createDevShopProvider();
     const offerings = [...(await provider.loadOfferings())];
-    expect(offerings).toHaveLength(COSMETIC_CATALOG.length);
+    expect(offerings).toHaveLength(COSMETIC_CATALOG.length + 1); // + remove_ads
     expect(offerings[0].price).toBe('$0.99');
     expect(await provider.purchase('combo_forge_skin_obsidian')).toBe(true);
     expect(await provider.restore()).toEqual([]);
     expect(cosmeticItemById('skin-obsidian')?.kind).toBe('deckSkin');
+  });
+});
+
+describe('remoção de anúncios (ticket 02)', () => {
+  test('remove_ads fica fora do COSMETIC_CATALOG (não é cosmético; a garantia do catálogo permanece)', () => {
+    expect(COSMETIC_CATALOG.some((item) => item.productId === REMOVE_ADS_PRODUCT_ID)).toBe(false);
+  });
+
+  test('estado inicial tem adsRemoved false', () => {
+    expect(createInitialShopState().adsRemoved).toBe(false);
+  });
+
+  test('provider dev: remove_ads a US$2,99 e a compra simulada marca a entitlement', async () => {
+    const provider = createDevShopProvider();
+    const removeAds = (await provider.loadOfferings()).find(
+      (offering) => offering.productId === REMOVE_ADS_PRODUCT_ID,
+    );
+    expect(removeAds?.price).toBe('$2.99');
+    expect(await provider.hasEntitlement(REMOVE_ADS_ENTITLEMENT_ID)).toBe(false);
+    expect(await provider.purchase(REMOVE_ADS_PRODUCT_ID)).toBe(true);
+    expect(await provider.hasEntitlement(REMOVE_ADS_ENTITLEMENT_ID)).toBe(true);
+    // entitlement de outro id não existe
+    expect(await provider.hasEntitlement('outra-entitlement')).toBe(false);
+  });
+
+  test('normalizeShopState aplica default false a saves antigos sem adsRemoved', () => {
+    const oldSave = {
+      owned: ['skin-obsidian'],
+      equippedDeckSkin: 'skin-obsidian',
+      equippedComboVfx: null,
+    } as unknown as PersistedShop;
+    const normalized = normalizeShopState(oldSave);
+    expect(normalized.adsRemoved).toBe(false);
+    expect(normalized.owned).toEqual(['skin-obsidian']);
+    expect(normalizeShopState(null)).toEqual(createInitialShopState());
   });
 });

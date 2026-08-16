@@ -9,9 +9,9 @@
 import {
   createInitialBreakHistory,
   createInitialDailyAttempts,
-  createInitialShopState,
   dailyAttemptsForDay,
   DEFAULT_PROGRESSION,
+  normalizeShopState,
   utcDateIso,
 } from '../engine';
 
@@ -28,6 +28,9 @@ export function initializeSqlitePersistence(): void {
       createSqlitePersistence();
     const saved = progressionStorage.load();
     const savedAttempts = dailyStorage.loadAttempts();
+    // Loja persistida (comprados + equipados + remoção de anúncios), com
+    // default aplicado a saves antigos sem o campo adsRemoved.
+    const loadedShop = normalizeShopState(shopStorage.load());
     gameStore.setState({
       ddaStorage,
       dailyStorage,
@@ -47,8 +50,9 @@ export function initializeSqlitePersistence(): void {
       },
       shop: {
         ...gameStore.getState().shop,
-        owned: shopStorage.load() ?? createInitialShopState(),
+        owned: loadedShop,
       },
+      adsRemoved: loadedShop.adsRemoved,
     });
   } catch {
     // SQLite indisponível (ex.: plataforma sem suporte): mantém os ports em

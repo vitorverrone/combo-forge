@@ -1,6 +1,12 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { COSMETIC_CATALOG, isDeckSkinItem, isOwned } from '../engine';
+import {
+  COSMETIC_CATALOG,
+  isDeckSkinItem,
+  isOwned,
+  REMOVE_ADS_DEV_PRICE,
+  REMOVE_ADS_PRODUCT_ID,
+} from '../engine';
 
 import { colors } from './theme';
 import { useGameStore } from '../store/gameStore';
@@ -13,13 +19,17 @@ import { useGameStore } from '../store/gameStore';
  */
 export function ShopScreen() {
   const shop = useGameStore((state) => state.shop);
+  const adsRemoved = useGameStore((state) => state.adsRemoved);
   const backToStart = useGameStore((state) => state.backToStart);
   const purchaseCosmetic = useGameStore((state) => state.purchaseCosmetic);
+  const purchaseRemoveAds = useGameStore((state) => state.purchaseRemoveAds);
   const equipCosmetic = useGameStore((state) => state.equipCosmetic);
   const restorePurchases = useGameStore((state) => state.restorePurchases);
 
   const priceOf = (productId: string): string | undefined =>
     shop.offerings.find((offering) => offering.productId === productId)?.price;
+  const removeAdsPrice = priceOf(REMOVE_ADS_PRODUCT_ID) ?? REMOVE_ADS_DEV_PRICE;
+  const removeAdsBusy = shop.purchasing === REMOVE_ADS_PRODUCT_ID;
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
@@ -28,6 +38,31 @@ export function ShopScreen() {
       <Text style={styles.guarantee}>
         ✓ Never affects gameplay power — deck skins and combo effects are purely visual.
       </Text>
+
+      {/* Remoção de anúncios (ticket 02): IAP não-consumível, fora do catálogo
+          cosmético (ADR 0004). Nada sobreposto ao banner — só esta tela. */}
+      <SectionHeader label="Remove Ads" />
+      <View style={[styles.itemRow, adsRemoved && styles.itemRowEquipped]}>
+        <View style={styles.itemText}>
+          <Text style={styles.itemName}>Remove Ads</Text>
+          <Text style={styles.itemDesc}>No more banner — one-time purchase.</Text>
+        </View>
+        {!adsRemoved && (
+          <Pressable
+            accessibilityLabel="Buy Remove Ads"
+            disabled={removeAdsBusy}
+            onPress={() => void purchaseRemoveAds()}
+            style={({ pressed }) => [styles.buyButton, pressed && styles.buttonPressed]}
+          >
+            <Text style={styles.buyButtonText}>{removeAdsBusy ? '…' : removeAdsPrice}</Text>
+          </Pressable>
+        )}
+        {adsRemoved && (
+          <View style={styles.equippedBadge}>
+            <Text style={styles.equippedBadgeText}>PURCHASED</Text>
+          </View>
+        )}
+      </View>
 
       <SectionHeader label="Deck Skins" />
       {COSMETIC_CATALOG.filter(isDeckSkinItem).map((item) => (
