@@ -248,6 +248,10 @@ EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID=<admob rewarded ad unit id (androi
 O `eas.json` já existe com os perfis `development`, `preview` e `production`
 (`environment` de cada um: `development` / `preview` / `production`).
 
+O projeto EAS foi vinculado em 2026-08-16: `projectId`
+`e1c84c4c-b160-4fa8-ae87-4054fd87299c` adicionado ao `app.json`
+(`npx eas-cli init --account vitorverrones-team --non-interactive`).
+
 ### Como as variáveis chegam ao build
 
 O EAS **não lê o `.env` local nos builds em nuvem** — as `EXPO_PUBLIC_*` são
@@ -256,14 +260,20 @@ caem no fallback de dev quando a variável não existe, então:
 
 - **`development`** — não precisa de variáveis: usa os fallbacks de dev
   (Desafio Diário indisponível, loja simulada, anúncio dev).
-- **`preview`/`production`** — criar as variáveis reais por ambiente:
+- **`preview`/`production`** — ✅ variáveis reais setadas (2026-08-16, via
+  `npx eas-cli env:set`, visibilidade `plaintext`): Supabase (URL + anon key),
+  RevenueCat e AdMob Android — em ambos os ambientes (confirmado com
+  `eas env:list`).
+  ⚠️ A `EXPO_PUBLIC_REVENUECAT_API_KEY` setada é a **Test Store key** — trocar
+  pela chave pública (`goog_...`) antes do build de produção real. A
+  `EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS` fica para a publicação na App
+  Store. Comandos equivalentes (repetir com `--environment production`):
   ```bash
   eas env:set --name EXPO_PUBLIC_SUPABASE_URL --value <url> --environment preview --visibility plaintext
   eas env:set --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <anon key> --environment preview --visibility plaintext
   eas env:set --name EXPO_PUBLIC_REVENUECAT_API_KEY --value <sdk key> --environment preview --visibility plaintext
   eas env:set --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID --value <ad unit id android> --environment preview --visibility plaintext
   eas env:set --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS --value <ad unit id ios> --environment preview --visibility plaintext   # quando publicar iOS
-  # repetir com --environment production para o perfil de store
   ```
   (São chaves públicas por design — embutidas no bundle — por isso
   `plaintext`; nada de secret no código do cliente.)
