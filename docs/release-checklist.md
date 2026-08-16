@@ -154,11 +154,14 @@ para monetizar de verdade.
     inteiro (loja ficava presa no provider dev silenciosamente) em vez de
     degradar para "Desafio Diário indisponível".
 - Nota de build local (não versionado): `android/local.properties` (sdk.dir com
-  barras normais). O pin do Kotlin agora vai pelo plugin `expo-build-properties`
-  no `app.json` (`kotlinVersion: 2.2.20` — o RN fixa Kotlin 2.1.20, que não lê
-  o metadata 2.3.0 da play-services-ads 25.4.0); mudança adicionada em
-  2026-08-16, ainda não commitada (working tree). `expo prebuild` regenera o
-  `local.properties` — reaplicar se o build quebrar.
+  barras normais — o `expo prebuild` o apaga; reaplicar se o build quebrar).
+- Pin do Kotlin (o RN fixa 2.1.20, que não lê o metadata 2.3.0 da
+  play-services-ads 25.4.0) é **versionado** via o config plugin
+  `plugins/withKotlinVersionPin.js` (registrado no `app.json`): pina
+  `kotlin-gradle-plugin:2.2.20` no `build.gradle` raiz durante o prebuild —
+  sobrevive ao build de nuvem do EAS (o `expo-build-properties` só escreve a
+  propriedade `android.kotlinVersion`, não o classpath do plugin). Validado
+  localmente com prebuild fresco (2026-08-16).
 
 ---
 
