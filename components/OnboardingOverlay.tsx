@@ -37,7 +37,11 @@ export function hasSeenOnboarding(): boolean {
 
 /** Mark onboarding as completed (synchronous, KV store). */
 export function completeOnboarding(): void {
-  kv.setItemSync(STORAGE_KEY, 'true');
+  try {
+    kv.setItemSync(STORAGE_KEY, 'true');
+  } catch {
+    // SQLite write failure should not crash the app
+  }
 }
 
 interface Props {
@@ -54,7 +58,7 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
   const isLast = step === STEPS.length - 1;
 
   return (
-    <Modal transparent visible animationType="fade" onRequestClose={onComplete}>
+    <Modal transparent visible animationType="fade">
       <View style={styles.backdrop}>
         <View style={styles.card}>
           <View style={styles.stepRow}>
