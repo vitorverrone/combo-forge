@@ -1,0 +1,253 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-20T00:00:00Z",
+  "title": "Design System: Combo Forge",
+  "extensions": {
+    "colorMeta": {
+      "primary": {
+        "role": "primary",
+        "displayName": "Forge Gold",
+        "canonical": "#e0a53e",
+        "tonalRamp": ["#3d2a0f", "#5c3f16", "#7a541d", "#996a25", "#b8802c", "#d49534", "#e0a53e", "#e8b85c", "#f0cb7f", "#f5dda5", "#faeeca"]
+      },
+      "primary-dark": {
+        "role": "primary",
+        "displayName": "Forge Gold Dark",
+        "canonical": "#b9842a",
+        "tonalRamp": ["#2e210a", "#4a3510", "#664917", "#825d1e", "#9e7125", "#b9842a", "#c99638", "#d9a84e", "#e4ba6a", "#eecc8c", "#f5ddb0"]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Charcoal Void",
+        "canonical": "#161120",
+        "tonalRamp": ["#0a080e", "#0e0b14", "#120f1a", "#161120", "#1c1628", "#221b30", "#2a2038", "#322640", "#3a2c48", "#423250", "#4a3858"]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Anvil Surface",
+        "canonical": "#221a30",
+        "tonalRamp": ["#0e0a14", "#140f1c", "#1a1424", "#221a30", "#2a2038", "#322640", "#3a2c48", "#423250", "#4a3858", "#523e60", "#5a4468"]
+      },
+      "surface-elevated": {
+        "role": "neutral",
+        "displayName": "Surface Elevated",
+        "canonical": "#241b33",
+        "tonalRamp": ["#0e0a14", "#140f1c", "#1a1424", "#201828", "#241b33", "#2a2038", "#322640", "#3a2c48", "#423250", "#4a3858", "#523e60"]
+      },
+      "surface-selected": {
+        "role": "neutral",
+        "displayName": "Surface Selected",
+        "canonical": "#2a2140",
+        "tonalRamp": ["#0e0a14", "#140f1c", "#1a1424", "#201830", "#2a2140", "#322848", "#3a2e50", "#423458", "#4a3a60", "#524068", "#5a4670"]
+      },
+      "surface-border": {
+        "role": "neutral",
+        "displayName": "Anvil Border",
+        "canonical": "#3a2f4c",
+        "tonalRamp": ["#1a1526", "#221b30", "#2a213a", "#322744", "#3a2f4c", "#443656", "#4e3d60", "#58446a", "#624b74", "#6c527e", "#765988"]
+      },
+      "backdrop": {
+        "role": "neutral",
+        "displayName": "Backdrop",
+        "canonical": "rgba(22,17,32,0.8)",
+        "tonalRamp": []
+      },
+      "card-face": {
+        "role": "neutral",
+        "displayName": "Parchment Cream",
+        "canonical": "#f2e9d8",
+        "tonalRamp": ["#4a4638", "#6a6455", "#8a8372", "#a8a290", "#c2bcac", "#d8d2c4", "#f2e9d8", "#f5eee0", "#f8f2e8", "#faf5ee", "#fcf8f3"]
+      },
+      "card-ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#221a2e",
+        "tonalRamp": ["#0a080e", "#0e0b14", "#120f1a", "#161120", "#1a1426", "#221a2e", "#2a2038", "#322640", "#3a2c48", "#423250", "#4a3858"]
+      },
+      "red": {
+        "role": "semantic",
+        "displayName": "Ember Red",
+        "canonical": "#c1352c",
+        "tonalRamp": ["#2e0d0b", "#4a1411", "#661b17", "#82231e", "#9e2a24", "#c1352c", "#d04e45", "#de6a62", "#e88882", "#f0a8a4", "#f5c8c6"]
+      },
+      "text": {
+        "role": "neutral",
+        "displayName": "Warm Off-White",
+        "canonical": "#f4ede1",
+        "tonalRamp": ["#3d3b36", "#5c5952", "#7a776e", "#98948a", "#b4b0a6", "#d2cec4", "#f4ede1", "#f6f0e6", "#f8f4ec", "#faf7f2", "#fcfaf8"]
+      },
+      "text-dim": {
+        "role": "neutral",
+        "displayName": "Muted Lavender",
+        "canonical": "#a89bb8",
+        "tonalRamp": ["#2a2630", "#3d3846", "#504a5c", "#635c72", "#767088", "#8f85a0", "#a89bb8", "#b8adc4", "#c8bfd0", "#d8d0dc", "#e8e2e8"]
+      },
+      "danger": {
+        "role": "semantic",
+        "displayName": "Danger",
+        "canonical": "#e05c4e",
+        "tonalRamp": ["#381713", "#58231d", "#783027", "#983c31", "#b8483b", "#e05c4e", "#e87468", "#f08c82", "#f4a49c", "#f8bcb8", "#fcd4d2"]
+      },
+      "success": {
+        "role": "semantic",
+        "displayName": "Success",
+        "canonical": "#7fc98a",
+        "tonalRamp": ["#203222", "#304a34", "#406246", "#507a58", "#60926a", "#7fc98a", "#94d49c", "#a8deae", "#bee8c0", "#d4f0d4", "#e8f8e8"]
+      },
+      "textOnPrimary": {
+        "role": "semantic",
+        "displayName": "Text on Primary",
+        "canonical": "#241a05",
+        "tonalRamp": []
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "Game title and largest score values" },
+      "title": { "displayName": "Title", "purpose": "Screen titles (PROFILE, COLLECTION, SHOP)" },
+      "headline": { "displayName": "Headline", "purpose": "Round headers, stat values" },
+      "body": { "displayName": "Body", "purpose": "Descriptive text, hints, labels" },
+      "label": { "displayName": "Label", "purpose": "Section headers, button text, badges" }
+    },
+    "shadows": [
+      {
+        "name": "card-lift",
+        "value": "shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 4, shadowOffset: { width: 0, height: 2 }, elevation: 3",
+        "purpose": "Playing cards — creates illusion of physical cards held above the table"
+      },
+      {
+        "name": "overlay-float",
+        "value": "shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 8, shadowOffset: { width: 0, height: 3 }, elevation: 6",
+        "purpose": "Floating banners and modals — signals temporary, dismissible overlays"
+      }
+    ],
+    "motion": [
+      {
+        "name": "card-select",
+        "value": "translateY(-14px) spring, 0.85 opacity on press",
+        "purpose": "Card selection — physical lift off the table"
+      },
+      {
+        "name": "press-feedback",
+        "value": "opacity 0.8–0.85 on press",
+        "purpose": "Universal press feedback across all interactive elements"
+      }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Full-width gold action button for primary calls: START RUN, PLAY, BUY, UNLOCK.",
+      "html": "<button class=\"ds-btn-primary\">START RUN</button>",
+      "css": ".ds-btn-primary { background: #e0a53e; color: #241a05; font-weight: 900; font-size: 17px; letter-spacing: 2px; padding: 16px 0; border: none; border-radius: 12px; width: 100%; text-align: center; text-transform: uppercase; } .ds-btn-primary:hover { background: #b9842a; } .ds-btn-primary:active { opacity: 0.8; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "Surface-background button for secondary actions: DISCARD, CLEAR, BACK, RESTORE.",
+      "html": "<button class=\"ds-btn-secondary\">BACK</button>",
+      "css": ".ds-btn-secondary { background: #221a30; color: #f4ede1; font-weight: 700; font-size: 14px; letter-spacing: 1px; padding: 14px 0; border: 1px solid #3a2f4c; border-radius: 12px; width: 100%; text-align: center; text-transform: uppercase; } .ds-btn-secondary:hover { opacity: 0.9; } .ds-btn-secondary:active { opacity: 0.8; }"
+    },
+    {
+      "name": "Panel Card",
+      "kind": "card",
+      "refersTo": "card-base",
+      "description": "Flat elevated surface for content containers, list items, stat panels. No shadow — tonal layering only.",
+      "html": "<div class=\"ds-panel-card\"><span class=\"ds-panel-title\">Round 3</span><span class=\"ds-panel-value\">1,240</span></div>",
+      "css": ".ds-panel-card { background: #221a30; border: 1px solid #3a2f4c; border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; } .ds-panel-title { color: #f4ede1; font-weight: 800; font-size: 15px; } .ds-panel-value { color: #e0a53e; font-weight: 900; font-size: 34px; }"
+    },
+    {
+      "name": "Pill / Stat Chip",
+      "kind": "custom",
+      "refersTo": "chip-pill",
+      "description": "Compact stat display with label on top, value below. Used in the game HUD for Plays, Discards, Combo.",
+      "html": "<div class=\"ds-pill\"><span class=\"ds-pill-label\">Combo</span><span class=\"ds-pill-value\">×3</span></div>",
+      "css": ".ds-pill { background: #221a30; border: 1px solid #3a2f4c; border-radius: 10px; padding: 8px 12px; text-align: center; flex: 1; } .ds-pill-label { display: block; color: #a89bb8; font-size: 11px; font-weight: 600; text-transform: uppercase; } .ds-pill-value { display: block; color: #f4ede1; font-size: 18px; font-weight: 800; margin-top: 2px; } .ds-pill--accent { border-color: #e0a53e; } .ds-pill--accent .ds-pill-value { color: #e0a53e; }"
+    },
+    {
+      "name": "Nav Button",
+      "kind": "button",
+      "refersTo": "nav-button",
+      "description": "Small top-bar navigation button (PROFILE, COLLECTION, SHOP). Absolute-positioned row at screen top.",
+      "html": "<div class=\"ds-nav-row\"><button class=\"ds-nav-btn\">PROFILE</button><button class=\"ds-nav-btn\">COLLECTION</button><button class=\"ds-nav-btn ds-nav-btn--shop\">SHOP</button></div>",
+      "css": ".ds-nav-row { display: flex; justify-content: space-between; gap: 10px; } .ds-nav-btn { background: #221a30; border: 1px solid #3a2f4c; border-radius: 10px; padding: 8px 14px; color: #a89bb8; font-size: 12px; font-weight: 800; letter-spacing: 1px; } .ds-nav-btn--shop { border-color: #e0a53e; color: #e0a53e; }"
+    },
+    {
+      "name": "Progress Bar",
+      "kind": "custom",
+      "refersTo": "progress-bar",
+      "description": "Score progress towards round target. Gold fill on surface track, 8px height, rounded.",
+      "html": "<div class=\"ds-progress-track\"><div class=\"ds-progress-fill\" style=\"width: 65%\"></div></div>",
+      "css": ".ds-progress-track { height: 8px; border-radius: 4px; background: #221a30; overflow: hidden; } .ds-progress-fill { height: 100%; border-radius: 4px; background: #e0a53e; transition: width 0.3s ease; }"
+    },
+    {
+      "name": "Badge (Unlocked)",
+      "kind": "custom",
+      "refersTo": "badge-unlocked",
+      "description": "Green-tinted badge indicating an unlocked item. Used in Collection and Shop screens.",
+      "html": "<span class=\"ds-badge-unlocked\">UNLOCKED</span>",
+      "css": ".ds-badge-unlocked { background: rgba(127,201,138,0.15); border: 1px solid #7fc98a; border-radius: 8px; padding: 4px 8px; color: #7fc98a; font-size: 10px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; }"
+    },
+    {
+      "name": "Badge (Locked)",
+      "kind": "custom",
+      "refersTo": "badge-locked",
+      "description": "Dimmed badge for locked items. Shows hint text or 'Locked'.",
+      "html": "<span class=\"ds-badge-locked\">Win 3 runs</span>",
+      "css": ".ds-badge-locked { background: #161120; border: 1px solid #3a2f4c; border-radius: 8px; padding: 4px 8px; color: #a89bb8; font-size: 10px; font-weight: 700; text-align: center; max-width: 130px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Dark Anvil",
+    "overview": "Combo Forge's visual world is a dark anvil — the place where heat meets craft in charcoal darkness. The UI lives in a deep purple-black void, with forge gold emerging as the single source of warmth and authority. Every interactive surface floats as a raised panel against the near-black background, and the gold accent is reserved exclusively for what matters: the title, the primary action, the score, the active selection. Parchment-toned card faces provide a tactile counterpoint — physical objects held against an intangible dark space. The system is high-contrast by necessity: portrait mobile, one-hand play, small screens where readability is survival.",
+    "keyCharacteristics": [
+      "Deep charcoal-purple void as universal background",
+      "Single warm accent (forge gold) for authority and action",
+      "Parchment card faces as tactile, physical objects against the dark",
+      "Heavy typographic weight with wide letter-spacing for mobile legibility",
+      "Tonal layering (no shadows except on cards and floating banners)",
+      "Generous border-radii for approachable, touch-friendly surfaces"
+    ],
+    "rules": [
+      {
+        "name": "The Gold Rule",
+        "body": "Forge Gold appears on ≤ 15% of any given screen. Its rarity is the point — it marks authority (titles), action (primary buttons), and value (scores). When everything is gold, nothing is.",
+        "section": "colors"
+      },
+      {
+        "name": "The Tonal Layer Rule",
+        "body": "Depth is conveyed through three tonal layers only: Void → Surface → Content. No shadows except on cards and floating overlays (banners, modals). The system is flat-by-default.",
+        "section": "colors"
+      },
+      {
+        "name": "The Heavy-Label Rule",
+        "body": "Every label, badge, and section header is uppercase with weight ≥ 800 and letter-spacing ≥ 1px. Thin, lowercase labels do not exist in this system.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat-By-Default Rule",
+        "body": "All panels, rows, and containers are flat. No shadows, no gradients, no drop shadows on buttons or list items. Shadows exist only on physical-card-like elements (playing cards) and temporary floating overlays (banners, modals).",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do use Forge Gold only for authority (titles), action (primary buttons), and value (scores).",
+      "Do use tonal layering (Void → Surface → Content) for all depth.",
+      "Do use 800–900 weight for all labels, headers, and interactive text.",
+      "Do use gold borders to indicate active/selected/equipped states.",
+      "Do keep card faces as parchment cream with ink — the one light-on-dark reversal.",
+      "Do use 12–16px padding inside panels and 8–10px gaps between rows."
+    ],
+    "donts": [
+      "Don't add shadows to buttons, list items, or flat panels.",
+      "Don't use gold for secondary actions, non-interactive borders, or background fills.",
+      "Don't introduce thin font weights (400, 500) for body text or labels.",
+      "Don't use pure white or pure black anywhere — use warm off-white and deep purple-black.",
+      "Don't add gradients, glows, or decorative overlays.",
+      "Don't break the portrait-only constraint."
+    ]
+  }
+}

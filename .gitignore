@@ -56,3 +56,7 @@ yarn-error.*
 agent/
 .claude/
 skills-lock.json
+.codex/
+
+# Emulator screenshots
+emulator-screenshot*.png
