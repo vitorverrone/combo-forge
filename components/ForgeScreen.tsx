@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -39,7 +39,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
   const [activeOffer, setActiveOffer] = useState<number | null>(null);
   const [targetKey, setTargetKey] = useState<string | null>(null);
 
-  const deck = createDeck();
+  const deck = useMemo(() => createDeck(), []);
   const active = activeOffer !== null ? run.forgeOffers[activeOffer] : undefined;
 
   const handleOfferPress = (index: number) => {
@@ -74,7 +74,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
       <Text style={styles.title}>The Forge</Text>
       <Text style={styles.subtitle}>Pick one upgrade to carry into the next round.</Text>
 
-      <RelicRow relics={activeRelics(run.startingRelic, run.relics)} />
+      <RelicRow relics={activeRelics(run.startingRelic, run.relics)} compact />
 
       <View style={styles.offerList}>
         {run.forgeOffers.map((offer, index) => (
@@ -95,23 +95,27 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
           </Text>
           <View style={styles.deckGrid}>
             {SUITS.map((suit) => (
-              <View key={suit} style={styles.suitRow}>
-                {deck
-                  .filter((card) => card.suit === suit)
-                  .map((card) => (
-                    <DeckCardCell
-                      key={cardKey(card)}
-                      card={card}
-                      forged={run.forgedCards.some((forged) => cardKey(forged.card) === cardKey(card))}
-                      selected={targetKey === cardKey(card)}
-                      onPress={() => setTargetKey(cardKey(card))}
-                    />
-                  ))}
+              <View key={suit} style={styles.suitSection}>
+                <Text style={styles.suitLabel}>{SUIT_SYMBOL[suit]} {suit.charAt(0).toUpperCase() + suit.slice(1)}</Text>
+                <View style={styles.suitRow}>
+                  {deck
+                    .filter((card) => card.suit === suit)
+                    .map((card) => (
+                      <DeckCardCell
+                        key={cardKey(card)}
+                        card={card}
+                        forged={run.forgedCards.some((forged) => cardKey(forged.card) === cardKey(card))}
+                        selected={targetKey === cardKey(card)}
+                        onPress={() => setTargetKey(cardKey(card))}
+                      />
+                    ))}
+                </View>
               </View>
             ))}
           </View>
           <View style={styles.confirmRow}>
             <Pressable
+              accessibilityRole="button"
               accessibilityLabel="Cancel forge"
               onPress={() => {
                 setActiveOffer(null);
@@ -122,6 +126,8 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
               <Text style={styles.secondaryButtonText}>CANCEL</Text>
             </Pressable>
             <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: targetKey === null }}
               accessibilityLabel="Confirm forge on selected card"
               disabled={targetKey === null}
               onPress={handleConfirm}
@@ -143,6 +149,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
           <Text style={styles.pickerHint}>{relicDescription(active.relic)}</Text>
           <View style={styles.confirmRow}>
             <Pressable
+              accessibilityRole="button"
               accessibilityLabel="Cancel relic"
               onPress={() => {
                 setActiveOffer(null);
@@ -153,6 +160,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
               <Text style={styles.secondaryButtonText}>CANCEL</Text>
             </Pressable>
             <Pressable
+              accessibilityRole="button"
               accessibilityLabel="Confirm relic"
               onPress={handleConfirm}
               style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
@@ -176,6 +184,7 @@ function OfferCard({ offer, selected, onPress }: OfferCardProps) {
   if (offer.type === 'relic') {
     return (
       <Pressable
+        accessibilityRole="button"
         accessibilityLabel={`Take relic ${offer.relic.name}`}
         onPress={onPress}
         style={({ pressed }) => [
@@ -193,6 +202,7 @@ function OfferCard({ offer, selected, onPress }: OfferCardProps) {
   }
   return (
     <Pressable
+      accessibilityRole="button"
       accessibilityLabel={`Forge effect ${forgeEffectLabel(offer.effect)}`}
       onPress={onPress}
       style={({ pressed }) => [
@@ -222,19 +232,20 @@ function DeckCardCell({ card, forged, selected, onPress }: DeckCardCellProps) {
   const red = isRedSuit(card.suit);
   return (
     <Pressable
-      accessibilityLabel={`${card.value} of ${card.suit}`}
+      accessibilityRole="button"
+      accessibilityLabel={`${card.value} of ${card.suit}${forged ? ' (forged)' : ''}`}
       onPress={onPress}
       style={({ pressed }) => [
         styles.deckCell,
+        forged && styles.deckCellForgedBg,
         selected && styles.deckCellSelected,
         pressed && styles.cardPressed,
       ]}
     >
-      <Text style={[styles.deckCellText, red && styles.deckCellRed]}>
-        {card.value}
-        {SUIT_SYMBOL[card.suit]}
+      <Text style={[styles.deckCellText, red && styles.deckCellRed, forged && styles.deckCellTextForged]}>
+        {card.value}{SUIT_SYMBOL[card.suit]}
       </Text>
-      {forged && <View style={styles.deckCellForged} />}
+      {forged && <View style={styles.deckCellForgedDot} />}
     </Pressable>
   );
 }
@@ -245,6 +256,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: 16,
+    paddingBottom: 70,
   },
   eyebrow: {
     color: colors.success,
@@ -276,7 +288,7 @@ const styles = StyleSheet.create({
   },
   offerCardSelected: {
     borderColor: colors.gold,
-    backgroundColor: '#2a2140',
+    backgroundColor: colors.surfaceSelected,
   },
   cardPressed: {
     opacity: 0.85,
@@ -328,7 +340,17 @@ const styles = StyleSheet.create({
   },
   deckGrid: {
     marginTop: 12,
-    gap: 6,
+    gap: 8,
+  },
+  suitSection: {
+    gap: 4,
+  },
+  suitLabel: {
+    color: colors.textDim,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   suitRow: {
     flexDirection: 'row',
@@ -344,6 +366,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
   },
+  deckCellForgedBg: {
+    backgroundColor: '#e8dcc8',
+    borderWidth: 1,
+    borderColor: colors.gold,
+  },
   deckCellSelected: {
     borderWidth: 2,
     borderColor: colors.gold,
@@ -356,7 +383,10 @@ const styles = StyleSheet.create({
   deckCellRed: {
     color: colors.red,
   },
-  deckCellForged: {
+  deckCellTextForged: {
+    fontWeight: '900',
+  },
+  deckCellForgedDot: {
     position: 'absolute',
     top: 2,
     right: 2,
@@ -378,7 +408,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryButtonText: {
-    color: '#241a05',
+    color: colors.textOnPrimary,
     fontSize: 14,
     fontWeight: '900',
     letterSpacing: 1,

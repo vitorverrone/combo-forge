@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -13,10 +14,12 @@ import {
 } from '../engine';
 
 import { relicDescription } from './format';
+import { completeOnboarding, hasSeenOnboarding, OnboardingOverlay } from './OnboardingOverlay';
 import { colors } from './theme';
 import { useGameStore } from '../store/gameStore';
 
 export function StartScreen() {
+  const [showOnboarding, setShowOnboarding] = useState(!hasSeenOnboarding());
   const forger = useGameStore((state) => state.forger);
   const chooseForger = useGameStore((state) => state.chooseForger);
   const startRun = useGameStore((state) => state.startRun);
@@ -31,11 +34,19 @@ export function StartScreen() {
   const dailyAttempts = dailyAttemptsForDay(daily.attempts, utcDateIso());
   const dailyPlayable = canPlayDaily(dailyAttempts);
 
+  const handleOnboardingComplete = () => {
+    completeOnboarding();
+    setShowOnboarding(false);
+  };
+
   return (
+    <>
+    <OnboardingOverlay visible={showOnboarding} onComplete={handleOnboardingComplete} />
     <ScrollView contentContainerStyle={styles.container}>
       <View style={styles.navRow}>
         <Pressable
           accessibilityLabel="Open profile"
+          accessibilityRole="button"
           onPress={openProfile}
           style={({ pressed }) => [styles.navButton, pressed && styles.forgerCardPressed]}
         >
@@ -43,6 +54,7 @@ export function StartScreen() {
         </Pressable>
         <Pressable
           accessibilityLabel="Open collection"
+          accessibilityRole="button"
           onPress={openCollection}
           style={({ pressed }) => [styles.navButton, pressed && styles.forgerCardPressed]}
         >
@@ -50,6 +62,7 @@ export function StartScreen() {
         </Pressable>
         <Pressable
           accessibilityLabel="Open shop"
+          accessibilityRole="button"
           onPress={openShop}
           style={({ pressed }) => [styles.navButton, styles.navButtonShop, pressed && styles.forgerCardPressed]}
         >
@@ -70,6 +83,8 @@ export function StartScreen() {
             <Pressable
               key={candidate.id}
               accessibilityLabel={`${candidate.name} forger${unlocked ? '' : ' (locked)'}`}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: !unlocked, selected }}
               disabled={!unlocked}
               onPress={() => chooseForger(candidate.id)}
               style={({ pressed }) => [
@@ -94,9 +109,9 @@ export function StartScreen() {
         })}
       </View>
       <Pressable
-        accessibilityLabel="Daily challenge"
-        onPress={openDaily}
-        style={({ pressed }) => [styles.dailyButton, pressed && styles.dailyButtonPressed]}
+        accessibilityLabel="Daily challenge"          accessibilityRole="button"
+          onPress={openDaily}
+          style={({ pressed }) => [styles.dailyButton, pressed && styles.dailyButtonPressed]}
       >
         <Text style={styles.dailyButtonText}>DAILY CHALLENGE</Text>
         <Text style={styles.dailyButtonHint}>
@@ -104,13 +119,14 @@ export function StartScreen() {
         </Text>
       </Pressable>
       <Pressable
-        accessibilityLabel="Start run"
-        onPress={startRun}
-        style={({ pressed }) => [styles.startButton, pressed && styles.startButtonPressed]}
+        accessibilityLabel="Start run"          accessibilityRole="button"
+          onPress={startRun}
+          style={({ pressed }) => [styles.startButton, pressed && styles.startButtonPressed]}
       >
         <Text style={styles.startButtonText}>START RUN</Text>
       </Pressable>
     </ScrollView>
+    </>
   );
 }
 
@@ -174,7 +190,7 @@ const styles = StyleSheet.create({
   },
   forgerCardSelected: {
     borderColor: colors.gold,
-    backgroundColor: '#2a2140',
+    backgroundColor: colors.surfaceSelected,
   },
   forgerCardPressed: {
     opacity: 0.85,
@@ -222,7 +238,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dailyButtonPressed: {
-    backgroundColor: '#2a2140',
+    backgroundColor: colors.surfaceSelected,
   },
   dailyButtonText: {
     color: colors.gold,
@@ -248,7 +264,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.goldDark,
   },
   startButtonText: {
-    color: '#241a05',
+    color: colors.textOnPrimary,
     fontSize: 17,
     fontWeight: '900',
     letterSpacing: 2,

@@ -58,7 +58,7 @@ export function GameScreen() {
         <View style={styles.pillRow}>
           <Pill label="Plays" value={String(run.playsRemaining)} />
           <Pill label="Discards" value={String(discardsRemaining)} />
-          <Pill label="Combo" value={`×${multiplier}`} accent={comboAccent} />
+          <ComboPill value={multiplier} accent={comboAccent} />
         </View>
 
         <RelicRow relics={relics} />
@@ -93,6 +93,8 @@ export function GameScreen() {
       <View style={styles.actions}>
         <Pressable
           accessibilityLabel="Discard selected cards"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: selectedKeys.length === 0 || discardsRemaining <= 0 }}
           disabled={selectedKeys.length === 0 || discardsRemaining <= 0}
           onPress={discardSelection}
           style={({ pressed }) => [styles.button, styles.secondaryButton, pressed && styles.buttonPressed]}
@@ -101,6 +103,8 @@ export function GameScreen() {
         </Pressable>
         <Pressable
           accessibilityLabel="Clear selection"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: selectedKeys.length === 0 }}
           disabled={selectedKeys.length === 0}
           onPress={clearSelection}
           style={({ pressed }) => [styles.button, styles.secondaryButton, pressed && styles.buttonPressed]}
@@ -109,6 +113,8 @@ export function GameScreen() {
         </Pressable>
         <Pressable
           accessibilityLabel="Play selected cards"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: selectedKeys.length === 0 }}
           disabled={selectedKeys.length === 0}
           onPress={playSelection}
           style={({ pressed }) => [styles.button, styles.primaryButton, pressed && styles.buttonPressed]}
@@ -122,11 +128,20 @@ export function GameScreen() {
   );
 }
 
-function Pill({ label, value, accent = false }: { label: string; value: string; accent?: string | false }) {
+function Pill({ label, value }: { label: string; value: string }) {
   return (
-    <View style={[styles.pill, accent && { borderColor: accent }]}>
+    <View style={styles.pill}>
       <Text style={styles.pillLabel}>{label}</Text>
-      <Text style={[styles.pillValue, accent && { color: accent }]}>{value}</Text>
+      <Text style={styles.pillValue}>{value}</Text>
+    </View>
+  );
+}
+
+function ComboPill({ value, accent }: { value: number; accent: string }) {
+  return (
+    <View style={styles.comboPill}>
+      <Text style={styles.comboLabel}>COMBO</Text>
+      <Text style={[styles.comboValue, { color: accent }]}>×{value}</Text>
     </View>
   );
 }
@@ -222,6 +237,27 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginTop: 2,
   },
+  comboPill: {
+    flex: 1.3,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: colors.gold,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    paddingVertical: 10,
+  },
+  comboLabel: {
+    color: colors.textDim,
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  comboValue: {
+    fontSize: 24,
+    fontWeight: '900',
+    marginTop: 2,
+  },
   preview: {
     marginTop: 14,
     minHeight: 52,
@@ -259,6 +295,7 @@ const styles = StyleSheet.create({
     gap: 10,
     padding: 16,
     paddingTop: 8,
+    paddingBottom: 58,
   },
   button: {
     flex: 1,
@@ -274,7 +311,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
   },
   primaryButtonText: {
-    color: '#241a05',
+    color: colors.textOnPrimary,
     fontWeight: '900',
     fontSize: 14,
     letterSpacing: 1,
