@@ -84,6 +84,7 @@ export function ProfileScreen() {
 
       <Pressable
         accessibilityLabel="Back to home"
+        accessibilityRole="button"
         onPress={backToStart}
         style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
       >
@@ -108,6 +109,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: 16,
+    paddingBottom: 70,
   },
   eyebrow: {
     color: colors.gold,

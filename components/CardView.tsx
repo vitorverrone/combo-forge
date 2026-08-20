@@ -24,7 +24,9 @@ export function CardView({ card, forgedCards, selected, disabled = false, onPres
 
   return (
     <Pressable
+      accessibilityRole="button"
       accessibilityLabel={`${card.value} of ${card.suit}`}
+      accessibilityState={{ disabled, selected }}
       disabled={disabled}
       onPress={onPress}
       style={({ pressed }) => [
@@ -103,7 +105,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   forgedText: {
-    color: '#241a05',
+    color: colors.textOnPrimary,
     fontSize: 9,
     fontWeight: '800',
   },

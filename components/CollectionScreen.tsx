@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -36,7 +37,7 @@ export function CollectionScreen() {
 
   const statusOf = (optionId: string) => statuses.find((status) => status.option.id === optionId);
   const lockedForgers = FORGERS.filter((forger) => !isForgerUnlocked(unlocks, forger.id));
-  const deck = createDeck();
+  const deck = useMemo(() => createDeck(), []);
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
@@ -109,6 +110,7 @@ export function CollectionScreen() {
               ) : status?.available ? (
                 <Pressable
                   accessibilityLabel={`Unlock ${forgeEffectLabel(option.effect)}`}
+                  accessibilityRole="button"
                   onPress={() => claimUnlock(option.id)}
                   style={({ pressed }) => [styles.unlockButton, pressed && styles.buttonPressed]}
                 >
@@ -152,6 +154,7 @@ export function CollectionScreen() {
 
       <Pressable
         accessibilityLabel="Back to home"
+        accessibilityRole="button"
         onPress={backToStart}
         style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
       >
@@ -193,6 +196,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: 16,
+    paddingBottom: 70,
   },
   eyebrow: {
     color: colors.gold,
@@ -344,7 +348,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   unlockButtonText: {
-    color: '#241a05',
+    color: colors.textOnPrimary,
     fontSize: 10,
     fontWeight: '900',
     letterSpacing: 1,

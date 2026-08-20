@@ -1,5 +1,5 @@
-import { Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useEffect, useRef } from 'react';
+import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
 
 import { activeRelics, getForger, RunState } from '../engine';
 
@@ -30,9 +30,16 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
   const soClose = missing > 0 && missing <= Math.round(run.target * 0.1);
 
   // Pulso suave na barra "quase cheia" (juice transiente, volta ao repouso).
+  // Respeta Reduce Motion: sem pulsação, mantém barra estática.
   const pulse = useRef(new Animated.Value(1)).current;
+  const [reduceMotion, setReduceMotion] = useState(false);
   useEffect(() => {
-    if (!soClose) return;
+    AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);
+    const sub = AccessibilityInfo.addEventListener('reduceMotionChanged', setReduceMotion);
+    return () => sub.remove();
+  }, []);
+  useEffect(() => {
+    if (!soClose || reduceMotion) return;
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulse, { toValue: 0.55, duration: 700, easing: Easing.inOut(Easing.ease), useNativeDriver: true }),
@@ -41,7 +48,7 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
     );
     loop.start();
     return () => loop.stop();
-  }, [soClose, pulse]);
+  }, [soClose, pulse, reduceMotion]);
 
   return (
     <View style={styles.container}>
@@ -91,7 +98,7 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
 
       <Text style={styles.runTotal}>Run total: {run.runScore} pts</Text>
 
-      <RelicRow relics={activeRelics(run.startingRelic, run.relics)} />
+      <RelicRow relics={activeRelics(run.startingRelic, run.relics)} compact />
 
       {dailyEnd ? (
         <Pressable
@@ -104,6 +111,7 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
       ) : (
         <Pressable
           accessibilityLabel="Try again immediately"
+          accessibilityRole="button"
           onPress={restartRun}
           style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
         >
@@ -112,6 +120,7 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
       )}
       <Pressable
         accessibilityLabel="Back to start"
+        accessibilityRole="button"
         onPress={backToStart}
         style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
       >
@@ -127,6 +136,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    paddingBottom: 80,
   },
   eyebrow: {
     color: colors.textDim,
@@ -209,7 +219,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryButtonText: {
-    color: '#241a05',
+    color: colors.textOnPrimary,
     fontSize: 16,
     fontWeight: '900',
     letterSpacing: 1,

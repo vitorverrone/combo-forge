@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   buttonText: {
-    color: '#241a05',
+    color: colors.textOnPrimary,
     fontSize: 11,
     fontWeight: '900',
     letterSpacing: 0.5,

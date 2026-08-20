@@ -50,6 +50,8 @@ export function ShopScreen() {
         {!adsRemoved && (
           <Pressable
             accessibilityLabel="Buy Remove Ads"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: removeAdsBusy }}
             disabled={removeAdsBusy}
             onPress={() => void purchaseRemoveAds()}
             style={({ pressed }) => [styles.buyButton, pressed && styles.buttonPressed]}
@@ -101,6 +103,8 @@ export function ShopScreen() {
 
       <Pressable
         accessibilityLabel="Restore purchases"
+        accessibilityRole="button"
+        accessibilityState={{ disabled: shop.restoring }}
         disabled={shop.restoring}
         onPress={() => void restorePurchases()}
         style={({ pressed }) => [styles.restoreButton, pressed && styles.buttonPressed]}
@@ -115,6 +119,7 @@ export function ShopScreen() {
 
       <Pressable
         accessibilityLabel="Back to home"
+        accessibilityRole="button"
         onPress={backToStart}
         style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
       >
@@ -191,6 +196,7 @@ const styles = StyleSheet.create({
   },
   scroll: {
     padding: 16,
+    paddingBottom: 70,
   },
   eyebrow: {
     color: colors.gold,
@@ -254,7 +260,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   buyButtonText: {
-    color: '#241a05',
+    color: colors.textOnPrimary,
     fontSize: 13,
     fontWeight: '900',
   },

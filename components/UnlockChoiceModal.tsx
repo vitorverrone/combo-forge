@@ -41,6 +41,7 @@ export function UnlockChoiceModal() {
               <Pressable
                 key={option.id}
                 accessibilityLabel={`Unlock ${option.title}`}
+                accessibilityRole="button"
                 onPress={() => claimUnlock(option.id)}
                 style={({ pressed }) => [styles.option, pressed && styles.buttonPressed]}
               >
@@ -53,6 +54,7 @@ export function UnlockChoiceModal() {
 
           <Pressable
             accessibilityLabel="Decide later"
+            accessibilityRole="button"
             onPress={dismiss}
             style={({ pressed }) => [styles.laterButton, pressed && styles.buttonPressed]}
           >
@@ -67,7 +69,7 @@ export function UnlockChoiceModal() {
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(10,6,16,0.8)',
+    backgroundColor: colors.backdrop,
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
@@ -111,7 +113,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 2,
     borderColor: colors.gold,
-    backgroundColor: '#2a2140',
+    backgroundColor: colors.surfaceSelected,
     padding: 14,
   },
   optionTag: {

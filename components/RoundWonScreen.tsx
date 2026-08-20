@@ -35,7 +35,7 @@ export function RoundWonScreen({ run }: RoundWonScreenProps) {
         </View>
       </View>
 
-      <RelicRow relics={activeRelics(run.startingRelic, run.relics)} />
+      <RelicRow relics={activeRelics(run.startingRelic, run.relics)} compact />
 
       <Text style={styles.forgerNote}>
         {getForger(run.forger).name} · Run total {run.runScore} pts
@@ -58,6 +58,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    paddingBottom: 80,
   },
   eyebrow: {
     color: colors.success,
@@ -120,7 +121,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.goldDark,
   },
   buttonText: {
-    color: '#241a05',
+    color: colors.textOnPrimary,
     fontSize: 16,
     fontWeight: '900',
     letterSpacing: 1,

@@ -63,6 +63,8 @@ export function DailyChallengeScreen() {
       {canAd && (
         <Pressable
           accessibilityLabel="Watch ad for extra attempt"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: daily.adLoading }}
           disabled={daily.adLoading}
           onPress={() => void watchAdForExtraAttempt()}
           style={({ pressed }) => [styles.adButton, pressed && styles.buttonPressed]}
@@ -75,6 +77,8 @@ export function DailyChallengeScreen() {
 
       <Pressable
         accessibilityLabel="Play daily challenge"
+        accessibilityRole="button"
+        accessibilityState={{ disabled: !playable || daily.status === 'loading' }}
         disabled={!playable || daily.status === 'loading'}
         onPress={() => void startDailyChallenge()}
         style={({ pressed }) => [
@@ -105,6 +109,8 @@ export function DailyChallengeScreen() {
       {daily.leaderboard === null ? (
         <Pressable
           accessibilityLabel="View weekly leaderboard"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: daily.leaderboardLoading }}
           disabled={daily.leaderboardLoading}
           onPress={() => void fetchLeaderboard()}
           style={({ pressed }) => [styles.leaderboardButton, pressed && styles.buttonPressed]}
@@ -123,6 +129,7 @@ export function DailyChallengeScreen() {
 
       <Pressable
         accessibilityLabel="Back to start"
+        accessibilityRole="button"
         onPress={backToStart}
         style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
       >
@@ -166,6 +173,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     alignItems: 'center',
     padding: 24,
+    paddingBottom: 90,
   },
   header: {
     alignItems: 'center',
@@ -226,14 +234,14 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: colors.success,
-    backgroundColor: 'rgba(127,201,138,0.12)',
+    borderColor: colors.gold,
+    backgroundColor: colors.surface,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 12,
   },
   adButtonText: {
-    color: colors.success,
+    color: colors.gold,
     fontSize: 14,
     fontWeight: '800',
     letterSpacing: 1,
@@ -250,7 +258,7 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   playButtonText: {
-    color: '#241a05',
+    color: colors.textOnPrimary,
     fontSize: 16,
     fontWeight: '900',
     letterSpacing: 1,

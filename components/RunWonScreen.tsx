@@ -52,7 +52,7 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
         />
       )}
 
-      <RelicRow relics={activeRelics(run.startingRelic, run.relics)} />
+      <RelicRow relics={activeRelics(run.startingRelic, run.relics)} compact />
 
       {dailyEnd ? (
         <Pressable
@@ -65,6 +65,7 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
       ) : (
         <Pressable
           accessibilityLabel="Play another run"
+          accessibilityRole="button"
           onPress={restartRun}
           style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
         >
@@ -73,6 +74,7 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
       )}
       <Pressable
         accessibilityLabel="Back to start"
+        accessibilityRole="button"
         onPress={backToStart}
         style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
       >
@@ -88,6 +90,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 24,
+    paddingBottom: 80,
   },
   eyebrow: {
     color: colors.success,
@@ -155,7 +158,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   primaryButtonText: {
-    color: '#241a05',
+    color: colors.textOnPrimary,
     fontSize: 16,
     fontWeight: '900',
     letterSpacing: 1,
