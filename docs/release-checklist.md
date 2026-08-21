@@ -10,12 +10,12 @@ desenvolvimento — nada disso é opcional para um release real.
 | Item | Onde está hoje | Próximo passo |
 |---|---|---|
 | Supabase | ✅ Projeto criado, migrations aplicadas, `.env` real (URL + anon) e Desafio Diário validado de ponta a ponta no app (seed real em release local e no preview do EAS) | `submit_daily_score`/`get_weekly_leaderboard` pendem de um fim de Run (opcional: `verify:backend` com Docker) |
-| RevenueCat | ✅ App + 4 cosméticos no dashboard, chave **Test Store** no `.env` e no EAS (preços simulados); compra/persistência validadas | Criar o produto `combo_forge_remove_ads` (Remove Ads) no dashboard + chave pública real (`goog_...`) + 5 IAPs nas lojas + vínculo + testar Restore real |
-| AdMob **Android** | ✅ App + unidade rewarded + App ID real no `app.json`, env no `.env` e no EAS; request real validado (NO_FILL esperado até aprovar) | Vincular à loja + readiness review → revalidar recompensa; criar ad unit de **banner** + env `EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID` |
-| Banner em todas as telas (ticket banner-01) | ✅ Implementado e validado no emulador (dev build: `Test Ad` no rodapé de todas as telas, reserva de 50dp, sem sobreposição) | Ad unit de banner no AdMob + env (seção 3) |
-| Remove Ads (tickets 02/03) | ✅ Implementado e validado no emulador (provider dev: compra esconde o banner na hora e persiste; restore não regride; sync no launch) | Produto `combo_forge_remove_ads` no RevenueCat + IAPs nas lojas (seção 2) |
+| RevenueCat | ✅ App + 5 produtos no dashboard (4 cosméticos + Remove Ads), chave **Test Store** no `.env` e no EAS; compra/persistência validadas | Chave pública real (`goog_...`) + Play Console (app em validação) + App Store Connect + vínculo + testar Restore real |
+| AdMob **Android** | ✅ App + unidade rewarded + banner + App ID real no `app.json`, env no `.env` e no EAS; request real validado (NO_FILL esperado até aprovar) | Vincular à loja + readiness review → revalidar recompensa |
+| Banner em todas as telas (ticket banner-01) | ✅ Implementado + ad unit real criada + env setada no EAS (preview + production) | Vincular AdMob à loja (readiness review) |
+| Remove Ads (tickets 02/03) | ✅ Implementado + produto `combo_forge_remove_ads` criado no RevenueCat | Play Console (em validação) → criar IAP + vínculo |
 | AdMob **iOS** | ⏳ Pendente (Test App ID, sem ad unit) | Quando publicar na App Store |
-| IAPs reais nas lojas | ❌ Não criados (só no RevenueCat/Test Store) | Play Console / App Store Connect (seção 2) |
+| IAPs reais nas lojas | ⏳ Play Console em validação (app não criado ainda); App Store Connect pendente | Aguardar validação do Play Console → criar 5 IAPs → vincular ao RevenueCat |
 | EAS | ✅ Projeto vinculado (`projectId`), variáveis em preview+production, build preview OK e validado no emulador | `eas build development` e `production` |
 | Identificadores `com.comboforge.app` | ✅ no `app.json` | Validar igualdade em AdMob/RC/ASC/Play (seção 0) |
 | Pin do Kotlin (build de nuvem) | ✅ Versionado via `plugins/withKotlinVersionPin.js` | — |
@@ -115,12 +115,9 @@ monetizar de verdade.
   | `combo_forge_skin_royal` | Royal Deck | $1.99 |
   | `combo_forge_vfx_golden_combo` | Golden Combo | $0.99 |
 
-- [ ] Produto não-consumível **`combo_forge_remove_ads`** (Remove Ads, US$2,99)
-      criado no dashboard do RevenueCat — **ação humana pendente**: os tickets
-      02/03 foram validados no emulador com o provider dev (compra simulada).
-      Criar com o productId exato + package no offering de Test Store para
-      validar o fluxo real (preço do provider + compra/restore) com a chave
-      Test Store.
+- [x] Produto não-consumível **`combo_forge_remove_ads`** (Remove Ads, US$2,99)
+      criado no dashboard do RevenueCat (2026-08-21, productId exato + package
+      no offering de Test Store).
 
 - [ ] Vincular os produtos de loja (App Store Connect / Play Console) a cada
       produto do RevenueCat (pagina de produto → Store Integration).
@@ -130,10 +127,10 @@ monetizar de verdade.
 - [ ] **App Store Connect:** criar os 5 IAPs (4 cosméticos consumíveis + o
       não-consumível `combo_forge_remove_ads`) com os mesmos identificadores,
       preço e textos localizados; aceitar o contrato pago.
-- [ ] **Play Console:** criar os 5 produtos no Google Play Billing (produtos em
-      app) com os mesmos IDs, preço e descrições (4 consumíveis + 1
-      não-consumível `combo_forge_remove_ads`); preencher a declaração de
-      produtos em app.
+- [ ] **Play Console:** ⏳ App em validação — não é possível criar o app nem
+      os 5 produtos em app ainda. Aguardar aprovação para proceder (4
+      consumíveis + 1 não-consumível `combo_forge_remove_ads`); preencher a
+      declaração de produtos em app.
 
 ### Preencher o `.env`
 
@@ -160,7 +157,7 @@ monetizar de verdade.
       (emulador, provider dev).
 - [ ] Testar `Restore` **real** (Test Store key): cosméticos voltam ao "owned"
       + a entitlement `remove_ads` reentregue → banner oculto (depende de
-      criar o produto no dashboard — acima).
+      criar os IAPs nas lojas e vincular ao RevenueCat — seção 2).
 
 #### Validação no emulador (2026-08-15, dev build local)
 
@@ -213,10 +210,8 @@ O config plugin hoje usa os **Test App IDs do Google**:
       `com.comboforge.app`; fluxo "unpublished" — app ainda não publicado).
       O app iOS fica pendente até publicar na App Store.
 - [x] Criar a unidade de anúncio **Rewarded** do Android (2026-08-16).
-- [ ] Criar a unidade de anúncio **Banner** do Android (separada da rewarded;
-      mesmo app) — **ação humana pendente** (ticket banner-01). Sem ela o
-      banner em produção fica oculto (degrade sem quebrar: `shouldShowBanner`
-      sem ad unit = oculto); em dev o `TestIds.ADAPTIVE_BANNER` sempre carrega.
+- [x] Criar a unidade de anúncio **Banner** do Android (separada da rewarded;
+      mesmo app) — (2026-08-21, ad unit `ca-app-pub-7753200620000515/1366979567`).
 - [x] Substituir o **App ID do Android** no `app.json` (validado com
       `npx expo config --type public`):
   ```json
@@ -233,8 +228,8 @@ O config plugin hoje usa os **Test App IDs do Google**:
 - [x] `EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID` preenchido no `.env`
       (2026-08-16) = `ca-app-pub-7753200620000515/2212947942`.
       O `_IOS` fica para a publicação na App Store.
-- [ ] `EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID` preenchido no `.env`
-      (quando criar a ad unit de banner — seção acima).
+- [x] `EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID` preenchido no `.env`
+      (2026-08-21) e refletido no EAS (preview + production).
 
 ### Verificar
 
@@ -275,10 +270,9 @@ EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID=<admob rewarded ad unit id (androi
 # EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS=<...>  # quando publicar iOS
 ```
 
-- [x] Nenhum valor de `.env` mantém `<...>` placeholder (verificado 2026-08-16)
-      e todas as variáveis existem (Supabase, RevenueCat e AdMob Android
-      rewarded). A variável de banner (`EXPO_PUBLIC_ADMOB_BANNER_..._ANDROID`)
-      ainda não existe — esperado, depende da ad unit de banner (seção 3).
+- [x] Nenhum valor de `.env` mantém `<...>` placeholder (verificado 2026-08-16,
+      banner adicionado 2026-08-21) e todas as variáveis existem (Supabase,
+      RevenueCat, AdMob Android rewarded + banner).
 - [x] `.env` fora do git (confirmado por `git check-ignore .env`).
 
 ---
@@ -313,7 +307,7 @@ caem no fallback de dev quando a variável não existe, então:
   eas env:set --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <anon key> --environment preview --visibility plaintext
   eas env:set --name EXPO_PUBLIC_REVENUECAT_API_KEY --value <sdk key> --environment preview --visibility plaintext
   eas env:set --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID --value <ad unit id android> --environment preview --visibility plaintext
-  eas env:set --name EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID --value <banner ad unit id android> --environment preview --visibility plaintext   # quando criar a ad unit de banner
+  eas env:set --name EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID --value <banner ad unit id android> --environment preview --visibility plaintext   # ✅ setado 2026-08-21
   eas env:set --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS --value <ad unit id ios> --environment preview --visibility plaintext   # quando publicar iOS
   ```
   (São chaves públicas por design — embutidas no bundle — por isso
@@ -355,7 +349,8 @@ caem no fallback de dev quando a variável não existe, então:
   - [ ] IAPs criados e aprovados (seção 2).
   - [ ] App Privacy ("nutrition label"): declarar dados de anúncios/identificadores
         usados pelos SDKs (AdMob/RevenueCat/Supabase).
-- [ ] **Google Play Console**
+- [ ] **Google Play Console** ⏳ App em validação — aguardar aprovação para
+      configurar.
   - [ ] `android.package` = package do app.
   - [ ] Produtos em app criados (seção 2).
   - [ ] Data safety form: SDKs de anúncios e analytics declarados.
