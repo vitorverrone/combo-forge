@@ -6,6 +6,7 @@ import { activeRelics, getForger, RunState } from '../engine';
 import { DailySubmitStatus } from './DailySubmitStatus';
 import { RelicRow } from './RelicRow';
 import { colors } from './theme';
+import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 
 interface RunLostScreenProps {
@@ -139,18 +140,21 @@ const styles = StyleSheet.create({
     paddingBottom: 80,
   },
   eyebrow: {
+    fontFamily: fonts.body,
     color: colors.textDim,
     fontSize: 12,
     fontWeight: '700',
     letterSpacing: 2,
   },
   title: {
+    fontFamily: fonts.heading,
     color: colors.text,
     fontSize: 30,
     fontWeight: '900',
     marginTop: 6,
   },
   missingText: {
+    fontFamily: fonts.body,
     color: colors.textDim,
     fontSize: 14,
     marginTop: 10,
@@ -173,6 +177,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   unlockBannerText: {
+    fontFamily: fonts.heading,
     color: colors.gold,
     fontSize: 13,
     fontWeight: '800',

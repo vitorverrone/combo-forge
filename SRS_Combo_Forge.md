@@ -73,9 +73,9 @@ decide regra de jogo: aplica os eventos que o motor devolve e delega IO
 | Build/deploy | EAS (Expo Application Services) | perfis development/preview/production |
 
 ### 2.3 Plataformas suportadas
-- **Android:** package `com.comboforge.app`; AdMob (banner + recompensado)
+- **Android:** package `com.combocardforge.app`; AdMob (banner + recompensado)
   totalmente configurado (ver §5.3).
-- **iOS:** bundle `com.comboforge.app`, `supportsTablet: true`; AdMob
+- **iOS:** bundle `com.combocardforge.app`, `supportsTablet: true`; AdMob
   pendente de App ID/ad unit reais até a publicação na App Store — o app
   funciona integralmente sem anúncios nessa plataforma até lá (degradação
   graciosa, não bloqueio).

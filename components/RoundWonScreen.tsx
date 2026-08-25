@@ -4,50 +4,68 @@ import { activeRelics, getForger, RunState } from '../engine';
 
 import { RelicRow } from './RelicRow';
 import { colors } from './theme';
+import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 
 interface RoundWonScreenProps {
   readonly run: RunState;
 }
 
-/** Resumo da Rodada vencida: pontuação obtida vs Meta e avanço para a próxima. */
 export function RoundWonScreen({ run }: RoundWonScreenProps) {
   const nextRound = useGameStore((state) => state.nextRound);
 
   return (
     <View style={styles.container}>
-      <Text style={styles.eyebrow}>ROUND {run.roundNumber} CLEARED</Text>
+      {/* Win badge */}
+      <View style={styles.winBadge}>
+        <Text style={styles.winBadgeIcon}>✓</Text>
+      </View>
+
+      <Text style={styles.eyebrow}>Round {run.roundNumber} cleared</Text>
       <Text style={styles.title}>Target beaten!</Text>
 
-      <View style={styles.card}>
-        <View style={styles.statRow}>
-          <Text style={styles.statLabel}>Score</Text>
-          <Text style={styles.statValue}>{run.score}</Text>
-        </View>
-        <View style={styles.statRow}>
-          <Text style={styles.statLabel}>Target</Text>
-          <Text style={styles.statValue}>{run.target}</Text>
-        </View>
-        <View style={styles.divider} />
-        <View style={styles.statRow}>
-          <Text style={styles.statLabel}>Margin</Text>
-          <Text style={[styles.statValue, styles.marginValue]}>+{run.score - run.target}</Text>
+      {/* Stats card */}
+      <View style={styles.statsCard}>
+        <View style={styles.statsGrid}>
+          <View style={styles.stat}>
+            <Text style={[styles.statValue, styles.statValueScore]}>{run.score}</Text>
+            <Text style={styles.statLabel}>Score</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statValue}>{run.target}</Text>
+            <Text style={styles.statLabel}>Target</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={[styles.statValue, styles.statValueMargin]}>
+              +{run.score - run.target}
+            </Text>
+            <Text style={styles.statLabel}>Margin</Text>
+          </View>
         </View>
       </View>
 
-      <RelicRow relics={activeRelics(run.startingRelic, run.relics)} compact />
-
+      {/* Forger note */}
       <Text style={styles.forgerNote}>
-        {getForger(run.forger).name} · Run total {run.runScore} pts
+        <Text style={styles.forgerNoteBold}>{getForger(run.forger).name}</Text> · Run total{' '}
+        {run.runScore} pts
       </Text>
 
-      <Pressable
-        accessibilityLabel="Start next round"
-        onPress={nextRound}
-        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-      >
-        <Text style={styles.buttonText}>NEXT ROUND →</Text>
-      </Pressable>
+      {/* Relics */}
+      <View style={styles.relicsBlock}>
+        <Text style={styles.relicsLabel}>Active relics</Text>
+        <RelicRow relics={activeRelics(run.startingRelic, run.relics)} compact />
+      </View>
+
+      {/* Action */}
+      <View style={styles.actions}>
+        <Pressable
+          accessibilityLabel="Start next round"
+          onPress={nextRound}
+          style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
+        >
+          <Text style={styles.btnPrimaryText}>Next Round →</Text>
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -57,73 +75,145 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: 20,
     paddingBottom: 80,
+    backgroundColor: colors.background,
   },
-  eyebrow: {
-    color: colors.success,
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 3,
+  /* ── Win badge ── */
+  winBadge: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+    shadowColor: colors.gold,
+    shadowOpacity: 0.14,
+    shadowRadius: 9,
+    shadowOffset: { width: 0, height: 0 },
   },
-  title: {
-    color: colors.text,
+  winBadgeIcon: {
+    fontFamily: fonts.heading,
+    color: colors.textOnPrimary,
     fontSize: 30,
     fontWeight: '900',
+  },
+  /* ── Header ── */
+  eyebrow: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 3,
+    color: colors.gold,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+  title: {
+    fontFamily: fonts.heading,
+    fontSize: 32,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: colors.text,
+    textAlign: 'center',
     marginTop: 6,
   },
-  card: {
+  /* ── Stats card ── */
+  statsCard: {
     alignSelf: 'stretch',
-    borderRadius: 14,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
+    borderRadius: 16,
     padding: 18,
-    marginTop: 28,
+    paddingHorizontal: 12,
+    marginTop: 22,
+  },
+  statsGrid: {
+    flexDirection: 'row',
     gap: 10,
   },
-  statRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-  },
-  statLabel: {
-    color: colors.textDim,
-    fontSize: 14,
-    fontWeight: '600',
+  stat: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 12,
   },
   statValue: {
-    color: colors.text,
+    fontFamily: fonts.heading,
     fontSize: 26,
-    fontWeight: '900',
+    fontWeight: '700',
+    lineHeight: 30,
+    color: colors.text,
   },
-  marginValue: {
+  statValueScore: {
     color: colors.gold,
   },
-  divider: {
-    height: 1,
-    backgroundColor: colors.surfaceBorder,
+  statValueMargin: {
+    color: colors.success,
   },
-  forgerNote: {
+  statLabel: {
+    fontFamily: fonts.body,
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 1,
     color: colors.textDim,
-    fontSize: 13,
-    marginTop: 14,
+    textTransform: 'uppercase',
+    marginTop: 5,
   },
-  button: {
-    marginTop: 28,
-    alignSelf: 'stretch',
-    borderRadius: 12,
-    backgroundColor: colors.gold,
-    paddingVertical: 16,
+  /* ── Forger note ── */
+  forgerNote: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textDim,
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  forgerNoteBold: {
+    color: colors.text,
+    fontWeight: '700',
+  },
+  /* ── Relics ── */
+  relicsBlock: {
+    marginTop: 20,
     alignItems: 'center',
   },
-  buttonPressed: {
+  relicsLabel: {
+    fontFamily: fonts.body,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: colors.textDim,
+    textTransform: 'uppercase',
+    marginBottom: 10,
+  },
+  /* ── Actions ── */
+  actions: {
+    alignSelf: 'stretch',
+    paddingHorizontal: 0,
+    paddingTop: 14,
+  },
+  btnPrimary: {
+    width: '100%',
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: colors.gold,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  btnPrimaryPressed: {
     backgroundColor: colors.goldDark,
   },
-  buttonText: {
+  btnPrimaryText: {
+    fontFamily: fonts.heading,
     color: colors.textOnPrimary,
-    fontSize: 16,
-    fontWeight: '900',
+    fontSize: 14,
+    fontWeight: '700',
     letterSpacing: 1,
   },
 });

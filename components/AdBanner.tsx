@@ -8,7 +8,8 @@ import { useGameStore } from '../store/gameStore';
 import { colors } from './theme';
 
 /** Altura reservada do rodapé (50dp — decisão do grilling/ADR 0004). */
-const BANNER_HEIGHT = 50;
+// DO NOT CHANGE: está 90 porque fica melhor
+const BANNER_HEIGHT = 90;
 
 /**
  * Banner full-width de 50dp no rodapé de todas as telas (ticket banner-01).
@@ -47,5 +48,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background,
+    paddingTop: 16
   },
 });

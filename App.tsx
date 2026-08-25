@@ -1,4 +1,5 @@
 import { StatusBar } from 'expo-status-bar';
+import { useFonts } from 'expo-font';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,37 +22,46 @@ import { useGameStore } from './store/gameStore';
 initializeSqlitePersistence();
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    'Rubik': require('./assets/fonts/Rubik-Variable.ttf'),
+    'Selawik': require('./assets/fonts/Selawik-Regular.ttf'),
+    'Selawik-Bold': require('./assets/fonts/Selawik-Bold.ttf'),
+  });
+
   const screen = useGameStore((state) => state.screen);
+
+  // Mantém o splash visível até as fontes carregarem.
+  if (!fontsLoaded) {
+    return null;
+  }
 
   return (
     <SafeAreaProvider>
-      <View style={styles.container}>
-        {/* SafeAreaView (topo) mantém o conteúdo abaixo da barra de status —
-            o app roda edge-to-edge no Android (API 35+). As sobreposições
-            (modais/banners) ficam fora de propósito. */}
-        <SafeAreaView edges={['top']} style={styles.container}>
+      <SafeAreaView edges={['top']} style={styles.container}>
+        <View style={styles.screenWrapper}>
           {screen === 'start' && <StartScreen />}
           {screen === 'game' && <GameScreen />}
           {screen === 'profile' && <ProfileScreen />}
           {screen === 'collection' && <CollectionScreen />}
           {screen === 'daily' && <DailyChallengeScreen />}
           {screen === 'shop' && <ShopScreen />}
-        </SafeAreaView>
-        {/* Banner full-width de 50dp no rodapé de todas as telas (ticket
-            banner-01). Oculto quando não há ad unit para a plataforma (regra
-            pura shouldShowBanner) — anúncio nunca é obrigatório. */}
+        </View>
         <AdBanner />
         <UnlockChoiceModal />
         <BreakReminderBanner />
         <GameFeedback />
         <StatusBar style="light" />
-      </View>
+      </SafeAreaView>
     </SafeAreaProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  screenWrapper: {
     flex: 1,
     backgroundColor: colors.background,
   },

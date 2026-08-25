@@ -6,6 +6,7 @@ import {
   Card,
   cardKey,
   createDeck,
+  ForgedCard,
   ForgeOffer,
   RunState,
   SUITS,
@@ -16,41 +17,42 @@ import {
   forgeEffectLabel,
   isRedSuit,
   relicDescription,
-  SUIT_SYMBOL,
 } from './format';
-import { RelicRow } from './RelicRow';
+import { SuitSymbol } from './SuitSymbol';
 import { colors } from './theme';
+import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 
 interface ForgeScreenProps {
   readonly run: RunState;
 }
 
-/**
- * A Forja entre Rodadas: as 3 ofertas do motor (2 de Efeito de Forja + 1 de
- * Relíquia, ou 3 de carta com o teto de Relíquias cheio). Oferta de carta
- * abre o seletor de carta-alvo do Baralho e exige confirmação; a Relíquia é
- * aplicada no toque. A Forja não pode ser pulada — o motor só sai da fase
- * 'forging' via applyForgeOffer.
- */
 export function ForgeScreen({ run }: ForgeScreenProps) {
   const applyForgeOffer = useGameStore((state) => state.applyForgeOffer);
-  // Índice da oferta em exame (carta) ou já confirmada (Relíquia).
   const [activeOffer, setActiveOffer] = useState<number | null>(null);
   const [targetKey, setTargetKey] = useState<string | null>(null);
+  const [cardEffectConfirmed, setCardEffectConfirmed] = useState(false);
 
   const deck = useMemo(() => createDeck(), []);
   const active = activeOffer !== null ? run.forgeOffers[activeOffer] : undefined;
+  const relicCount = activeRelics(run.startingRelic, run.relics).length;
 
   const handleOfferPress = (index: number) => {
-    // Mesma oferta de novo = cancela. Oferta nova = abre a confirmação.
     if (activeOffer === index) {
       setActiveOffer(null);
       setTargetKey(null);
+      setCardEffectConfirmed(false);
     } else {
       setActiveOffer(index);
       setTargetKey(null);
+      setCardEffectConfirmed(false);
     }
+  };
+
+  const handleApplyCardEffect = () => {
+    if (active === undefined || activeOffer === null || active.type !== 'cardEffect') return;
+    if (targetKey === null) return;
+    setCardEffectConfirmed(true);
   };
 
   const handleConfirm = () => {
@@ -61,126 +63,144 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
       if (target === undefined) return;
       applyForgeOffer(activeOffer, target);
     } else {
-      // Relíquia: confirmada na segunda etapa (sem carta alvo).
       applyForgeOffer(activeOffer);
     }
     setActiveOffer(null);
     setTargetKey(null);
+    setCardEffectConfirmed(false);
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
-      <Text style={styles.eyebrow}>ROUND {run.roundNumber} CLEARED</Text>
-      <Text style={styles.title}>The Forge</Text>
-      <Text style={styles.subtitle}>Pick one upgrade to carry into the next round.</Text>
-
-      <RelicRow relics={activeRelics(run.startingRelic, run.relics)} compact />
-
-      <View style={styles.offerList}>
-        {run.forgeOffers.map((offer, index) => (
-          <OfferCard
-            key={index}
-            offer={offer}
-            selected={activeOffer === index}
-            onPress={() => handleOfferPress(index)}
-          />
-        ))}
+    <View style={styles.container}>
+      {/* Topbar with relic counter */}
+      <View style={styles.topbar}>
+        <View style={styles.relicCounter}>
+          <Text style={styles.relicCounterLabel}>Relics</Text>
+          <Text style={styles.relicCounterValue}>{relicCount}/3</Text>
+        </View>
       </View>
 
-      {active !== undefined && active.type === 'cardEffect' && (
-        <View style={styles.picker}>
-          <Text style={styles.pickerTitle}>Apply {forgeEffectLabel(active.effect)} to which card?</Text>
-          <Text style={styles.pickerHint}>
-            Already-forged cards keep stacking effects.
-          </Text>
-          <View style={styles.deckGrid}>
-            {SUITS.map((suit) => (
-              <View key={suit} style={styles.suitSection}>
-                <Text style={styles.suitLabel}>{SUIT_SYMBOL[suit]} {suit.charAt(0).toUpperCase() + suit.slice(1)}</Text>
-                <View style={styles.suitRow}>
-                  {deck
-                    .filter((card) => card.suit === suit)
-                    .map((card) => (
-                      <DeckCardCell
-                        key={cardKey(card)}
-                        card={card}
-                        forged={run.forgedCards.some((forged) => cardKey(forged.card) === cardKey(card))}
-                        selected={targetKey === cardKey(card)}
-                        onPress={() => setTargetKey(cardKey(card))}
-                      />
-                    ))}
-                </View>
-              </View>
-            ))}
-          </View>
-          <View style={styles.confirmRow}>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        {/* Screen header */}
+        <Text style={styles.eyebrow}>Round {run.roundNumber} cleared</Text>
+        <Text style={styles.title}>Forge</Text>
+        <Text style={styles.subtitle}>Choose 1 of 3 offers to strengthen your run.</Text>
+
+        {/* Offers */}
+        <View style={styles.offerList}>
+          {run.forgeOffers.map((offer, index) => (
+            <OfferCard
+              key={index}
+              offer={offer}
+              selected={activeOffer === index}
+              deck={deck}
+              forgedCards={run.forgedCards}
+              onPress={() => handleOfferPress(index)}
+            />
+          ))}
+        </View>
+      </ScrollView>
+
+      {/* Forge button */}
+      <View style={styles.actions}>
+        {(() => {
+          const forgeDisabled = activeOffer === null || (active !== undefined && active.type === 'cardEffect' && !cardEffectConfirmed);
+          return (
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Cancel forge"
-              onPress={() => {
-                setActiveOffer(null);
-                setTargetKey(null);
-              }}
-              style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
-            >
-              <Text style={styles.secondaryButtonText}>CANCEL</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityState={{ disabled: targetKey === null }}
-              accessibilityLabel="Confirm forge on selected card"
-              disabled={targetKey === null}
+              accessibilityState={{ disabled: forgeDisabled }}
+              accessibilityLabel="Confirm forge"
+              disabled={forgeDisabled}
               onPress={handleConfirm}
               style={({ pressed }) => [
-                styles.primaryButton,
-                targetKey === null && styles.buttonDisabled,
-                pressed && styles.buttonPressed,
+                styles.btnPrimary,
+                forgeDisabled && styles.btnDisabled,
+                pressed && !forgeDisabled && styles.btnPressed,
               ]}
             >
-              <Text style={styles.primaryButtonText}>FORGE</Text>
+              <Text style={[styles.btnPrimaryText, forgeDisabled && styles.btnDisabledText]}>Forge</Text>
             </Pressable>
-          </View>
-        </View>
-      )}
+          );
+        })()}
+      </View>
 
-      {active !== undefined && active.type === 'relic' && (
-        <View style={styles.picker}>
-          <Text style={styles.pickerTitle}>Take {active.relic.name}?</Text>
-          <Text style={styles.pickerHint}>{relicDescription(active.relic)}</Text>
-          <View style={styles.confirmRow}>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Cancel relic"
-              onPress={() => {
-                setActiveOffer(null);
-                setTargetKey(null);
-              }}
-              style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
-            >
-              <Text style={styles.secondaryButtonText}>CANCEL</Text>
-            </Pressable>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Confirm relic"
-              onPress={handleConfirm}
-              style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
-            >
-              <Text style={styles.primaryButtonText}>TAKE IT</Text>
-            </Pressable>
+      {/* Card picker overlay */}
+      {active !== undefined && active.type === 'cardEffect' && !cardEffectConfirmed && (
+        <View style={styles.overlay}>
+          <View style={styles.pickerPanel}>
+            <Text style={styles.pickerTitle}>Choose a card</Text>
+            <Text style={styles.pickerSub}>
+              {forgeEffectLabel(active.effect)} — {forgeEffectDescription(active.effect)}
+            </Text>
+            <ScrollView contentContainerStyle={styles.pickerGrid}>
+              {SUITS.map((suit) => (
+                deck
+                  .filter((card) => card.suit === suit)
+                  .map((card) => {
+                    const red = isRedSuit(card.suit);
+                    const isSelected = targetKey === cardKey(card);
+                    return (
+                      <Pressable
+                        key={cardKey(card)}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${card.value} of ${card.suit}`}
+                        onPress={() => setTargetKey(cardKey(card))}
+                        style={({ pressed }) => [
+                          styles.pickCard,
+                          red && styles.pickCardRed,
+                          isSelected && styles.pickCardSelected,
+                          pressed && styles.btnPressed,
+                        ]}
+                      >
+                        <Text style={[styles.pickCardRank, red && styles.pickCardRedText]}>
+                          {card.value}
+                        </Text>
+                        <SuitSymbol suit={card.suit} color={red ? colors.red : colors.cardInk} size={14} />
+                      </Pressable>
+                    );
+                  })
+              ))}
+            </ScrollView>
+            <View style={styles.pickerActions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Cancel"
+                onPress={() => { setActiveOffer(null); setTargetKey(null); }}
+                style={({ pressed }) => [styles.btnDanger, pressed && styles.btnPressed]}
+              >
+                <Text style={styles.btnDangerText}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ disabled: targetKey === null }}
+                accessibilityLabel={`Apply ${active ? forgeEffectLabel(active.effect) : ''}`}
+                disabled={targetKey === null}
+                onPress={handleApplyCardEffect}
+                style={({ pressed }) => [
+                  styles.btnPrimarySmall,
+                  targetKey === null && styles.btnDisabledSmall,
+                  pressed && targetKey !== null && styles.btnPressed,
+                ]}
+              >
+                <Text style={[styles.btnPrimaryText, targetKey === null && styles.btnDisabledText]}>Apply</Text>
+              </Pressable>
+            </View>
           </View>
         </View>
       )}
-    </ScrollView>
+    </View>
   );
 }
 
 interface OfferCardProps {
   readonly offer: ForgeOffer;
   readonly selected: boolean;
+  readonly deck: Card[];
+  readonly forgedCards: readonly ForgedCard[];
   readonly onPress: () => void;
 }
 
-function OfferCard({ offer, selected, onPress }: OfferCardProps) {
+function OfferCard({ offer, selected, deck, forgedCards, onPress }: OfferCardProps) {
   if (offer.type === 'relic') {
     return (
       <Pressable
@@ -188,64 +208,54 @@ function OfferCard({ offer, selected, onPress }: OfferCardProps) {
         accessibilityLabel={`Take relic ${offer.relic.name}`}
         onPress={onPress}
         style={({ pressed }) => [
-          styles.offerCard,
-          selected && styles.offerCardSelected,
-          pressed && styles.cardPressed,
+          styles.offer,
+          selected && styles.offerSelected,
+          pressed && styles.btnPressed,
         ]}
       >
-        <Text style={styles.offerTag}>RELIC</Text>
-        <Text style={styles.offerName}>{offer.relic.name}</Text>
-        <Text style={styles.offerText}>{relicDescription(offer.relic)}</Text>
-        <Text style={styles.offerAction}>{selected ? 'Confirm below' : 'Tap to review'}</Text>
+        <View style={styles.offerThumb}>
+          <View style={styles.relicGem} />
+        </View>
+        <View style={styles.offerInfo}>
+          <Text style={styles.offerType}>Relic</Text>
+          <Text style={styles.offerName}>{offer.relic.name}</Text>
+          <Text style={styles.offerDesc}>{relicDescription(offer.relic)}</Text>
+        </View>
       </Pressable>
     );
   }
+
+  // Card effect — show a mini card with forge badge
+  const sampleCard = deck[0]; // default card for thumbnail
+  const badge = offer.effect.kind === 'valueBonus' ? `+${offer.effect.amount}` :
+    offer.effect.kind === 'multiplier' ? `×${offer.effect.multiplier}` :
+      offer.effect.kind === 'wildcard' ? 'ANY' : 'IF';
+
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={`Forge effect ${forgeEffectLabel(offer.effect)}`}
       onPress={onPress}
       style={({ pressed }) => [
-        styles.offerCard,
-        selected && styles.offerCardSelected,
-        pressed && styles.cardPressed,
+        styles.offer,
+        selected && styles.offerSelected,
+        pressed && styles.btnPressed,
       ]}
     >
-      <Text style={styles.offerTag}>CARD EFFECT</Text>
-      <Text style={[styles.offerName, styles.offerNameGold]}>
-        {forgeEffectLabel(offer.effect)}
-      </Text>
-      <Text style={styles.offerText}>{forgeEffectDescription(offer.effect)}</Text>
-      <Text style={styles.offerAction}>{selected ? 'Pick a card below' : 'Tap to choose a card'}</Text>
-    </Pressable>
-  );
-}
-
-interface DeckCardCellProps {
-  readonly card: Card;
-  readonly forged: boolean;
-  readonly selected: boolean;
-  readonly onPress: () => void;
-}
-
-function DeckCardCell({ card, forged, selected, onPress }: DeckCardCellProps) {
-  const red = isRedSuit(card.suit);
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={`${card.value} of ${card.suit}${forged ? ' (forged)' : ''}`}
-      onPress={onPress}
-      style={({ pressed }) => [
-        styles.deckCell,
-        forged && styles.deckCellForgedBg,
-        selected && styles.deckCellSelected,
-        pressed && styles.cardPressed,
-      ]}
-    >
-      <Text style={[styles.deckCellText, red && styles.deckCellRed, forged && styles.deckCellTextForged]}>
-        {card.value}{SUIT_SYMBOL[card.suit]}
-      </Text>
-      {forged && <View style={styles.deckCellForgedDot} />}
+      <View style={styles.offerThumb}>
+        <View style={styles.miniCard}>
+          <Text style={styles.miniCardRank}>{sampleCard.value}</Text>
+          <SuitSymbol suit={sampleCard.suit} color={colors.cardInk} size={17} />
+        </View>
+        <View style={styles.forgeBadge}>
+          <Text style={styles.forgeBadgeText}>{badge}</Text>
+        </View>
+      </View>
+      <View style={styles.offerInfo}>
+        <Text style={styles.offerType}>Card Effect</Text>
+        <Text style={styles.offerName}>{forgeEffectLabel(offer.effect)}</Text>
+        <Text style={styles.offerDesc}>{forgeEffectDescription(offer.effect)}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -253,185 +263,337 @@ function DeckCardCell({ card, forged, selected, onPress }: DeckCardCellProps) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
+  /* ── Topbar ── */
+  topbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    paddingHorizontal: 16,
+    paddingTop: 44,
+  },
+  relicCounter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 10,
+    paddingVertical: 7,
+    paddingHorizontal: 12,
+  },
+  relicCounterLabel: {
+    fontFamily: fonts.body,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1,
+    color: colors.textDim,
+    textTransform: 'uppercase',
+  },
+  relicCounterValue: {
+    fontFamily: fonts.heading,
+    fontSize: 13,
+    fontWeight: '800',
+    color: colors.gold,
+  },
+  /* ── Scroll ── */
   scroll: {
-    padding: 16,
+    paddingHorizontal: 16,
     paddingBottom: 70,
   },
+  /* ── Header ── */
   eyebrow: {
-    color: colors.success,
+    fontFamily: fonts.body,
     fontSize: 12,
-    fontWeight: '800',
+    fontWeight: '600',
     letterSpacing: 3,
+    color: colors.gold,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    marginTop: 16,
   },
   title: {
-    color: colors.text,
+    fontFamily: fonts.heading,
     fontSize: 30,
-    fontWeight: '900',
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: colors.gold,
+    textAlign: 'center',
     marginTop: 4,
   },
   subtitle: {
-    color: colors.textDim,
+    fontFamily: fonts.body,
     fontSize: 14,
-    marginTop: 4,
+    fontWeight: '400',
+    color: colors.textDim,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginTop: 8,
+    maxWidth: 290,
+    alignSelf: 'center',
   },
+  /* ── Offers ── */
   offerList: {
-    marginTop: 16,
+    marginTop: 20,
     gap: 10,
   },
-  offerCard: {
-    borderRadius: 12,
+  offer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: colors.surfaceBorder,
-    backgroundColor: colors.surface,
+    borderRadius: 12,
     padding: 14,
   },
-  offerCardSelected: {
+  offerSelected: {
     borderColor: colors.gold,
     backgroundColor: colors.surfaceSelected,
   },
-  cardPressed: {
+  btnPressed: {
     opacity: 0.85,
   },
-  offerTag: {
-    color: colors.gold,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 2,
-  },
-  offerName: {
-    color: colors.text,
-    fontSize: 20,
-    fontWeight: '900',
-    marginTop: 2,
-  },
-  offerNameGold: {
-    color: colors.gold,
-  },
-  offerText: {
-    color: colors.textDim,
-    fontSize: 13,
-    marginTop: 4,
-    lineHeight: 18,
-  },
-  offerAction: {
-    color: colors.text,
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 8,
-  },
-  picker: {
-    marginTop: 16,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    backgroundColor: colors.surface,
-    padding: 14,
-  },
-  pickerTitle: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  pickerHint: {
-    color: colors.textDim,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  deckGrid: {
-    marginTop: 12,
-    gap: 8,
-  },
-  suitSection: {
-    gap: 4,
-  },
-  suitLabel: {
-    color: colors.textDim,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
-    textTransform: 'uppercase',
-  },
-  suitRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 4,
-  },
-  deckCell: {
-    flex: 1,
-    aspectRatio: 0.85,
-    borderRadius: 6,
-    backgroundColor: colors.cardFace,
+  offerThumb: {
+    width: 60,
+    height: 74,
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
   },
-  deckCellForgedBg: {
-    backgroundColor: '#e8dcc8',
+  miniCard: {
+    width: 48,
+    height: 66,
+    borderRadius: 6,
+    backgroundColor: colors.cardFace,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 3,
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
     borderWidth: 1,
-    borderColor: colors.gold,
+    borderColor: 'rgba(0,0,0,0.15)',
   },
-  deckCellSelected: {
-    borderWidth: 2,
-    borderColor: colors.gold,
-  },
-  deckCellText: {
-    color: colors.cardInk,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  deckCellRed: {
-    color: colors.red,
-  },
-  deckCellTextForged: {
+  miniCardRank: {
+    fontFamily: fonts.heading,
+    fontSize: 18,
     fontWeight: '900',
+    lineHeight: 22,
+    color: colors.cardInk,
   },
-  deckCellForgedDot: {
+  miniCardSuit: {
+    fontFamily: fonts.heading,
+    fontSize: 17,
+    lineHeight: 20,
+    color: colors.cardInk,
+  },
+  forgeBadge: {
     position: 'absolute',
-    top: 2,
-    right: 2,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    bottom: -3,
+    right: -3,
     backgroundColor: colors.gold,
+    borderRadius: 6,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    borderWidth: 1,
+    borderColor: colors.goldDark,
   },
-  confirmRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginTop: 14,
+  forgeBadgeText: {
+    fontFamily: fonts.body,
+    color: colors.textOnPrimary,
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
-  primaryButton: {
-    flex: 2,
+  relicGem: {
+    width: 22,
+    height: 22,
+    borderRadius: 5,
+    backgroundColor: colors.gold,
+    transform: [{ rotate: '45deg' }],
+    shadowColor: colors.gold,
+    shadowOpacity: 0.12,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 0 },
+  },
+  offerInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  offerType: {
+    fontFamily: fonts.body,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: colors.textDim,
+    textTransform: 'uppercase',
+  },
+  offerName: {
+    fontFamily: fonts.heading,
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    marginTop: 3,
+  },
+  offerDesc: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '400',
+    color: colors.textDim,
+    marginTop: 3,
+    lineHeight: 17,
+  },
+  /* ── Actions ── */
+  actions: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  btnPrimary: {
+    width: '100%',
     borderRadius: 12,
     backgroundColor: colors.gold,
-    paddingVertical: 13,
+    paddingVertical: 16,
     alignItems: 'center',
   },
-  primaryButtonText: {
+  btnDisabled: {
+    opacity: 0.45,
+  },
+  btnDisabledText: {
+    opacity: 0.6,
+  },
+  btnPrimaryText: {
+    fontFamily: fonts.heading,
     color: colors.textOnPrimary,
     fontSize: 14,
-    fontWeight: '900',
-    letterSpacing: 1,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
-  secondaryButton: {
+  /* ── Picker overlay ── */
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.backdrop,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+    zIndex: 10,
+  },
+  pickerPanel: {
+    width: 'auto',
+    maxWidth: 400,
+    maxHeight: '92%',
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 14,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+    elevation: 6,
+  },
+  pickerTitle: {
+    fontFamily: fonts.heading,
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.text,
+    textAlign: 'center',
+  },
+  pickerSub: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    fontWeight: '400',
+    color: colors.textDim,
+    textAlign: 'center',
+    lineHeight: 18,
+    marginTop: 6,
+    marginBottom: 14,
+  },
+  pickerGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+  },
+  pickCard: {
+    width: '18%',
+    // aspectRatio: 5 / 9,
+    paddingTop: '5%',
+    paddingBottom: '5%',
+    borderRadius: 6,
+    backgroundColor: colors.cardFace,
+    alignItems: 'center',
+    gap: 1,
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+    display: 'flex',
+    flexDirection: 'column'
+  },
+  pickCardRed: {},
+  pickCardSelected: {
+    borderColor: colors.gold,
+  },
+  pickCardRank: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    fontWeight: '900',
+    lineHeight: 18,
+    color: colors.cardInk,
+    includeFontPadding: false
+  },
+  pickCardSuit: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    lineHeight: 18,
+    color: colors.cardInk,
+    includeFontPadding: false
+  },
+  pickCardRedText: {
+    color: colors.red,
+  },
+  pickerActions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 24,
+    width: '100%'
+  },
+  btnDanger: {
     flex: 1,
     borderRadius: 12,
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    paddingVertical: 13,
+    borderColor: colors.danger,
+    paddingVertical: 14,
     alignItems: 'center',
   },
-  secondaryButtonText: {
-    color: colors.text,
-    fontSize: 13,
+  btnDangerText: {
+    fontFamily: fonts.body,
+    color: colors.danger,
+    fontSize: 14,
     fontWeight: '700',
-    letterSpacing: 1,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
-  buttonDisabled: {
-    opacity: 0.4,
+  btnPrimarySmall: {
+    flex: 1,
+    borderRadius: 12,
+    backgroundColor: colors.gold,
+    borderWidth: 1,
+    borderColor: colors.gold,
+    paddingVertical: 14,
+    alignItems: 'center',
   },
-  buttonPressed: {
-    opacity: 0.8,
+  btnDisabledSmall: {
+    opacity: 0.45,
   },
 });
