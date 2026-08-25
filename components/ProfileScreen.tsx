@@ -2,7 +2,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { computeUnlocks, MILESTONES } from '../engine';
 
-import { SUIT_SYMBOL } from './format';
+import { Suit } from '../engine';
+import { SuitSymbol } from './SuitSymbol';
 import { colors } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -69,7 +70,9 @@ export function ProfileScreen() {
                 <View key={key} style={styles.favCardWrap}>
                   <View style={[styles.favCard, isRed && styles.favCardRed]}>
                     <Text style={[styles.favRank, isRed && styles.favRankRed]}>{value}</Text>
-                    <Text style={[styles.favSuit, isRed && styles.favSuitRed]}>{SUIT_SYMBOL[suit as keyof typeof SUIT_SYMBOL] ?? '?'}</Text>
+                    <View style={styles.favSuitWrap}>
+                      <SuitSymbol suit={suit as Suit} color={isRed ? colors.red : colors.cardInk} size={22} />
+                    </View>
                   </View>
                   <Text style={styles.favPlays}>{count} plays</Text>
                 </View>
@@ -281,15 +284,8 @@ const styles = StyleSheet.create({
   favRankRed: {
     color: colors.red,
   },
-  favSuit: {
-    fontFamily: fonts.heading,
+  favSuitWrap: {
     alignSelf: 'flex-end',
-    fontSize: 22,
-    fontWeight: '900',
-    color: colors.cardInk,
-  },
-  favSuitRed: {
-    color: colors.red,
   },
   favPlays: {
     fontFamily: fonts.body,

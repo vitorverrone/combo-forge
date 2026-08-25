@@ -18,7 +18,7 @@ import {
   unlockStatuses,
 } from '../engine';
 
-import { cardLabel, forgeEffectDescription, forgeEffectLabel, isRedSuit, relicDescription, SUIT_SYMBOL } from './format';
+import { cardLabel, forgeEffectDescription, forgeEffectLabel, isRedSuit, relicDescription } from './format';
 import { colors } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';

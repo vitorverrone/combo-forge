@@ -17,8 +17,8 @@ import {
   forgeEffectLabel,
   isRedSuit,
   relicDescription,
-  SUIT_SYMBOL,
 } from './format';
+import { SuitSymbol } from './SuitSymbol';
 import { colors } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -155,9 +155,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
                         <Text style={[styles.pickCardRank, red && styles.pickCardRedText]}>
                           {card.value}
                         </Text>
-                        <Text style={[styles.pickCardSuit, red && styles.pickCardRedText]}>
-                          {SUIT_SYMBOL[card.suit]}
-                        </Text>
+                        <SuitSymbol suit={card.suit} color={red ? colors.red : colors.cardInk} size={14} />
                       </Pressable>
                     );
                   })
@@ -247,7 +245,7 @@ function OfferCard({ offer, selected, deck, forgedCards, onPress }: OfferCardPro
       <View style={styles.offerThumb}>
         <View style={styles.miniCard}>
           <Text style={styles.miniCardRank}>{sampleCard.value}</Text>
-          <Text style={styles.miniCardSuit}>{SUIT_SYMBOL[sampleCard.suit]}</Text>
+          <SuitSymbol suit={sampleCard.suit} color={colors.cardInk} size={17} />
         </View>
         <View style={styles.forgeBadge}>
           <Text style={styles.forgeBadgeText}>{badge}</Text>

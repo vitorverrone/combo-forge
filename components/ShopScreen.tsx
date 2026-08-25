@@ -8,6 +8,7 @@ import {
   REMOVE_ADS_PRODUCT_ID,
 } from '../engine';
 
+import { SuitSymbol } from './SuitSymbol';
 import { colors } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -138,7 +139,7 @@ function SectionHeader({ label, count }: { label: string; count?: string }) {
 function DeckPreview({ item }: any) {
   return (
     <View style={[styles.deckPreview, { backgroundColor: item.palette.cardFace, borderColor: item.palette.border }]}>
-      <Text style={[styles.deckPreviewSuit, { color: item.palette.cardInk }]}>♠</Text>
+      <SuitSymbol suit="spades" color={item.palette.cardInk} size={16} />
     </View>
   );
 }

@@ -2,7 +2,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { cardKey, Card, DeckSkinPalette, ForgedCard } from '../engine';
 
-import { forgeEffectLabel, isRedSuit, SUIT_SYMBOL } from './format';
+import { forgeEffectLabel, isRedSuit } from './format';
+import { SuitSymbol } from './SuitSymbol';
 import { colors } from './theme';
 import { fonts } from './typography';
 
@@ -63,7 +64,9 @@ export function PlayingCard({
       </View>
 
       {/* Center suit (large) */}
-      <Text style={[styles.centerSuit, { color: suitColor }]}>{SUIT_SYMBOL[card.suit]}</Text>
+      <View style={styles.centerSuit}>
+        <SuitSymbol suit={card.suit} color={suitColor} size={28} />
+      </View>
 
       {/* Bottom-right rank (rotated) */}
       <View style={styles.bottomCorner}>
@@ -130,10 +133,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   centerSuit: {
-    fontFamily: fonts.heading,
-    fontSize: 28,
-    fontWeight: '900',
-    lineHeight: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   bottomCorner: {
     alignSelf: 'flex-end',
