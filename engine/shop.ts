@@ -21,6 +21,7 @@ export interface DeckSkinPalette {
   readonly cardInk: string;
   /** Naipes vermelhos (substitui colors.red). */
   readonly red: string;
+  readonly border: string;
 }
 
 export interface DeckSkinItem {
@@ -55,30 +56,39 @@ export type CosmeticKind = CosmeticItem['kind'];
 export const COSMETIC_CATALOG: readonly CosmeticItem[] = [
   {
     kind: 'deckSkin',
-    id: 'skin-obsidian',
+    id: 'deck-classic',
+    name: 'Classic',
+    description: 'Classic parchment deck',
+    productId: 'combo_forge_skin_classic',
+    devPrice: '$0',
+    palette: { cardFace: '#f2e9d8', cardInk: '#221a2e', red: '#c1352c', border: 'transparent' },
+  },
+  {
+    kind: 'deckSkin',
+    id: 'deck-obsidian',
     name: 'Obsidian Deck',
     description: 'Charcoal face with silver ink — forged in shadow.',
     productId: 'combo_forge_skin_obsidian',
     devPrice: '$0.99',
-    palette: { cardFace: '#23202e', cardInk: '#e8e2f2', red: '#e05c4e' },
+    palette: { cardFace: '#1a1724', cardInk: '#f1eef7', red: '#e05c4e', border: '#4a4560' },
   },
   {
     kind: 'deckSkin',
-    id: 'skin-emerald',
+    id: 'deck-emerald',
     name: 'Emerald Deck',
     description: 'Deep green face with gold ink — forest alloy.',
     productId: 'combo_forge_skin_emerald',
     devPrice: '$0.99',
-    palette: { cardFace: '#1c2f26', cardInk: '#f0e6c8', red: '#d98c3a' },
+    palette: { cardFace: '#0f3a2c', cardInk: '#f4ecd2', red: '#d98c3a', border: '#2f6b52' },
   },
   {
     kind: 'deckSkin',
-    id: 'skin-royal',
+    id: 'deck-royal',
     name: 'Royal Deck',
     description: 'Navy face with ivory ink — crown of the forge.',
     productId: 'combo_forge_skin_royal',
-    devPrice: '$1.99',
-    palette: { cardFace: '#1c2440', cardInk: '#f2ecd8', red: '#c1352c' },
+    devPrice: '$0.99',
+    palette: { cardFace: '#3a1442', cardInk: '#eccd6e', red: '#c1352c', border: '#caa15a' },
   },
   {
     kind: 'comboVfx',
@@ -164,7 +174,7 @@ export function purchaseItem(state: PersistedShop, itemId: string): PersistedSho
  * VFX de combo trocam o VFX atual. Ignora item não comprado ou inexistente.
  */
 export function equipItem(state: PersistedShop, itemId: string): PersistedShop {
-  if (!isOwned(state, itemId)) return state;
+  if (itemId !== 'deck-classic' && !isOwned(state, itemId)) return state;
   const item = cosmeticItemById(itemId);
   if (item === undefined) return state;
   if (item.kind === 'deckSkin') {

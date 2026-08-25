@@ -7,35 +7,44 @@ import { colors } from './theme';
 const STORAGE_KEY = 'combo-forge:onboarding-seen';
 const kv = new SQLiteStorage('combo-forge.db');
 
-const STEPS = [
+interface Step {
+  readonly title: string;
+  readonly body: string;
+  readonly tip: string;
+  readonly visual: 'cards' | 'pattern' | 'combo' | 'target';
+}
+
+const STEPS: Step[] = [
   {
     title: 'Select Cards',
-    body: 'Tap cards from your hand (up to 5) to build a play. Look for patterns: Pairs, Straights, Full Houses.',
-    hint: 'Tap to select · Tap again to deselect',
+    body: 'Tap cards in your hand to choose between 1 and 5. They form your play for the round.',
+    tip: 'Tip: selected cards lift up with a gold border.',
+    visual: 'cards',
   },
   {
     title: 'Score the Pattern',
-    body: 'Each pattern has a base value. The better the pattern, the higher the base score.',
-    hint: 'High Card < Pair < Two Pair < Three of a Kind < Straight < Full House < Four of a Kind',
+    body: 'Your cards form a pattern — from High Card up to Four of a Kind. Stronger patterns score more.',
+    tip: 'Tip: base = pattern bonus + the cards\' values.',
+    visual: 'pattern',
   },
   {
     title: 'Ride the Combo',
-    body: 'Each play in a round multiplies your score: ×1, ×2, ×3, ×4. Stack plays to build massive scores.',
-    hint: 'The combo multiplier resets at the start of each new round',
+    body: 'Every play raises the Combo Multiplier — ×1, ×2, ×3, ×4 — so later plays are worth more.',
+    tip: 'Tip: the multiplier resets every round.',
+    visual: 'combo',
   },
   {
     title: 'Beat the Target',
-    body: 'Reach the round target before your plays run out. Win rounds to unlock forge upgrades and grow stronger.',
-    hint: 'After winning, choose a forge upgrade to power up your next round',
+    body: 'Reach the round\'s target before your plays run out. Winning rounds 1–5 opens the Forge.',
+    tip: 'Tip: clear all 6 rounds to win the run.',
+    visual: 'target',
   },
 ];
 
-/** Check if onboarding has been completed (synchronous, KV store). */
 export function hasSeenOnboarding(): boolean {
   return kv.getItemSync(STORAGE_KEY) === 'true';
 }
 
-/** Mark onboarding as completed (synchronous, KV store). */
 export function completeOnboarding(): void {
   try {
     kv.setItemSync(STORAGE_KEY, 'true');
@@ -61,31 +70,47 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
     <Modal transparent visible animationType="fade">
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <View style={styles.stepRow}>
-            <Text style={styles.stepCount}>
-              {step + 1}/{STEPS.length}
-            </Text>
+          {/* Dots + counter */}
+          <View style={styles.topRow}>
+            <View style={styles.dots}>
+              {STEPS.map((_, i) => (
+                <View key={i} style={[styles.dot, i <= step && styles.dotOn]} />
+              ))}
+            </View>
+            <Text style={styles.counter}>{step + 1}/{STEPS.length}</Text>
           </View>
+
+          {/* Visual area */}
+          <View style={styles.visual}>
+            <StepVisual kind={current.visual} />
+          </View>
+
+          {/* Content */}
           <Text style={styles.title}>{current.title}</Text>
           <Text style={styles.body}>{current.body}</Text>
-          <Text style={styles.hint}>{current.hint}</Text>
 
+          {/* Tip box */}
+          <View style={styles.tipBox}>
+            <Text style={styles.tipText}>{current.tip}</Text>
+          </View>
+
+          {/* Actions */}
           <View style={styles.actions}>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Skip tutorial"
               onPress={onComplete}
-              style={({ pressed }) => [styles.skipButton, pressed && styles.buttonPressed]}
+              style={({ pressed }) => [styles.skipBtn, pressed && styles.btnPressed]}
             >
-              <Text style={styles.skipText}>SKIP</Text>
+              <Text style={styles.skipBtnText}>Skip</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={isLast ? 'Start playing' : 'Next step'}
               onPress={() => (isLast ? onComplete() : setStep(step + 1))}
-              style={({ pressed }) => [styles.nextButton, pressed && styles.buttonPressed]}
+              style={({ pressed }) => [styles.nextBtn, pressed && styles.btnPressed]}
             >
-              <Text style={styles.nextText}>{isLast ? "LET'S FORGE" : 'NEXT'}</Text>
+              <Text style={styles.nextBtnText}>{isLast ? "Let's Forge" : 'Next'}</Text>
             </Pressable>
           </View>
         </View>
@@ -94,84 +119,303 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
   );
 }
 
+/** Step-specific visual illustrations. */
+function StepVisual({ kind }: { kind: Step['visual'] }) {
+  switch (kind) {
+    case 'cards':
+      return (
+        <View style={styles.vCards}>
+          <View style={[styles.vCard, styles.vCardRed]}>
+            <Text style={[styles.vCardRank, styles.vCardRankRed]}>A</Text>
+            <Text style={[styles.vCardSuit, styles.vCardSuitRed]}>♥</Text>
+          </View>
+          <View style={[styles.vCard, styles.vCardSelected]}>
+            <Text style={styles.vCardRank}>7</Text>
+            <Text style={styles.vCardSuit}>♠</Text>
+          </View>
+          <View style={[styles.vCard, styles.vCardRed]}>
+            <Text style={[styles.vCardRank, styles.vCardRankRed]}>10</Text>
+            <Text style={[styles.vCardSuit, styles.vCardSuitRed]}>♦</Text>
+          </View>
+        </View>
+      );
+    case 'pattern':
+      return (
+        <View style={styles.vPattern}>
+          <Text style={styles.vPatternName}>Pair</Text>
+          <Text style={styles.vPatternBase}>10 + card values</Text>
+        </View>
+      );
+    case 'combo':
+      return (
+        <View style={styles.vCombo}>
+          {['×1', '×2', '×3', '×4'].map((m, i) => (
+            <View key={m} style={[styles.vMult, i === 2 && styles.vMultOn]}>
+              <Text style={[styles.vMultText, i === 2 && styles.vMultTextOn]}>{m}</Text>
+            </View>
+          ))}
+        </View>
+      );
+    case 'target':
+      return (
+        <View style={styles.vTarget}>
+          <View style={styles.vBar}>
+            <View style={styles.vFill} />
+          </View>
+          <Text style={styles.vTargetLabel}>255 <Text style={styles.vTargetDim}>/ 300</Text></Text>
+        </View>
+      );
+  }
+}
+
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(22,17,32,0.92)',
+    backgroundColor: 'rgba(22,17,32,0.82)',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: 44,
   },
   card: {
-    alignSelf: 'stretch',
-    borderRadius: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 2,
-    borderColor: colors.gold,
-    padding: 24,
-  },
-  stepRow: {
-    alignItems: 'flex-end',
-  },
-  stepCount: {
-    color: colors.textDim,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  title: {
-    color: colors.gold,
-    fontSize: 28,
-    fontWeight: '900',
-    marginTop: 8,
-  },
-  body: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '600',
-    marginTop: 12,
-    lineHeight: 24,
-  },
-  hint: {
-    color: colors.textDim,
-    fontSize: 13,
-    fontWeight: '600',
-    marginTop: 12,
-    lineHeight: 18,
-  },
-  actions: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 24,
-  },
-  skipButton: {
-    flex: 1,
-    borderRadius: 12,
-    backgroundColor: colors.background,
+    width: '100%',
+    maxWidth: 326,
+    backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    paddingVertical: 14,
+    borderRadius: 16,
+    padding: 22,
+    paddingHorizontal: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
+  },
+  /* ── Top row: dots + counter ── */
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  dots: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+  },
+  dotOn: {
+    backgroundColor: colors.gold,
+    borderColor: colors.gold,
+  },
+  counter: {
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: colors.textDim,
+    textTransform: 'uppercase',
+  },
+  /* ── Visual area ── */
+  visual: {
+    height: 120,
+    marginTop: 18,
+    marginBottom: 16,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  /* ── Cards visual ── */
+  vCards: {
+    flexDirection: 'row',
+    gap: 8,
     alignItems: 'center',
   },
-  skipText: {
+  vCard: {
+    width: 52,
+    height: 72,
+    borderRadius: 7,
+    backgroundColor: colors.cardFace,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    borderWidth: 3,
+    borderColor: 'transparent',
+  },
+  vCardRed: {},
+  vCardSelected: {
+    transform: [{ translateY: -10 }],
+    borderColor: colors.gold,
+  },
+  vCardRank: {
+    fontSize: 16,
+    fontWeight: '900',
+    lineHeight: 20,
+    color: colors.cardInk,
+  },
+  vCardRankRed: {
+    color: colors.red,
+  },
+  vCardSuit: {
+    fontSize: 19,
+    lineHeight: 22,
+    color: colors.cardInk,
+  },
+  vCardSuitRed: {
+    color: colors.red,
+  },
+  /* ── Pattern visual ── */
+  vPattern: {
+    alignItems: 'center',
+  },
+  vPatternName: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: colors.gold,
+  },
+  vPatternBase: {
+    fontSize: 13,
+    fontWeight: '400',
     color: colors.textDim,
+    marginTop: 4,
+  },
+  /* ── Combo visual ── */
+  vCombo: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  vMult: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vMultOn: {
+    backgroundColor: colors.surfaceSelected,
+    borderColor: colors.gold,
+  },
+  vMultText: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.textDim,
+  },
+  vMultTextOn: {
+    color: colors.gold,
+  },
+  /* ── Target visual ── */
+  vTarget: {
+    width: '100%',
+    maxWidth: 210,
+  },
+  vBar: {
+    height: 12,
+    borderRadius: 6,
+    overflow: 'hidden',
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+  },
+  vFill: {
+    height: '100%',
+    width: '85%',
+    borderRadius: 6,
+    backgroundColor: colors.gold,
+  },
+  vTargetLabel: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.text,
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  vTargetDim: {
+    color: colors.textDim,
+    fontWeight: '600',
+  },
+  /* ── Content ── */
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  body: {
+    fontSize: 14,
+    fontWeight: '400',
+    color: colors.textDim,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginTop: 8,
+  },
+  /* ── Tip box ── */
+  tipBox: {
+    marginTop: 14,
+    padding: 10,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(224,165,62,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(224,165,62,0.35)',
+    borderRadius: 10,
+  },
+  tipText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.gold,
+    textAlign: 'center',
+    lineHeight: 17,
+  },
+  /* ── Actions ── */
+  actions: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 20,
+  },
+  skipBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  skipBtnText: {
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 1,
+    color: colors.textDim,
+    textTransform: 'uppercase',
   },
-  nextButton: {
-    flex: 2,
+  nextBtn: {
+    flex: 1,
+    height: 48,
     borderRadius: 12,
     backgroundColor: colors.gold,
-    paddingVertical: 14,
+    borderWidth: 1,
+    borderColor: 'transparent',
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  nextText: {
-    color: colors.textOnPrimary,
-    fontSize: 14,
-    fontWeight: '900',
+  nextBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
     letterSpacing: 1,
+    color: colors.textOnPrimary,
+    textTransform: 'uppercase',
   },
-  buttonPressed: {
-    opacity: 0.8,
+  btnPressed: {
+    opacity: 0.85,
   },
 });

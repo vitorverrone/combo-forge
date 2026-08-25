@@ -1,4 +1,5 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Svg, { Rect, Line } from 'react-native-svg';
 
 import {
   canPlayDaily,
@@ -10,7 +11,9 @@ import {
 } from '../engine';
 
 import { colors } from './theme';
+import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
+import TopButton from './TopButton';
 
 /**
  * Tela do Desafio Diário (ticket 13): mesma Run para todos (seed do dia,
@@ -29,140 +32,189 @@ export function DailyChallengeScreen() {
   const today = utcDateIso();
   const attempts = dailyAttemptsForDay(daily.attempts, today);
   const playable = canPlayDaily(attempts);
-  const canAd = canWatchExtraAd(attempts);
+  const canAd = !attempts.extraUnlocked;
+
+  // Cálculo de tentativas restantes
+  const rem = (attempts.attemptsUsed === 0 ? 1 : 0) + (attempts.extraUnlocked && attempts.attemptsUsed < 2 ? 1 : 0);
+
+  let hintText = '';
+  let hintDim = false;
+  if (rem === 0 && attempts.extraUnlocked) {
+    hintText = 'No attempts left today — come back tomorrow.';
+    hintDim = true;
+  } else if (rem === 0) {
+    hintText = 'Watch an ad to unlock an extra attempt.';
+  } else if (attempts.extraUnlocked) {
+    hintText = 'Extra attempt ready.';
+  } else {
+    hintText = 'Free attempt ready today.';
+  }
+
+  const currentWeekLabel = () => {
+    const d = new Date();
+    const day = (d.getUTCDay() + 6) % 7; // Monday = 0
+    const monday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - day));
+    const sunday = new Date(monday.getTime() + 6 * 86400000);
+    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const short = (t: Date) => `${MONTHS[t.getUTCMonth()]} ${t.getUTCDate()}`;
+    return `Week of ${short(monday)} – ${short(sunday)}`;
+  };
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.eyebrow}>SAME RUN FOR EVERYONE · {today}</Text>
-        <Text style={styles.title}>DAILY CHALLENGE</Text>
-        <Text style={styles.subtitle}>
-          One fixed run per day — fixed targets, fixed forger. Compare your score on the weekly
-          leaderboard.
-        </Text>
+    <View style={styles.container}>
+      {/* Topbar */}
+      <View style={styles.topbar}>
+        <TopButton onPress={backToStart} />
       </View>
 
-      <View style={styles.card}>
-        <View style={styles.cardRow}>
-          <Text style={styles.cardLabel}>ATTEMPTS LEFT</Text>
-          <Text style={styles.cardValue}>
-            {attempts.attemptsUsed}/{DAILY_MAX_ATTEMPTS} used
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <View style={styles.header}>
+          <Text style={styles.title}>Daily Challenge</Text>
+          <Text style={styles.subtitle}>
+            One attempt is free each day. Watch a rewarded ad to unlock a second.
           </Text>
         </View>
-        <Text style={styles.cardHint}>
-          {canPlayDaily(attempts)
-            ? attempts.attemptsUsed === 0
-              ? 'Your free attempt is ready.'
-              : 'Your extra attempt is ready.'
-            : attempts.attemptsUsed >= DAILY_MAX_ATTEMPTS
-              ? 'No attempts left today — come back tomorrow.'
-              : 'Watch an ad to unlock the extra attempt.'}
-        </Text>
-      </View>
 
-      {canAd && (
+        <View style={styles.attemptsCard}>
+          <Text style={styles.attemptsHead}>Attempts left</Text>
+          <Text style={styles.attemptsValue}>
+            {rem}
+            <Text style={styles.attemptsValueSlash}>/{DAILY_MAX_ATTEMPTS}</Text>
+          </Text>
+          <Text style={[styles.attemptsHint, hintDim && styles.attemptsHintDim]}>
+            {hintText}
+          </Text>
+        </View>
+
+        {canAd && (
+          <Pressable
+            accessibilityLabel="Watch ad for extra attempt"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: daily.adLoading }}
+            disabled={daily.adLoading}
+            onPress={() => void watchAdForExtraAttempt()}
+            style={({ pressed }) => [styles.btnPressedSecondary, pressed && styles.btnPressed]}
+          >
+            <Svg
+              width={15}
+              height={15}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke={colors.gold}
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              style={{ marginRight: 8 }}
+            >
+              <Rect x={2} y={3} width={20} height={14} rx={2} />
+              <Line x1={8} y1={21} x2={16} y2={21} />
+              <Line x1={12} y1={17} x2={12} y2={21} />
+            </Svg>
+            <Text style={styles.btnSecondaryText}>
+              {daily.adLoading ? 'WATCHING…' : 'Watch ad · Extra attempt'}
+            </Text>
+          </Pressable>
+        )}
+
         <Pressable
-          accessibilityLabel="Watch ad for extra attempt"
+          accessibilityLabel="Play daily challenge"
           accessibilityRole="button"
-          accessibilityState={{ disabled: daily.adLoading }}
-          disabled={daily.adLoading}
-          onPress={() => void watchAdForExtraAttempt()}
-          style={({ pressed }) => [styles.adButton, pressed && styles.buttonPressed]}
+          accessibilityState={{ disabled: !playable || daily.status === 'loading' }}
+          disabled={!playable || daily.status === 'loading'}
+          onPress={() => void startDailyChallenge()}
+          style={({ pressed }) => [
+            styles.btnPrimary,
+            (!playable || daily.status === 'loading') && styles.btnPrimaryDisabled,
+            pressed && playable && styles.btnPressed,
+          ]}
         >
-          <Text style={styles.adButtonText}>
-            {daily.adLoading ? 'WATCHING…' : '📺 WATCH AD · EXTRA ATTEMPT'}
+          <Text style={styles.btnPrimaryText}>
+            {daily.status === 'loading' ? 'Loading seed…' : 'Play Daily Challenge'}
           </Text>
         </Pressable>
-      )}
 
-      <Pressable
-        accessibilityLabel="Play daily challenge"
-        accessibilityRole="button"
-        accessibilityState={{ disabled: !playable || daily.status === 'loading' }}
-        disabled={!playable || daily.status === 'loading'}
-        onPress={() => void startDailyChallenge()}
-        style={({ pressed }) => [
-          styles.playButton,
-          (!playable || daily.status === 'loading') && styles.playButtonDisabled,
-          pressed && playable && styles.buttonPressed,
-        ]}
-      >
-        <Text style={styles.playButtonText}>
-          {daily.status === 'loading' ? 'LOADING SEED…' : 'PLAY DAILY CHALLENGE'}
+        {daily.status === 'error' && (
+          <View style={styles.errorCard} role="alert">
+            <Text style={styles.errorText}>⚠ {daily.error ?? "Couldn't load today's seed. Please try again."}</Text>
+          </View>
+        )}
+
+        <View style={styles.divider} />
+
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>This week's leaderboard</Text>
+          <Text style={styles.sectionWeek}>{currentWeekLabel()}</Text>
+        </View>
+
+        {daily.leaderboard === null ? (
+          <Pressable
+            accessibilityLabel="View weekly leaderboard"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: daily.leaderboardLoading }}
+            disabled={daily.leaderboardLoading}
+            onPress={() => void fetchLeaderboard()}
+            style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnPressed]}
+          >
+            <Text style={styles.btnSecondaryText}>
+              {daily.leaderboardLoading ? 'LOADING…' : 'View weekly leaderboard'}
+            </Text>
+          </Pressable>
+        ) : (
+          <LeaderboardList leaderboard={daily.leaderboard} />
+        )}
+
+        {daily.leaderboardError !== null && (
+          <View style={styles.errorCard} role="alert">
+            <Text style={styles.errorText}>⚠ {daily.leaderboardError}</Text>
+          </View>
+        )}
+
+        <Text style={styles.bottomHint}>
+          Attempts reset at midnight UTC and are stored on this device.{' '}
+          <Text style={styles.bottomHintBold}>Watch ad</Text> appears only after the
+          free attempt is used; <Text style={styles.bottomHintBold}>Play</Text> loads
+          today's shared seed. Leaderboard shows your best plus the weekly Top 10.
         </Text>
-      </Pressable>
-
-      {daily.status === 'error' && (
-        <Text style={styles.errorText}>⚠ {daily.error}</Text>
-      )}
-
-      <View style={styles.divider} />
-
-      <View style={styles.leaderboardHeader}>
-        <Text style={styles.sectionTitle}>THIS WEEK'S LEADERBOARD</Text>
-        <Text style={styles.sectionHint}>
-          Opt-in: only your own result is personal — the top 10 shows ranks and scores, never
-          anyone's defeats.
-        </Text>
-      </View>
-
-      {daily.leaderboard === null ? (
-        <Pressable
-          accessibilityLabel="View weekly leaderboard"
-          accessibilityRole="button"
-          accessibilityState={{ disabled: daily.leaderboardLoading }}
-          disabled={daily.leaderboardLoading}
-          onPress={() => void fetchLeaderboard()}
-          style={({ pressed }) => [styles.leaderboardButton, pressed && styles.buttonPressed]}
-        >
-          <Text style={styles.leaderboardButtonText}>
-            {daily.leaderboardLoading ? 'LOADING…' : 'VIEW WEEKLY LEADERBOARD'}
-          </Text>
-        </Pressable>
-      ) : (
-        <LeaderboardList leaderboard={daily.leaderboard} />
-      )}
-
-      {daily.leaderboardError !== null && (
-        <Text style={styles.errorText}>⚠ {daily.leaderboardError}</Text>
-      )}
-
-      <Pressable
-        accessibilityLabel="Back to start"
-        accessibilityRole="button"
-        onPress={backToStart}
-        style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
-      >
-        <Text style={styles.backButtonText}>BACK</Text>
-      </Pressable>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
 function LeaderboardList({ leaderboard }: { leaderboard: DailyLeaderboard }) {
   return (
-    <View style={styles.leaderboardCard}>
-      <Text style={styles.weekLabel}>WEEK OF {leaderboard.week}</Text>
-      <View style={styles.ownRow}>
-        <Text style={styles.ownLabel}>YOUR BEST</Text>
-        <Text style={styles.ownValue}>
+    <View style={styles.leaderboard}>
+      <View style={styles.yourBest}>
+        <Text style={styles.yourBestLabel}>Your best</Text>
+        <Text style={styles.yourBestValue}>
           {leaderboard.own === null
             ? 'No score yet'
-            : `#${leaderboard.own.rank} · ${leaderboard.own.score} pts`}
+            : `#${leaderboard.own.rank} · ${leaderboard.own.score.toLocaleString('en-US')}`}
         </Text>
-      </View>
-      <View style={styles.topHeader}>
-        <Text style={styles.topHeaderText}>TOP 10</Text>
       </View>
       {leaderboard.top.length === 0 ? (
         <Text style={styles.emptyTop}>No scores this week yet.</Text>
       ) : (
-        leaderboard.top.map((entry) => (
-          <View key={`${entry.rank}-${entry.score}`} style={styles.topRow}>
-            <Text style={[styles.rank, entry.rank === 1 && styles.rankFirst]}>#{entry.rank}</Text>
-            <Text style={styles.topScore}>{entry.score} pts</Text>
-          </View>
-        ))
+        leaderboard.top.map((entry, index) => {
+          const isFirst = entry.rank === 1;
+          return (
+            <View
+              key={`${entry.rank}-${entry.score}`}
+              style={[
+                styles.lbRow,
+                isFirst && styles.lbRowFirst,
+                index > 0 && !isFirst && styles.lbRowBorder,
+              ]}
+            >
+              <Text style={[styles.lbRank, isFirst && styles.lbRankFirst]}>
+                {entry.rank}
+              </Text>
+              {isFirst && <Text style={styles.lbCrown}>♦</Text>}
+              <Text style={[styles.lbScore, isFirst && styles.lbScoreFirst]}>
+                {entry.score.toLocaleString('en-US')}
+              </Text>
+            </View>
+          );
+        })
       )}
     </View>
   );
@@ -170,230 +222,291 @@ function LeaderboardList({ leaderboard }: { leaderboard: DailyLeaderboard }) {
 
 const styles = StyleSheet.create({
   container: {
-    flexGrow: 1,
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  topbar: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 24,
-    paddingBottom: 90,
+    paddingHorizontal: 16,
+    paddingTop: 0,
+  },
+  scroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 70,
   },
   header: {
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 14,
   },
   eyebrow: {
-    color: colors.textDim,
+    fontFamily: fonts.body,
+    color: colors.gold,
     fontSize: 11,
-    fontWeight: '800',
+    fontWeight: '600',
     letterSpacing: 2,
+    textTransform: 'uppercase',
+    textAlign: 'center',
   },
   title: {
+    fontFamily: fonts.heading,
     color: colors.gold,
     fontSize: 28,
-    fontWeight: '900',
-    letterSpacing: 2,
-    marginTop: 6,
-    textAlign: 'center',
-  },
-  subtitle: {
-    color: colors.textDim,
-    fontSize: 13,
-    marginTop: 8,
-    textAlign: 'center',
-    lineHeight: 19,
-  },
-  card: {
-    alignSelf: 'stretch',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    backgroundColor: colors.surface,
-    padding: 16,
-    marginTop: 24,
-  },
-  cardRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-  },
-  cardLabel: {
-    color: colors.textDim,
-    fontSize: 12,
     fontWeight: '700',
     letterSpacing: 1,
+    textAlign: 'center',
+    marginTop: 4,
   },
-  cardValue: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  cardHint: {
+  subtitle: {
+    fontFamily: fonts.body,
     color: colors.textDim,
-    fontSize: 13,
-    marginTop: 6,
-  },
-  adButton: {
-    alignSelf: 'stretch',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.gold,
-    backgroundColor: colors.surface,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  adButtonText: {
-    color: colors.gold,
     fontSize: 14,
-    fontWeight: '800',
-    letterSpacing: 1,
+    fontWeight: '400',
+    textAlign: 'center',
+    lineHeight: 21,
+    marginTop: 8,
+    maxWidth: 300,
+    alignSelf: 'center',
   },
-  playButton: {
+  attemptsCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 14,
+    padding: 16,
+    marginTop: 20,
+    alignSelf: 'stretch',
+    alignItems: 'center',
+  },
+  attemptsHead: {
+    fontFamily: fonts.body,
+    fontSize: 11,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: colors.textDim,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+  },
+  attemptsValue: {
+    fontFamily: fonts.heading,
+    fontSize: 40,
+    fontWeight: '700',
+    color: colors.gold,
+    textAlign: 'center',
+    lineHeight: 44,
+    marginTop: 4,
+  },
+  attemptsValueSlash: {
+    fontSize: 20,
+    color: colors.textDim,
+    fontWeight: '600',
+  },
+  attemptsHint: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.text,
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  attemptsHintDim: {
+    color: colors.textDim,
+  },
+  btnPrimary: {
     alignSelf: 'stretch',
     borderRadius: 12,
     backgroundColor: colors.gold,
-    paddingVertical: 16,
+    height: 48,
     alignItems: 'center',
-    marginTop: 12,
+    justifyContent: 'center',
+    marginTop: 14,
   },
-  playButtonDisabled: {
+  btnPrimaryDisabled: {
     opacity: 0.45,
   },
-  playButtonText: {
+  btnPrimaryText: {
     color: colors.textOnPrimary,
-    fontSize: 16,
-    fontWeight: '900',
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    fontWeight: '700',
     letterSpacing: 1,
   },
-  buttonPressed: {
+  btnSecondary: {
+    alignSelf: 'stretch',
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  btnPressedSecondary: {
+    flexDirection: 'row',
+    alignSelf: 'stretch',
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+  },
+  btnSecondaryText: {
+    color: colors.text,
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1,
+  },
+  btnPressed: {
     opacity: 0.85,
   },
-  errorText: {
-    color: colors.danger,
-    fontSize: 13,
+  errorCard: {
     marginTop: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(224,92,78,0.12)',
+    borderWidth: 1,
+    borderColor: colors.danger,
+    borderRadius: 10,
+    alignSelf: 'stretch',
+  },
+  errorText: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.danger,
     textAlign: 'center',
+    lineHeight: 17,
   },
   divider: {
     alignSelf: 'stretch',
     height: 1,
     backgroundColor: colors.surfaceBorder,
-    marginVertical: 24,
+    marginTop: 24,
+    marginBottom: 20,
   },
-  leaderboardHeader: {
-    alignSelf: 'stretch',
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginBottom: 10,
   },
   sectionTitle: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  sectionHint: {
-    color: colors.textDim,
-    fontSize: 12,
-    marginTop: 4,
-    lineHeight: 17,
-  },
-  leaderboardButton: {
-    alignSelf: 'stretch',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.gold,
-    backgroundColor: colors.surface,
-    paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  leaderboardButtonText: {
-    color: colors.gold,
+    fontFamily: fonts.heading,
     fontSize: 14,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 1,
+    color: colors.text,
+    textTransform: 'uppercase',
   },
-  leaderboardCard: {
-    alignSelf: 'stretch',
-    borderRadius: 12,
+  sectionWeek: {
+    fontFamily: fonts.body,
+    fontSize: 11,
+    fontWeight: '500',
+    color: colors.textDim,
+  },
+  leaderboard: {
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    backgroundColor: colors.surface,
-    padding: 16,
-    marginTop: 12,
+    borderRadius: 14,
+    overflow: 'hidden',
+    alignSelf: 'stretch',
   },
-  weekLabel: {
-    color: colors.textDim,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
-    marginBottom: 8,
-  },
-  ownRow: {
+  yourBest: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
-    borderRadius: 8,
-    backgroundColor: 'rgba(224,165,62,0.12)',
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  ownLabel: {
-    color: colors.gold,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  ownValue: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  topHeader: {
-    marginTop: 14,
-    marginBottom: 6,
-  },
-  topHeaderText: {
-    color: colors.textDim,
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1,
-  },
-  topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    paddingVertical: 7,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    backgroundColor: colors.surfaceElevated,
     borderBottomWidth: 1,
     borderBottomColor: colors.surfaceBorder,
   },
-  rank: {
+  yourBestLabel: {
+    fontFamily: fonts.heading,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 1,
     color: colors.textDim,
+    textTransform: 'uppercase',
+  },
+  yourBestValue: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.gold,
+  },
+  lbRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+  },
+  lbRowFirst: {
+    backgroundColor: 'rgba(224,165,62,0.07)',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceBorder,
+  },
+  lbRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceBorder,
+  },
+  lbRank: {
+    width: 26,
+    textAlign: 'center',
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    fontWeight: '800',
+    color: colors.textDim,
+  },
+  lbRankFirst: {
+    color: colors.gold,
+  },
+  lbCrown: {
+    color: colors.gold,
+    fontFamily: fonts.heading,
     fontSize: 14,
     fontWeight: '800',
   },
-  rankFirst: {
+  lbScore: {
+    flex: 1,
+    textAlign: 'right',
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  lbScoreFirst: {
     color: colors.gold,
   },
-  topScore: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '700',
-  },
   emptyTop: {
+    fontFamily: fonts.body,
     color: colors.textDim,
     fontSize: 13,
-    paddingVertical: 6,
-  },
-  backButton: {
-    alignSelf: 'stretch',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
     paddingVertical: 14,
-    alignItems: 'center',
-    marginTop: 24,
+    textAlign: 'center',
   },
-  backButtonText: {
+  bottomHint: {
+    marginTop: 28,
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '400',
+    letterSpacing: 0.5,
+    color: colors.textDim,
+    textAlign: 'center',
+    lineHeight: 19,
+    alignSelf: 'stretch',
+  },
+  bottomHintBold: {
     color: colors.text,
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 1,
+    fontWeight: 'bold',
   },
 });
+

@@ -8,11 +8,11 @@
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.comboforge.app"
+      "bundleIdentifier": "com.combocardforge.app"
     },
     "android": {
       "predictiveBackGestureEnabled": false,
-      "package": "com.comboforge.app",
+      "package": "com.combocardforge.app",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
@@ -38,7 +38,8 @@
           }
         }
       ],
-      "./plugins/withKotlinVersionPin"
+      "./plugins/withKotlinVersionPin",
+      "expo-font"
     ],
     "extra": {
       "eas": {

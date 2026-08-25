@@ -1,15 +1,18 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { activeRelics, cardKey, cosmeticItemById, currentMultiplier, getForger } from '../engine';
 
-import { CardView } from './CardView';
+import { PlayingCard } from './PlayingCard';
 import { PATTERN_NAME } from './format';
 import { PhaseScreen } from './PhaseScreen';
 import { RelicRow } from './RelicRow';
 import { colors } from './theme';
+import { fonts } from './typography';
 import { MAX_SELECTION, selectionPreview, useGameStore } from '../store/gameStore';
 
 export function GameScreen() {
+  const [showAbandon, setShowAbandon] = useState(false);
   const run = useGameStore((state) => state.run);
   const runMode = useGameStore((state) => state.runMode);
   const selectedKeys = useGameStore((state) => state.selectedKeys);
@@ -17,7 +20,7 @@ export function GameScreen() {
   const clearSelection = useGameStore((state) => state.clearSelection);
   const playSelection = useGameStore((state) => state.playSelection);
   const discardSelection = useGameStore((state) => state.discardSelection);
-  // Cosméticos equipados (ticket 14): skin do baralho + VFX de combo.
+  const backToStart = useGameStore((state) => state.backToStart);
   const shopOwned = useGameStore((state) => state.shop.owned);
   const deckSkin =
     shopOwned.equippedDeckSkin === null ? undefined : cosmeticItemById(shopOwned.equippedDeckSkin);
@@ -36,49 +39,65 @@ export function GameScreen() {
 
   return (
     <View style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scroll}>
-        <View style={styles.header}>
-          <View>
-            <View style={styles.roundRow}>
-              <Text style={styles.round}>Round {run.roundNumber}</Text>
-              {runMode === 'daily' && <Text style={styles.dailyBadge}>DAILY</Text>}
-            </View>
-            <Text style={styles.forger}>{getForger(run.forger).name} · Run {run.runScore}</Text>
-          </View>
-          <View style={styles.scoreBlock}>
-            <Text style={styles.score}>{run.score}</Text>
-            <Text style={styles.target}>/ {run.target}</Text>
-          </View>
+      {/* Top bar */}
+      <View style={styles.topbar}>
+        <Pressable
+          accessibilityLabel="Abandon run"
+          accessibilityRole="button"
+          onPress={() => setShowAbandon(true)}
+          style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
+        >
+          <Text style={styles.navBtnText}>←</Text>
+        </Pressable>
+        <View style={styles.roundLabelWrap}>
+          <Text style={styles.roundLabel}>Round {run.roundNumber}</Text>
+          {runMode === 'daily' && <Text style={styles.dailyBadge}>Daily</Text>}
         </View>
-
+        <View style={styles.scoreBlock}>
+          <Text style={styles.scoreValue}>{run.score}</Text>
+          <Text style={styles.scoreSep}>/</Text>
+          <Text style={styles.scoreTarget}>{run.target}</Text>
+        </View>
+        {/* Progress bar */}
         <View style={styles.progressTrack}>
           <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
         </View>
+      </View>
 
-        <View style={styles.pillRow}>
-          <Pill label="Plays" value={String(run.playsRemaining)} />
-          <Pill label="Discards" value={String(discardsRemaining)} />
-          <ComboPill value={multiplier} accent={comboAccent} />
+      <ScrollView contentContainerStyle={styles.scroll}>
+        {/* HUD row: Plays + Combo only */}
+        <View style={styles.hudRow}>
+          <View style={styles.hudBox}>
+            <Text style={styles.hudLabel}>Plays</Text>
+            <Text style={styles.hudValue}>{run.playsRemaining}</Text>
+          </View>
+          <View style={styles.hudBox}>
+            <Text style={styles.hudLabel}>Combo</Text>
+            <Text style={[styles.hudValue, { color: comboAccent }]}>×{multiplier}</Text>
+          </View>
         </View>
 
+        {/* Relics */}
         <RelicRow relics={relics} />
 
-        <View style={styles.preview}>
+        {/* Pattern preview — inline, no container */}
+        <View style={styles.patternPreview}>
           {preview !== null ? (
             <>
-              <Text style={styles.previewPattern}>{PATTERN_NAME[preview.pattern.kind]}</Text>
-              <Text style={styles.previewValue}>
-                Base {preview.baseValue} · {preview.baseValue * multiplier} pts with ×{multiplier}
+              <Text style={styles.patternName}>{PATTERN_NAME[preview.pattern.kind]}</Text>
+              <Text style={styles.patternPoints}>
+                Base {preview.baseValue} · <Text style={styles.patternPointsBold}>{preview.baseValue * multiplier} pts</Text> with ×{multiplier}
               </Text>
             </>
           ) : (
-            <Text style={styles.previewHint}>Select 2–5 cards to preview your play</Text>
+            <Text style={styles.patternHint}>Select cards to form a play</Text>
           )}
         </View>
 
+        {/* Card hand */}
         <View style={styles.hand}>
           {run.deck.hand.map((card) => (
-            <CardView
+            <PlayingCard
               key={cardKey(card)}
               card={card}
               forgedCards={run.forgedCards}
@@ -88,60 +107,73 @@ export function GameScreen() {
             />
           ))}
         </View>
+
+        {/* Actions — inside scroll so they flow below the hand */}
+        <View style={styles.actions}>
+          <View style={styles.actionsSecondary}>
+            <Pressable
+              accessibilityLabel="Clear selection"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: selectedKeys.length === 0 }}
+              disabled={selectedKeys.length === 0}
+              onPress={clearSelection}
+              style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPressed]}
+            >
+              <Text style={[styles.btnSecondaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>Clear</Text>
+            </Pressable>
+            <Pressable
+              accessibilityLabel="Discard selected cards"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: selectedKeys.length === 0 || discardsRemaining <= 0 }}
+              disabled={selectedKeys.length === 0 || discardsRemaining <= 0}
+              onPress={discardSelection}
+              style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabled, pressed && styles.btnPressed]}
+            >
+              <Text style={[styles.btnSecondaryText, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>
+                Discard <Text style={[styles.hintBadge, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>· {discardsRemaining}</Text>
+              </Text>
+            </Pressable>
+          </View>
+          <Pressable
+            accessibilityLabel="Play selected cards"
+            accessibilityRole="button"
+            accessibilityState={{ disabled: selectedKeys.length === 0 }}
+            disabled={selectedKeys.length === 0}
+            onPress={playSelection}
+            style={({ pressed }) => [styles.btn, styles.btnPrimary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPrimaryPressed]}
+          >
+            <Text style={[styles.btnPrimaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>PLAY</Text>
+          </Pressable>
+        </View>
       </ScrollView>
 
-      <View style={styles.actions}>
-        <Pressable
-          accessibilityLabel="Discard selected cards"
-          accessibilityRole="button"
-          accessibilityState={{ disabled: selectedKeys.length === 0 || discardsRemaining <= 0 }}
-          disabled={selectedKeys.length === 0 || discardsRemaining <= 0}
-          onPress={discardSelection}
-          style={({ pressed }) => [styles.button, styles.secondaryButton, pressed && styles.buttonPressed]}
-        >
-          <Text style={styles.secondaryButtonText}>DISCARD</Text>
-        </Pressable>
-        <Pressable
-          accessibilityLabel="Clear selection"
-          accessibilityRole="button"
-          accessibilityState={{ disabled: selectedKeys.length === 0 }}
-          disabled={selectedKeys.length === 0}
-          onPress={clearSelection}
-          style={({ pressed }) => [styles.button, styles.secondaryButton, pressed && styles.buttonPressed]}
-        >
-          <Text style={styles.secondaryButtonText}>CLEAR</Text>
-        </Pressable>
-        <Pressable
-          accessibilityLabel="Play selected cards"
-          accessibilityRole="button"
-          accessibilityState={{ disabled: selectedKeys.length === 0 }}
-          disabled={selectedKeys.length === 0}
-          onPress={playSelection}
-          style={({ pressed }) => [styles.button, styles.primaryButton, pressed && styles.buttonPressed]}
-        >
-          <Text style={styles.primaryButtonText}>
-            PLAY{selectedKeys.length > 0 ? ` (${selectedKeys.length}/${MAX_SELECTION})` : ''}
-          </Text>
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
-function Pill({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.pill}>
-      <Text style={styles.pillLabel}>{label}</Text>
-      <Text style={styles.pillValue}>{value}</Text>
-    </View>
-  );
-}
-
-function ComboPill({ value, accent }: { value: number; accent: string }) {
-  return (
-    <View style={styles.comboPill}>
-      <Text style={styles.comboLabel}>COMBO</Text>
-      <Text style={[styles.comboValue, { color: accent }]}>×{value}</Text>
+      {/* Abandon run modal */}
+      {showAbandon && (
+        <View style={styles.overlay}>
+          <View style={styles.overlayCard}>
+            <Text style={styles.overlayTitle}>Abandon run?</Text>
+            <Text style={styles.overlaySub}>Your progress in this round will be lost.</Text>
+            <View style={styles.overlayActions}>
+              <Pressable
+                accessibilityLabel="Keep playing"
+                accessibilityRole="button"
+                onPress={() => setShowAbandon(false)}
+                style={({ pressed }) => [styles.overlayBtn, styles.overlayBtnPrimary, pressed && styles.btnPressed]}
+              >
+                <Text style={styles.overlayBtnPrimaryText}>Keep playing</Text>
+              </Pressable>
+              <Pressable
+                accessibilityLabel="Abandon run"
+                accessibilityRole="button"
+                onPress={backToStart}
+                style={({ pressed }) => [styles.overlayBtn, styles.overlayBtnDanger, pressed && styles.btnPressed]}
+              >
+                <Text style={styles.overlayBtnDangerText}>Abandon</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -149,182 +181,340 @@ function ComboPill({ value, accent }: { value: number; accent: string }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  scroll: {
-    padding: 16,
-    paddingBottom: 8,
-  },
-  header: {
-    flexDirection: 'row',
+    backgroundColor: colors.background,
+    display: 'flex',
     justifyContent: 'space-between',
-    alignItems: 'flex-end',
   },
-  round: {
-    color: colors.text,
-    fontSize: 24,
-    fontWeight: '900',
-  },
-  roundRow: {
+  /* ── Topbar ── */
+  topbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 0,
+    minHeight: 48,
+    flexWrap: 'wrap'
+  },
+  navBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navBtnPressed: {
+    opacity: 0.85,
+  },
+  navBtnText: {
+    fontFamily: fonts.body,
+    color: colors.textDim,
+    fontSize: 16,
+  },
+  roundLabelWrap: {
+    flex: 1,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingLeft: 32
+  },
+  roundLabel: {
+    fontFamily: fonts.heading,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: colors.textDim,
+    textTransform: 'uppercase',
+    textAlign: 'center',
   },
   dailyBadge: {
-    color: colors.gold,
-    fontSize: 10,
-    fontWeight: '900',
+    fontFamily: fonts.body,
+    fontSize: 9,
+    fontWeight: '800',
     letterSpacing: 1,
+    color: colors.gold,
     borderWidth: 1,
     borderColor: colors.gold,
     borderRadius: 6,
     paddingHorizontal: 6,
     paddingVertical: 2,
   },
-  forger: {
-    color: colors.textDim,
-    fontSize: 13,
-    marginTop: 2,
-  },
   scoreBlock: {
     flexDirection: 'row',
     alignItems: 'baseline',
   },
-  score: {
-    color: colors.gold,
-    fontSize: 34,
-    fontWeight: '900',
-  },
-  target: {
-    color: colors.textDim,
-    fontSize: 20,
+  scoreValue: {
+    fontFamily: fonts.heading,
+    fontSize: 26,
     fontWeight: '700',
+    letterSpacing: 2,
+    color: colors.gold,
+    lineHeight: 30,
   },
+  scoreSep: {
+    fontFamily: fonts.heading,
+    fontSize: 26,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: colors.textDim,
+    marginHorizontal: 4,
+    lineHeight: 30,
+  },
+  scoreTarget: {
+    fontFamily: fonts.heading,
+    fontSize: 26,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: colors.textDim,
+    lineHeight: 30,
+  },
+  /* ── Progress ── */
   progressTrack: {
-    height: 8,
-    borderRadius: 4,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: colors.surface,
-    marginTop: 10,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    marginTop: 14,
     overflow: 'hidden',
+    width: '100%'
   },
   progressFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: 5,
     backgroundColor: colors.gold,
   },
-  pillRow: {
-    flexDirection: 'row',
-    gap: 8,
-    marginTop: 14,
-  },
-  pill: {
+  /* ── Scroll content ── */
+  scroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 8,
     flex: 1,
-    borderRadius: 10,
+    justifyContent: 'space-between'
+  },
+  /* ── HUD ── */
+  hudRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 16,
+  },
+  hudBox: {
+    flex: 1,
+    backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    backgroundColor: colors.surface,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     alignItems: 'center',
-    paddingVertical: 8,
   },
-  pillLabel: {
-    color: colors.textDim,
+  hudLabel: {
+    fontFamily: fonts.body,
     fontSize: 11,
     fontWeight: '600',
-    textTransform: 'uppercase',
-  },
-  pillValue: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: '800',
-    marginTop: 2,
-  },
-  comboPill: {
-    flex: 1.3,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: colors.gold,
-    backgroundColor: colors.surface,
-    alignItems: 'center',
-    paddingVertical: 10,
-  },
-  comboLabel: {
-    color: colors.textDim,
-    fontSize: 11,
-    fontWeight: '700',
-    textTransform: 'uppercase',
     letterSpacing: 1,
+    color: colors.textDim,
+    textTransform: 'uppercase',
   },
-  comboValue: {
-    fontSize: 24,
-    fontWeight: '900',
-    marginTop: 2,
+  hudValue: {
+    fontFamily: fonts.heading,
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.gold,
+    marginTop: 4,
   },
-  preview: {
-    marginTop: 14,
-    minHeight: 52,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+  /* ── Pattern preview ── */
+  patternPreview: {
+    minHeight: 64,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    marginTop: 16,
   },
-  previewPattern: {
+  patternHint: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    fontWeight: '400',
+    color: colors.textDim,
+  },
+  patternName: {
+    fontFamily: fonts.heading,
+    fontSize: 24,
+    fontWeight: '700',
+    letterSpacing: 0,
+    color: colors.gold,
+  },
+  patternPoints: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    fontWeight: '400',
+    color: colors.textDim,
+    marginTop: 4,
+  },
+  patternPointsBold: {
     color: colors.text,
-    fontSize: 18,
     fontWeight: '800',
   },
-  previewValue: {
-    color: colors.gold,
-    fontSize: 13,
-    marginTop: 2,
-    fontWeight: '700',
-  },
-  previewHint: {
-    color: colors.textDim,
-    fontSize: 13,
-  },
+  /* ── Hand ── */
   hand: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    alignContent: 'center',
     justifyContent: 'center',
-    marginTop: 10,
+    gap: 6,
+    paddingTop: 20,
+    paddingBottom: 4,
   },
+  /* ── Actions ── */
   actions: {
+    paddingHorizontal: 16,
+    marginTop: 100,
+    paddingTop: 10,
+    paddingBottom: 0,
+  },
+  actionsSecondary: {
     flexDirection: 'row',
     gap: 10,
-    padding: 16,
-    paddingTop: 8,
-    paddingBottom: 58,
   },
-  button: {
+  btn: {
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+  },
+  btnFlex: {
+    flex: 1,
+  },
+  btnPressed: {
+    opacity: 0.8,
+  },
+  btnPrimary: {
+    backgroundColor: colors.gold,
+    marginTop: 10,
+  },
+  btnPrimaryPressed: {
+    backgroundColor: colors.goldDark,
+    opacity: 0.85,
+  },
+  btnPrimaryText: {
+    fontFamily: fonts.heading,
+    color: colors.textOnPrimary,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  btnSecondary: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+  },
+  btnSecondaryText: {
+    fontFamily: fonts.body,
+    color: colors.text,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  hintBadge: {
+    fontFamily: fonts.body,
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    color: colors.textDim,
+    textTransform: 'none',
+  },
+  btnDisabled: {
+    opacity: 0.45,
+  },
+  btnDisabledText: {
+    opacity: 0.6,
+  },
+  /* ── Abandon modal ── */
+  overlay: {
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.backdrop,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 24,
+    zIndex: 10,
+  },
+  overlayCard: {
+    width: '100%',
+    maxWidth: 280,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 14,
+    padding: 28,
+    paddingHorizontal: 24,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  overlayTitle: {
+    fontFamily: fonts.heading,
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    color: colors.text,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  overlaySub: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    fontWeight: '400',
+    color: colors.textDim,
+    textAlign: 'center',
+    lineHeight: 20,
+    marginBottom: 22,
+  },
+  overlayActions: {
+    flexDirection: 'row',
+    gap: 10,
+    width: '100%',
+  },
+  overlayBtn: {
     flex: 1,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 14,
   },
-  buttonPressed: {
-    opacity: 0.8,
-  },
-  primaryButton: {
+  overlayBtnPrimary: {
     backgroundColor: colors.gold,
+    borderWidth: 1,
+    borderColor: colors.gold,
   },
-  primaryButtonText: {
+  overlayBtnPrimaryText: {
+    fontFamily: fonts.heading,
     color: colors.textOnPrimary,
-    fontWeight: '900',
     fontSize: 14,
-    letterSpacing: 1,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+    textAlign: 'center'
   },
-  secondaryButton: {
+  overlayBtnDanger: {
     backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.surfaceBorder,
+    borderColor: colors.danger,
   },
-  secondaryButtonText: {
-    color: colors.text,
+  overlayBtnDangerText: {
+    fontFamily: fonts.heading,
+    color: colors.danger,
+    fontSize: 14,
     fontWeight: '700',
-    fontSize: 13,
-    letterSpacing: 1,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
   },
 });

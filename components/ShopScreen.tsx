@@ -9,14 +9,10 @@ import {
 } from '../engine';
 
 import { colors } from './theme';
+import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
+import TopButton from './TopButton';
 
-/**
- * Loja cosmética (ticket 14). Única forma de monetização (junto dos anúncios
- * opt-in do ticket 16). Garantia explícita: itens são 100% visuais — nunca
- * afetam poder de jogo. Compras são IAP via RevenueCat (provider real); em
- * desenvolvimento sem chave, o provider dev simula a compra.
- */
 export function ShopScreen() {
   const shop = useGameStore((state) => state.shop);
   const adsRemoved = useGameStore((state) => state.adsRemoved);
@@ -32,160 +28,117 @@ export function ShopScreen() {
   const removeAdsBusy = shop.purchasing === REMOVE_ADS_PRODUCT_ID;
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
-      <Text style={styles.eyebrow}>SHOP</Text>
-      <Text style={styles.title}>Cosmetic Only</Text>
-      <Text style={styles.guarantee}>
-        ✓ Never affects gameplay power — deck skins and combo effects are purely visual.
-      </Text>
-
-      {/* Remoção de anúncios (ticket 02): IAP não-consumível, fora do catálogo
-          cosmético (ADR 0004). Nada sobreposto ao banner — só esta tela. */}
-      <SectionHeader label="Remove Ads" />
-      <View style={[styles.itemRow, adsRemoved && styles.itemRowEquipped]}>
-        <View style={styles.itemText}>
-          <Text style={styles.itemName}>Remove Ads</Text>
-          <Text style={styles.itemDesc}>No more banner — one-time purchase.</Text>
-        </View>
-        {!adsRemoved && (
-          <Pressable
-            accessibilityLabel="Buy Remove Ads"
-            accessibilityRole="button"
-            accessibilityState={{ disabled: removeAdsBusy }}
-            disabled={removeAdsBusy}
-            onPress={() => void purchaseRemoveAds()}
-            style={({ pressed }) => [styles.buyButton, pressed && styles.buttonPressed]}
-          >
-            <Text style={styles.buyButtonText}>{removeAdsBusy ? '…' : removeAdsPrice}</Text>
-          </Pressable>
-        )}
-        {adsRemoved && (
-          <View style={styles.equippedBadge}>
-            <Text style={styles.equippedBadgeText}>PURCHASED</Text>
-          </View>
-        )}
+    <View style={styles.container}>
+      {/* Topbar */}
+      <View style={styles.topbar}>
+        <TopButton onPress={backToStart} />
       </View>
 
-      <SectionHeader label="Deck Skins" />
-      {COSMETIC_CATALOG.filter(isDeckSkinItem).map((item) => (
-        <ItemRow
-          key={item.id}
-          label={item.name}
-          description={item.description}
-          price={priceOf(item.productId) ?? item.devPrice}
-          owned={isOwned(shop.owned, item.id)}
-          equipped={shop.owned.equippedDeckSkin === item.id}
-          busy={shop.purchasing === item.id}
-          onBuy={() => void purchaseCosmetic(item.id)}
-          onEquip={() => equipCosmetic(item.id)}
-        />
-      ))}
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Text style={styles.eyebrow}>Cosmetics</Text>
+        <Text style={styles.title}>Shop</Text>
+        <Text style={styles.subtitle}>100% visual — Deck skins never affect gameplay power.</Text>
 
-      <SectionHeader label="Combo Effects" />
-      {COSMETIC_CATALOG.filter((item) => !isDeckSkinItem(item)).map((item) => (
-        <ItemRow
-          key={item.id}
-          label={item.name}
-          description={item.description}
-          price={priceOf(item.productId) ?? item.devPrice}
-          owned={isOwned(shop.owned, item.id)}
-          equipped={shop.owned.equippedComboVfx === item.id}
-          busy={shop.purchasing === item.id}
-          onBuy={() => void purchaseCosmetic(item.id)}
-          onEquip={() => equipCosmetic(item.id)}
-        />
-      ))}
+        {/* Deck Skins */}
+        <SectionHeader label="Decks" count={`${COSMETIC_CATALOG.filter(isDeckSkinItem).filter((item) => isOwned(shop.owned, item.id)).length}/${COSMETIC_CATALOG.filter(isDeckSkinItem).length}`} />
+        {COSMETIC_CATALOG.filter(isDeckSkinItem).map((item) => {
+          const owned = item.id == 'deck-classic' ? true : isOwned(shop.owned, item.id);
+          const equipped = shop.owned.equippedDeckSkin === item.id;
+          const busy = shop.purchasing === item.id;
+          return (
+            <View key={item.id} style={[styles.shopRow, equipped && styles.shopRowEquipped]}>
+              <DeckPreview item={item} />
+              <View style={styles.shopInfo}>
+                <Text style={styles.shopName}>{item.name}</Text>
+                <Text style={styles.shopSub}>{item.description}</Text>
+              </View>
+              <View style={styles.shopAction}>
+                {owned && equipped ? (
+                  <Text style={styles.shopEquippedLabel}>Equipped</Text>
+                ) : owned && !equipped ? (
+                  <Pressable
+                    accessibilityLabel={`Equip ${item.name}`}
+                    onPress={() => equipCosmetic(item.id)}
+                    style={({ pressed }) => [styles.equipBtn, pressed && styles.btnPressed]}
+                  >
+                    <Text style={styles.equipBtnText}>Equip</Text>
+                  </Pressable>
+                ) : (
+                  <Pressable
+                    accessibilityLabel={`Buy ${item.name}`}
+                    disabled={busy}
+                    onPress={() => void purchaseCosmetic(item.id)}
+                    style={({ pressed }) => [styles.priceBtn, pressed && styles.btnPressed]}
+                  >
+                    <Text style={styles.priceBtnText}>{busy ? '…' : (priceOf(item.productId) ?? item.devPrice)}</Text>
+                  </Pressable>
+                )}
+              </View>
+            </View>
+          );
+        })}
 
-      {shop.status === 'loading' && (
-        <Text style={styles.statusText}>Loading prices…</Text>
-      )}
-      {shop.status === 'error' && <Text style={styles.errorText}>⚠ {shop.error}</Text>}
+        {/* Remove Ads */}
+        <SectionHeader label="Remove Ads" />
+        <View style={[styles.offerCard, adsRemoved && styles.shopRowEquipped]}>
+          <Text style={styles.offerTitle}>Remove Ads</Text>
+          <Text style={styles.offerDesc}>
+            Hides the banner and interstitial ads. Doesn't affect the optional
+            rewarded ad in the Daily Challenge.
+          </Text>
+          {!adsRemoved ? (
+            <Pressable
+              accessibilityLabel="Buy Remove Ads"
+              accessibilityRole="button"
+              accessibilityState={{ disabled: removeAdsBusy }}
+              disabled={removeAdsBusy}
+              onPress={() => void purchaseRemoveAds()}
+              style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
+            >
+              <Text style={styles.btnPrimaryText}>{removeAdsBusy ? '…' : `Buy for ${removeAdsPrice}`}</Text>
+            </Pressable>
+          ) : (
+            <Text style={styles.purchasedLabel}>✓ Purchased</Text>
+          )}
+        </View>
 
-      <Pressable
-        accessibilityLabel="Restore purchases"
-        accessibilityRole="button"
-        accessibilityState={{ disabled: shop.restoring }}
-        disabled={shop.restoring}
-        onPress={() => void restorePurchases()}
-        style={({ pressed }) => [styles.restoreButton, pressed && styles.buttonPressed]}
-      >
-        <Text style={styles.restoreButtonText}>
-          {shop.restoring ? 'RESTORING…' : 'RESTORE PURCHASES'}
-        </Text>
-      </Pressable>
-      <Text style={styles.restoreHint}>
-        Bought on another device? Restore to unlock here too.
-      </Text>
+        {/* Restore Purchases */}
+        <Pressable
+          accessibilityLabel="Restore purchases"
+          accessibilityRole="button"
+          accessibilityState={{ disabled: shop.restoring }}
+          disabled={shop.restoring}
+          onPress={() => void restorePurchases()}
+          style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnPressed]}
+        >
+          <Text style={styles.btnSecondaryText}>
+            {shop.restoring ? 'Restoring…' : 'Restore Purchases'}
+          </Text>
+        </Pressable>
 
-      <Pressable
-        accessibilityLabel="Back to home"
-        accessibilityRole="button"
-        onPress={backToStart}
-        style={({ pressed }) => [styles.backButton, pressed && styles.buttonPressed]}
-      >
-        <Text style={styles.backButtonText}>BACK</Text>
-      </Pressable>
-    </ScrollView>
-  );
-}
-
-function SectionHeader({ label }: { label: string }) {
-  return (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{label}</Text>
+        {shop.status === 'loading' && (
+          <Text style={styles.statusText}>Loading prices…</Text>
+        )}
+        {shop.status === 'error' && <Text style={styles.errorText}>⚠ {shop.error}</Text>}
+      </ScrollView>
     </View>
   );
 }
 
-function ItemRow({
-  label,
-  description,
-  price,
-  owned,
-  equipped,
-  busy,
-  onBuy,
-  onEquip,
-}: {
-  readonly label: string;
-  readonly description: string;
-  readonly price: string;
-  readonly owned: boolean;
-  readonly equipped: boolean;
-  readonly busy: boolean;
-  readonly onBuy: () => void;
-  readonly onEquip: () => void;
-}) {
+function SectionHeader({ label, count }: { label: string; count?: string }) {
   return (
-    <View style={[styles.itemRow, equipped && styles.itemRowEquipped]}>
-      <View style={styles.itemText}>
-        <Text style={styles.itemName}>{label}</Text>
-        <Text style={styles.itemDesc}>{description}</Text>
-      </View>
-      {!owned && (
-        <Pressable
-          accessibilityLabel={`Buy ${label}`}
-          disabled={busy}
-          onPress={onBuy}
-          style={({ pressed }) => [styles.buyButton, pressed && styles.buttonPressed]}
-        >
-          <Text style={styles.buyButtonText}>{busy ? '…' : price}</Text>
-        </Pressable>
-      )}
-      {owned && !equipped && (
-        <Pressable
-          accessibilityLabel={`Equip ${label}`}
-          onPress={onEquip}
-          style={({ pressed }) => [styles.equipButton, pressed && styles.buttonPressed]}
-        >
-          <Text style={styles.equipButtonText}>EQUIP</Text>
-        </Pressable>
-      )}
-      {owned && equipped && (
-        <View style={styles.equippedBadge}>
-          <Text style={styles.equippedBadgeText}>EQUIPPED</Text>
-        </View>
-      )}
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionTitle}>{label}</Text>
+      {count !== undefined && <Text style={styles.sectionCount}>{count}</Text>}
+    </View>
+  );
+}
+
+/** Deck skin preview thumbnail showing a card face. */
+function DeckPreview({ item }: any) {
+  return (
+    <View style={[styles.deckPreview, { backgroundColor: item.palette.cardFace, borderColor: item.palette.border }]}>
+      <Text style={[styles.deckPreviewSuit, { color: item.palette.cardInk }]}>♠</Text>
     </View>
   );
 }
@@ -193,107 +146,242 @@ function ItemRow({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
-  scroll: {
-    padding: 16,
-    paddingBottom: 70,
-  },
-  eyebrow: {
-    color: colors.gold,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 3,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 30,
-    fontWeight: '900',
-    marginTop: 4,
-  },
-  guarantee: {
-    color: colors.success,
-    fontSize: 12,
-    fontWeight: '700',
-    marginTop: 6,
-  },
-  sectionHeader: {
-    marginTop: 22,
-    marginBottom: 8,
-  },
-  sectionTitle: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  itemRow: {
+  topbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    paddingHorizontal: 16,
+    paddingTop: 0,
+  },
+  navBtn: {
+    width: 40,
+    height: 40,
     borderRadius: 10,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    padding: 12,
-    marginBottom: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  itemRowEquipped: {
+  navBtnPressed: {
+    opacity: 0.85,
+  },
+  navBtnText: {
+    fontFamily: fonts.body,
+    color: colors.textDim,
+    fontSize: 16,
+  },
+  scroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 0,
+  },
+  eyebrow: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 3,
+    color: colors.gold,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    marginTop: 14,
+  },
+  title: {
+    fontFamily: fonts.heading,
+    fontSize: 30,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: colors.gold,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  subtitle: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    fontWeight: '400',
+    color: colors.textDim,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginTop: 8,
+    maxWidth: 280,
+    alignSelf: 'center',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: 22,
+    marginBottom: 10,
+  },
+  sectionTitle: {
+    fontFamily: fonts.heading,
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: colors.text,
+    textTransform: 'uppercase',
+  },
+  sectionCount: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.gold,
+  },
+  /* ── Shop rows ── */
+  shopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+    minHeight: 64,
+  },
+  shopRowEquipped: {
     borderColor: colors.gold,
   },
-  itemText: {
-    flex: 1,
+  deckPreview: {
+    width: 40,
+    height: 56,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    borderWidth: 1
   },
-  itemName: {
-    color: colors.text,
-    fontSize: 15,
-    fontWeight: '800',
-  },
-  itemDesc: {
-    color: colors.textDim,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  buyButton: {
-    borderRadius: 10,
-    backgroundColor: colors.gold,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  buyButtonText: {
-    color: colors.textOnPrimary,
-    fontSize: 13,
+  deckPreviewSuit: {
+    fontFamily: fonts.heading,
+    fontSize: 16,
     fontWeight: '900',
   },
-  equipButton: {
+  shopInfo: {
+    flex: 1,
+  },
+  shopName: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  shopSub: {
+    fontFamily: fonts.body,
+    fontSize: 11,
+    fontWeight: '400',
+    color: colors.textDim,
+    marginTop: 2,
+  },
+  shopAction: {
+    alignItems: 'flex-end',
+  },
+  priceBtn: {
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  priceBtnText: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  equipBtn: {
     borderRadius: 10,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.gold,
-    paddingHorizontal: 12,
     paddingVertical: 8,
+    paddingHorizontal: 12,
   },
-  equipButtonText: {
-    color: colors.gold,
+  equipBtnText: {
+    fontFamily: fonts.body,
     fontSize: 11,
     fontWeight: '800',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
+    color: colors.gold,
+    textTransform: 'uppercase',
   },
-  equippedBadge: {
-    borderRadius: 10,
-    backgroundColor: 'rgba(127,201,138,0.15)',
+  shopEquippedLabel: {
+    fontFamily: fonts.body,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 0.5,
+    color: colors.textDim,
+    textTransform: 'uppercase',
+  },
+  btnPressed: {
+    opacity: 0.8,
+  },
+  /* ── Remove Ads offer ── */
+  offerCard: {
+    backgroundColor: colors.surface,
     borderWidth: 1,
-    borderColor: colors.success,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 12,
+    padding: 16,
   },
-  equippedBadgeText: {
+  offerTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    color: colors.text,
+  },
+  offerDesc: {
+    fontSize: 13,
+    fontWeight: '400',
+    color: colors.textDim,
+    lineHeight: 20,
+    marginTop: 6,
+    marginBottom: 14,
+  },
+  btnPrimary: {
+    borderRadius: 12,
+    backgroundColor: colors.gold,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  btnPrimaryPressed: {
+    backgroundColor: colors.goldDark,
+    opacity: 0.85,
+  },
+  btnPrimaryText: {
+    color: colors.textOnPrimary,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  purchasedLabel: {
     color: colors.success,
-    fontSize: 10,
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  btnSecondary: {
+    marginTop: 22,
+    marginBottom: 8,
+    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  btnSecondaryText: {
+    color: colors.text,
+    fontSize: 13,
     fontWeight: '800',
     letterSpacing: 1,
-  },
-  buttonPressed: {
-    opacity: 0.8,
   },
   statusText: {
     color: colors.textDim,
@@ -306,41 +394,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: 'center',
     marginTop: 8,
-  },
-  restoreButton: {
-    marginTop: 20,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  restoreButtonText: {
-    color: colors.text,
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 1,
-  },
-  restoreHint: {
-    color: colors.textDim,
-    fontSize: 11,
-    textAlign: 'center',
-    marginTop: 6,
-  },
-  backButton: {
-    marginTop: 18,
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  backButtonText: {
-    color: colors.text,
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 1,
   },
 });

@@ -17,7 +17,7 @@ desenvolvimento — nada disso é opcional para um release real.
 | AdMob **iOS** | ⏳ Pendente (Test App ID, sem ad unit) | Quando publicar na App Store |
 | IAPs reais nas lojas | ⏳ Play Console em validação (app não criado ainda); App Store Connect pendente | Aguardar validação do Play Console → criar 5 IAPs → vincular ao RevenueCat |
 | EAS | ✅ Projeto vinculado (`projectId`), variáveis em preview+production, build preview OK e validado no emulador | `eas build development` e `production` |
-| Identificadores `com.comboforge.app` | ✅ no `app.json` | Validar igualdade em AdMob/RC/ASC/Play (seção 0) |
+| Identificadores `com.combocardforge.app` | ✅ no `app.json` | Validar igualdade em AdMob/RC/ASC/Play (seção 0) |
 | Pin do Kotlin (build de nuvem) | ✅ Versionado via `plugins/withKotlinVersionPin.js` | — |
 
 ---
@@ -27,16 +27,16 @@ desenvolvimento — nada disso é opcional para um release real.
 AdMob, RevenueCat, EAS e as lojas se amarram ao identificador do app. Sem ele,
 nada do restante pode ser criado de verdade.
 
-- [x] Decidir o bundle identifier: **`com.comboforge.app`** (único, nunca muda
+- [x] Decidir o bundle identifier: **`com.combocardforge.app`** (único, nunca muda
       depois de publicado) — aplicado ao iOS e ao Android.
 - [x] Adicionar ao `app.json`:
   ```json
   "ios": {
     "supportsTablet": true,
-    "bundleIdentifier": "com.comboforge.app"
+    "bundleIdentifier": "com.combocardforge.app"
   },
   "android": {
-    "package": "com.comboforge.app"
+    "package": "com.combocardforge.app"
   }
   ```
       (validado com `npx expo config --type public`)
@@ -207,7 +207,7 @@ O config plugin hoje usa os **Test App IDs do Google**:
 - Com App ID de teste, o Ad Unit real **não serve anúncios** (só os de teste).
 
 - [x] Criar o app **Android** em https://apps.admob.com (2026-08-16, package
-      `com.comboforge.app`; fluxo "unpublished" — app ainda não publicado).
+      `com.combocardforge.app`; fluxo "unpublished" — app ainda não publicado).
       O app iOS fica pendente até publicar na App Store.
 - [x] Criar a unidade de anúncio **Rewarded** do Android (2026-08-16).
 - [x] Criar a unidade de anúncio **Banner** do Android (separada da rewarded;

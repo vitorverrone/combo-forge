@@ -4,19 +4,25 @@ import { bonusForgeEffectById, MilestoneOption } from '../engine';
 
 import { forgeEffectDescription } from './format';
 import { colors } from './theme';
+import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 
-/**
- * Modal de escolha da ordem de desbloqueio: quando um marco oferece mais de
- * uma opção (5ª Run vencida → 2 novos Efeitos de Forja), o jogador escolhe
- * qual entra primeiro no pool. As opções restantes continuam disponíveis na
- * Coleção — a escolha define apenas a ordem.
- */
-/** Descrição curta de uma opção de Efeito de Forja (null para outros tipos). */
 function optionHint(option: MilestoneOption): string | null {
   if (option.unlock.kind !== 'forgeEffect') return null;
   const effect = bonusForgeEffectById(option.unlock.effectId);
   return effect !== undefined ? forgeEffectDescription(effect) : null;
+}
+
+function optionIcon(option: MilestoneOption): string {
+  if (option.unlock.kind === 'forgeEffect') {
+    const effect = bonusForgeEffectById(option.unlock.effectId);
+    if (effect === undefined) return '?';
+    if (effect.kind === 'valueBonus') return '+V';
+    if (effect.kind === 'multiplier') return '×M';
+    if (effect.kind === 'wildcard') return 'ANY';
+    return 'IF';
+  }
+  return '★';
 }
 
 export function UnlockChoiceModal() {
@@ -31,11 +37,15 @@ export function UnlockChoiceModal() {
     <Modal transparent visible animationType="fade" onRequestClose={dismiss}>
       <View style={styles.backdrop}>
         <View style={styles.card}>
-          <Text style={styles.eyebrow}>MILESTONE REACHED</Text>
+          {/* Eyebrow */}
+          <Text style={styles.eyebrow}>Milestone reached</Text>
           <Text style={styles.title}>{milestone.title}</Text>
           <Text style={styles.subtitle}>{milestone.description}</Text>
-          <Text style={styles.prompt}>Pick which unlock comes first — the rest stay available in the Collection.</Text>
+          <Text style={styles.prompt}>
+            Pick which unlock comes first — the rest stay available in the Collection.
+          </Text>
 
+          {/* Options */}
           <View style={styles.optionList}>
             {unclaimedOptions.map((option) => (
               <Pressable
@@ -43,22 +53,34 @@ export function UnlockChoiceModal() {
                 accessibilityLabel={`Unlock ${option.title}`}
                 accessibilityRole="button"
                 onPress={() => claimUnlock(option.id)}
-                style={({ pressed }) => [styles.option, pressed && styles.buttonPressed]}
+                style={({ pressed }) => [styles.option, pressed && styles.btnPressed]}
               >
-                <Text style={styles.optionTag}>NEW</Text>
-                <Text style={styles.optionTitle}>{option.title}</Text>
-                {optionHint(option) !== null && <Text style={styles.optionHint}>{optionHint(option)}</Text>}
+                <View style={styles.optionIcon}>
+                  <Text style={styles.optionIconText}>{optionIcon(option)}</Text>
+                </View>
+                <View style={styles.optionInfo}>
+                  <View style={styles.optionTitleRow}>
+                    <Text style={styles.optionTitle}>{option.title}</Text>
+                    <View style={styles.newBadge}>
+                      <Text style={styles.newBadgeText}>New</Text>
+                    </View>
+                  </View>
+                  {optionHint(option) !== null && (
+                    <Text style={styles.optionHint}>{optionHint(option)}</Text>
+                  )}
+                </View>
               </Pressable>
             ))}
           </View>
 
+          {/* Later button */}
           <Pressable
             accessibilityLabel="Decide later"
             accessibilityRole="button"
             onPress={dismiss}
-            style={({ pressed }) => [styles.laterButton, pressed && styles.buttonPressed]}
+            style={({ pressed }) => [styles.laterBtn, pressed && styles.btnPressed]}
           >
-            <Text style={styles.laterButtonText}>LATER</Text>
+            <Text style={styles.laterBtnText}>Decide Later</Text>
           </Pressable>
         </View>
       </View>
@@ -72,83 +94,147 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backdrop,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: 44,
   },
   card: {
-    alignSelf: 'stretch',
+    width: '100%',
+    maxWidth: 326,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
     borderRadius: 16,
-    backgroundColor: colors.surface,
-    borderWidth: 2,
-    borderColor: colors.gold,
-    padding: 20,
+    padding: 22,
+    paddingHorizontal: 18,
+    shadowColor: '#000',
+    shadowOpacity: 0.5,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 10 },
   },
   eyebrow: {
-    color: colors.success,
+    fontFamily: fonts.body,
     fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 3,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: colors.gold,
+    textTransform: 'uppercase',
+    textAlign: 'center',
   },
   title: {
+    fontFamily: fonts.heading,
+    fontSize: 22,
+    fontWeight: '700',
+    letterSpacing: 0.5,
     color: colors.text,
-    fontSize: 26,
-    fontWeight: '900',
+    textAlign: 'center',
     marginTop: 4,
   },
   subtitle: {
-    color: colors.textDim,
+    fontFamily: fonts.body,
     fontSize: 14,
-    marginTop: 4,
+    fontWeight: '400',
+    color: colors.textDim,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginTop: 8,
   },
   prompt: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '500',
     color: colors.text,
-    fontSize: 13,
-    marginTop: 14,
+    textAlign: 'center',
     lineHeight: 18,
-  },
-  optionList: {
     marginTop: 14,
+  },
+  /* ── Options ── */
+  optionList: {
+    marginTop: 16,
     gap: 10,
   },
   option: {
-    borderRadius: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: colors.surface,
     borderWidth: 2,
-    borderColor: colors.gold,
-    backgroundColor: colors.surfaceSelected,
-    padding: 14,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 12,
+    padding: 12,
   },
-  optionTag: {
+  btnPressed: {
+    borderColor: colors.gold,
+  },
+  optionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    backgroundColor: colors.surfaceElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  optionIconText: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    fontWeight: '700',
     color: colors.gold,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 2,
+  },
+  optionInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  optionTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   optionTitle: {
+    fontFamily: fonts.heading,
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.text,
-    fontSize: 17,
-    fontWeight: '900',
-    marginTop: 2,
+  },
+  newBadge: {
+    backgroundColor: 'rgba(224,165,62,0.12)',
+    borderWidth: 1,
+    borderColor: colors.gold,
+    borderRadius: 5,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  newBadgeText: {
+    fontFamily: fonts.body,
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 1,
+    color: colors.gold,
+    textTransform: 'uppercase',
   },
   optionHint: {
-    color: colors.textDim,
+    fontFamily: fonts.body,
     fontSize: 12,
-    marginTop: 2,
+    fontWeight: '400',
+    color: colors.textDim,
+    marginTop: 3,
+    lineHeight: 16,
   },
-  laterButton: {
-    marginTop: 14,
+  /* ── Later button ── */
+  laterBtn: {
+    marginTop: 16,
+    height: 46,
     borderRadius: 12,
-    backgroundColor: colors.background,
+    backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  laterButtonText: {
-    color: colors.textDim,
+  laterBtnText: {
+    fontFamily: fonts.body,
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 1,
-  },
-  buttonPressed: {
-    opacity: 0.8,
+    color: colors.textDim,
+    textTransform: 'uppercase',
   },
 });

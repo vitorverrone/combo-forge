@@ -60,3 +60,7 @@ skills-lock.json
 
 # Emulator screenshots
 emulator-screenshot*.png
+
+# references
+design-references/
+screenshots/

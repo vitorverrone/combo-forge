@@ -4,15 +4,10 @@ import { computeUnlocks, MILESTONES } from '../engine';
 
 import { SUIT_SYMBOL } from './format';
 import { colors } from './theme';
+import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
+import TopButton from './TopButton';
 
-/** Rótulo de uma carta a partir da identidade `naipe:valor` (ex.: "7♠"). */
-function cardLabelFromKey(key: string): string {
-  const [suit, value] = key.split(':');
-  return `${value}${SUIT_SYMBOL[suit as keyof typeof SUIT_SYMBOL] ?? '?'}`;
-}
-
-/** Perfil: estatísticas de longo prazo + progresso dos marcos de conquista. */
 export function ProfileScreen() {
   const progression = useGameStore((state) => state.progression);
   const backToStart = useGameStore((state) => state.backToStart);
@@ -26,36 +21,67 @@ export function ProfileScreen() {
     .slice(0, 3);
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scroll}>
-      <Text style={styles.eyebrow}>PROFILE</Text>
-      <Text style={styles.title}>Forge Stats</Text>
-
-      <View style={styles.statCard}>
-        <Stat label="Best run score" value={String(stats.bestRunScore)} gold />
-        <View style={styles.divider} />
-        <Stat label="Runs won" value={`${stats.runsWon} / ${stats.runsStarted}`} />
-        <Stat label="Win rate" value={`${winRate}%`} />
-        <Stat label="Biggest combo" value={`×${stats.maxMultiplier}`} />
+    <View style={styles.container}>
+      {/* Topbar */}
+      <View style={styles.topbar}>
+        <TopButton onPress={backToStart} />
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Favorite cards</Text>
+      <ScrollView contentContainerStyle={styles.scroll}>
+        <Text style={styles.eyebrow}>Player stats</Text>
+        <Text style={styles.title}>Profile</Text>
+        <Text style={styles.screenDesc}>Your record across every run, your favorite cards and your milestone progress.</Text>
+
+        {/* Stats card — 2×2 grid */}
+        <View style={styles.statCard}>
+          <View style={styles.statsGrid}>
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{stats.bestRunScore.toLocaleString()}</Text>
+              <Text style={styles.statLabel}>Best run score</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{stats.runsWon}/{stats.runsStarted}</Text>
+              <Text style={styles.statLabel}>Runs won</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{winRate}%</Text>
+              <Text style={styles.statLabel}>Win rate</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>×{stats.maxMultiplier}</Text>
+              <Text style={styles.statLabel}>Biggest combo</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Favorite cards — mini playing cards */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Favorite cards</Text>
+        </View>
         {favorites.length === 0 ? (
           <Text style={styles.emptyText}>No cards played yet — start a run!</Text>
         ) : (
-          <View style={styles.favoriteRow}>
-            {favorites.map(([key, count], index) => (
-              <View key={key} style={styles.favoriteChip}>
-                <Text style={[styles.favoriteValue, index === 0 && styles.favoriteTop]}>{cardLabelFromKey(key)}</Text>
-                <Text style={styles.favoriteCount}>{count} plays</Text>
-              </View>
-            ))}
+          <View style={styles.favCards}>
+            {favorites.map(([key, count]) => {
+              const [suit, value] = key.split(':');
+              const isRed = suit === 'hearts' || suit === 'diamonds';
+              return (
+                <View key={key} style={styles.favCardWrap}>
+                  <View style={[styles.favCard, isRed && styles.favCardRed]}>
+                    <Text style={[styles.favRank, isRed && styles.favRankRed]}>{value}</Text>
+                    <Text style={[styles.favSuit, isRed && styles.favSuitRed]}>{SUIT_SYMBOL[suit as keyof typeof SUIT_SYMBOL] ?? '?'}</Text>
+                  </View>
+                  <Text style={styles.favPlays}>{count} plays</Text>
+                </View>
+              );
+            })}
           </View>
         )}
-      </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Milestones</Text>
+        {/* Milestones */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Milestones</Text>
+        </View>
         <View style={styles.milestoneList}>
           {MILESTONES.map((milestone) => {
             const claimed = milestone.options.every((option) =>
@@ -63,42 +89,32 @@ export function ProfileScreen() {
             );
             const reached = milestone.condition(stats);
             return (
-              <View key={milestone.id} style={styles.milestoneRow}>
-                <View style={[styles.milestoneDot, claimed && styles.milestoneDotDone]} />
+              <View key={milestone.id} style={[styles.milestoneRow, !claimed && styles.milestoneRowBorder]}>
+                <View style={[styles.milestoneDot, claimed && styles.milestoneDotDone, !claimed && reached && styles.milestoneDotReady]}>
+                  {claimed && <View style={styles.milestoneCheck} />}
+                </View>
                 <View style={styles.milestoneText}>
                   <Text style={[styles.milestoneTitle, claimed && styles.milestoneTitleDone]}>
                     {milestone.title}
                   </Text>
                   <Text style={styles.milestoneDesc}>{milestone.description}</Text>
                 </View>
-                <Text style={[styles.milestoneState, claimed && styles.milestoneStateDone]}>
-                  {claimed ? 'Done' : reached ? 'Ready' : 'Locked'}
-                </Text>
+                <View style={styles.milestoneBadge}>
+                  <Text style={[styles.milestoneBadgeText, claimed && styles.milestoneBadgeDone, !claimed && reached && styles.milestoneBadgeReady]}>
+                    {claimed ? 'Done' : reached ? 'Ready' : 'Locked'}
+                  </Text>
+                </View>
               </View>
             );
           })}
         </View>
-      </View>
 
-      <Text style={styles.forgerNote}>Forgers unlocked: {unlocks.forgers.length}/3</Text>
-
-      <Pressable
-        accessibilityLabel="Back to home"
-        accessibilityRole="button"
-        onPress={backToStart}
-        style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
-      >
-        <Text style={styles.buttonText}>BACK</Text>
-      </Pressable>
-    </ScrollView>
-  );
-}
-
-function Stat({ label, value, gold = false }: { label: string; value: string; gold?: boolean }) {
-  return (
-    <View style={styles.statRow}>
-      <Text style={styles.statLabel}>{label}</Text>
-      <Text style={[styles.statValue, gold && styles.statValueGold]}>{value}</Text>
+        {/* Forgers note */}
+        <View style={styles.forgersNote}>
+          <Text style={styles.forgersIcon}>⚒</Text>
+          <Text style={styles.forgersText}>Forgers unlocked: <Text style={styles.forgersCount}>{unlocks.forgers.length}/3</Text></Text>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -106,164 +122,293 @@ function Stat({ label, value, gold = false }: { label: string; value: string; go
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: colors.background,
   },
-  scroll: {
-    padding: 16,
-    paddingBottom: 70,
+  /* ── Topbar ── */
+  topbar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingTop: 0,
   },
-  eyebrow: {
-    color: colors.gold,
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 3,
-  },
-  title: {
-    color: colors.text,
-    fontSize: 30,
-    fontWeight: '900',
-    marginTop: 4,
-  },
-  statCard: {
-    borderRadius: 14,
+  navBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 10,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    padding: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  navBtnPressed: {
+    opacity: 0.85,
+  },
+  navBtnText: {
+    fontFamily: fonts.body,
+    color: colors.textDim,
+    fontSize: 16,
+  },
+  /* ── Scroll ── */
+  scroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 70,
+  },
+  /* ── Header ── */
+  eyebrow: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 3,
+    color: colors.gold,
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    marginTop: 14,
+  },
+  title: {
+    fontFamily: fonts.heading,
+    fontSize: 30,
+    fontWeight: '700',
+    letterSpacing: 2,
+    color: colors.gold,
+    textAlign: 'center',
+    marginTop: 4,
+  },
+  screenDesc: {
+    fontFamily: fonts.body,
+    fontSize: 14,
+    fontWeight: '400',
+    color: colors.textDim,
+    textAlign: 'center',
+    lineHeight: 21,
+    marginTop: 8,
+    maxWidth: 290,
+    alignSelf: 'center',
+  },
+  /* ── Stats card (2×2 grid) ── */
+  statCard: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 14,
+    padding: 14,
     marginTop: 18,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
   },
-  statRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-  },
-  statLabel: {
-    color: colors.textDim,
-    fontSize: 14,
-    fontWeight: '600',
+  statBox: {
+    width: '48%' as unknown as number,
+    flexGrow: 1,
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 8,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: 12,
   },
   statValue: {
-    color: colors.text,
+    fontFamily: fonts.heading,
     fontSize: 24,
-    fontWeight: '900',
-  },
-  statValueGold: {
+    fontWeight: '700',
     color: colors.gold,
+    lineHeight: 28,
   },
-  divider: {
-    height: 1,
-    backgroundColor: colors.surfaceBorder,
+  statLabel: {
+    fontFamily: fonts.heading,
+    fontSize: 10,
+    fontWeight: '600',
+    letterSpacing: 1,
+    color: colors.textDim,
+    textTransform: 'uppercase',
+    marginTop: 5,
   },
-  section: {
-    marginTop: 22,
+  /* ── Section headers ── */
+  sectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: 24,
+    marginBottom: 10,
   },
   sectionTitle: {
-    color: colors.text,
+    fontFamily: fonts.heading,
     fontSize: 16,
-    fontWeight: '800',
+    fontWeight: '700',
     letterSpacing: 1,
+    color: colors.text,
+    textTransform: 'uppercase',
   },
   emptyText: {
+    fontFamily: fonts.body,
     color: colors.textDim,
     fontSize: 13,
     marginTop: 10,
   },
-  favoriteRow: {
+  /* ── Favorite cards (mini playing cards) ── */
+  favCards: {
     flexDirection: 'row',
     gap: 10,
-    marginTop: 10,
   },
-  favoriteChip: {
+  favCardWrap: {
     flex: 1,
     alignItems: 'center',
-    borderRadius: 12,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    paddingVertical: 12,
+    gap: 6,
   },
-  favoriteValue: {
-    color: colors.text,
+  favCard: {
+    width: '100%' as unknown as number,
+    aspectRatio: 0.72,
+    backgroundColor: colors.cardFace,
+    borderRadius: 8,
+    padding: 8,
+    justifyContent: 'space-between',
+    shadowColor: '#000',
+    shadowOpacity: 0.35,
+    shadowRadius: 4,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+  },
+  favCardRed: {},
+  favRank: {
+    fontFamily: fonts.heading,
     fontSize: 22,
     fontWeight: '900',
+    color: colors.cardInk,
   },
-  favoriteTop: {
-    color: colors.gold,
+  favRankRed: {
+    color: colors.red,
   },
-  favoriteCount: {
-    color: colors.textDim,
+  favSuit: {
+    fontFamily: fonts.heading,
+    alignSelf: 'flex-end',
+    fontSize: 22,
+    fontWeight: '900',
+    color: colors.cardInk,
+  },
+  favSuitRed: {
+    color: colors.red,
+  },
+  favPlays: {
+    fontFamily: fonts.body,
     fontSize: 11,
-    marginTop: 2,
+    fontWeight: '500',
+    color: colors.textDim,
   },
+  /* ── Milestones ── */
   milestoneList: {
-    marginTop: 10,
-    gap: 8,
+    gap: 0,
   },
   milestoneRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    borderRadius: 10,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    padding: 12,
+    paddingVertical: 11,
+  },
+  milestoneRowBorder: {
+    borderTopWidth: 1,
+    borderTopColor: colors.surfaceBorder,
   },
   milestoneDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.surfaceBorder,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   milestoneDotDone: {
     backgroundColor: colors.success,
+    borderColor: colors.success,
+  },
+  milestoneDotReady: {
+    backgroundColor: colors.gold,
+    borderColor: colors.gold,
+  },
+  milestoneCheck: {
+    width: 5,
+    height: 9,
+    borderRightWidth: 2,
+    borderBottomWidth: 2,
+    borderColor: colors.cardInk,
+    transform: [{ rotate: '45deg' }],
+    marginTop: -2,
   },
   milestoneText: {
     flex: 1,
   },
   milestoneTitle: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    fontWeight: '600',
     color: colors.text,
-    fontSize: 14,
-    fontWeight: '800',
   },
   milestoneTitleDone: {
-    color: colors.success,
+    color: colors.textDim,
   },
   milestoneDesc: {
-    color: colors.textDim,
-    fontSize: 12,
-    marginTop: 2,
-  },
-  milestoneState: {
-    color: colors.textDim,
+    fontFamily: fonts.body,
     fontSize: 11,
-    fontWeight: '700',
-  },
-  milestoneStateDone: {
-    color: colors.success,
-  },
-  forgerNote: {
+    fontWeight: '400',
     color: colors.textDim,
-    fontSize: 13,
-    marginTop: 18,
-    textAlign: 'center',
+    marginTop: 2,
+    lineHeight: 15,
   },
-  button: {
-    marginTop: 18,
-    borderRadius: 12,
+  milestoneBadge: {
+    flexShrink: 0,
+  },
+  milestoneBadgeText: {
+    fontFamily: fonts.heading,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+    borderRadius: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+  },
+  milestoneBadgeDone: {
+    backgroundColor: 'rgba(127,201,138,0.15)',
+    color: colors.success,
+    borderWidth: 1,
+    borderColor: colors.success,
+  },
+  milestoneBadgeReady: {
+    backgroundColor: 'rgba(224,165,62,0.15)',
+    color: colors.gold,
+    borderWidth: 1,
+    borderColor: colors.gold,
+  },
+  /* ── Forgers note ── */
+  forgersNote: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    paddingVertical: 14,
-    alignItems: 'center',
+    borderRadius: 12,
+    padding: 12,
+    paddingLeft: 14,
+    marginTop: 18,
   },
-  buttonPressed: {
-    opacity: 0.8,
+  forgersIcon: {
+    fontFamily: fonts.heading,
+    fontSize: 18,
+    color: colors.gold,
   },
-  buttonText: {
+  forgersText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    fontWeight: '500',
     color: colors.text,
-    fontSize: 14,
+  },
+  forgersCount: {
+    color: colors.gold,
     fontWeight: '700',
-    letterSpacing: 1,
   },
 });
