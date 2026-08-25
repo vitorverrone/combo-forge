@@ -1,0 +1,232 @@
+{
+  "common": {
+    "back": "←",
+    "locked": "Trancado",
+    "unlocked": "Desbloqueado",
+    "ready": "Pronto",
+    "done": "Concluído",
+    "new": "Novo",
+    "retry": "TENTAR NOVAMENTE",
+    "loading": "CARREGANDO…",
+    "equip": "Equipar",
+    "equipped": "Equipado",
+    "unlock": "Desbloquear",
+    "decideLater": "Decidir Depois",
+    "skip": "Pular",
+    "next": "Próximo",
+    "cancel": "Cancelar",
+    "apply": "Aplicar",
+    "home": "Início",
+    "close": "Fechar"
+  },
+  "start": {
+    "title": "COMBO FORGE",
+    "tagline": "Monte Combos. Vença o Alvo. Repita.",
+    "shop": "Loja",
+    "forger": "Forjador",
+    "startRun": "Iniciar Run",
+    "dailyChallenge": "Desafio Diário",
+    "attemptsUsed": "· {{used}}/{{max}} tentativas usadas",
+    "collection": "Coleção"
+  },
+  "game": {
+    "round": "Rodada {{number}}",
+    "daily": "Diário",
+    "plays": "Jogadas",
+    "combo": "Combo",
+    "patternHint": "Selecione cartas para formar uma jogada",
+    "base": "Base",
+    "pts": "pts",
+    "clear": "Limpar",
+    "discard": "Descartar",
+    "play": "JOGAR",
+    "abandonTitle": "Abandonar run?",
+    "abandonSub": "Seu progresso nesta rodada será perdido.",
+    "keepPlaying": "Continuar",
+    "abandon": "Abandonar"
+  },
+  "shop": {
+    "eyebrow": "Cosméticos",
+    "title": "Loja",
+    "subtitle": "100% visual — Deck skins nunca afetam o poder do jogo.",
+    "decks": "Decks",
+    "removeAds": "Remover Anúncios",
+    "removeAdsDesc": "Oculta o banner e anúncios intersticiais. Não afeta o anúncio recompensado opcional no Desafio Diário.",
+    "buyFor": "Comprar por {{price}}",
+    "purchased": "✓ Comprado",
+    "restorePurchases": "Restaurar Compras",
+    "restoring": "Restaurando…",
+    "loadingPrices": "Carregando preços…"
+  },
+  "profile": {
+    "eyebrow": "Estatísticas do jogador",
+    "title": "Perfil",
+    "desc": "Seu recorde em cada run, suas cartas favoritas e seu progresso de marcos.",
+    "bestRunScore": "Melhor pontuação de run",
+    "runsWon": "Runs ganhas",
+    "winRate": "Taxa de vitória",
+    "biggestCombo": "Maior combo",
+    "favoriteCards": "Cartas favoritas",
+    "noCardsYet": "Nenhuma carta jogada ainda — comece uma run!",
+    "plays": "jogadas",
+    "milestones": "Marcos",
+    "forgersUnlocked": "Forjadores desbloqueados: {{count}}/3",
+    "language": "Idioma"
+  },
+  "forge": {
+    "relics": "Relíquias",
+    "roundCleared": "Rodada {{number}} concluída",
+    "title": "Forja",
+    "subtitle": "Escolha 1 de 3 ofertas para fortalecer sua run.",
+    "relic": "Relíquia",
+    "cardEffect": "Efeito de Carta",
+    "chooseCard": "Escolha uma carta",
+    "forgeButton": "Forjar"
+  },
+  "collection": {
+    "eyebrow": "Meta-progressão",
+    "title": "Coleção",
+    "subtitle": "Tudo que você conquistou nas runs. Itens trancados mostram sua condição de desbloqueio.",
+    "runsWon": "Runs ganhas",
+    "bestScore": "Melhor pontuação",
+    "milestones": "Marcos",
+    "forgers": "Forjadores",
+    "relics": "Relíquias",
+    "forgeEffects": "Efeitos de Forja",
+    "lockedSummary_one": "{{count}} forjador a desbloquear · ganhe runs para progredir",
+    "lockedSummary_other": "{{count}} forjadores a desbloquear · ganhe runs para progredir",
+    "allCards": "Todas as 40 cartas base estão sempre disponíveis — efeitos de forja as moldam."
+  },
+  "daily": {
+    "title": "Desafio Diário",
+    "subtitle": "Uma tentativa é gratuita cada dia. Assista um anúncio recompensado para desbloquear uma segunda.",
+    "attemptsLeft": "Tentativas restantes",
+    "watchAd": "Assistir anúncio · Tentativa extra",
+    "watchAdLoading": "ASSISTINDO…",
+    "playDaily": "Jogar Desafio Diário",
+    "loadingSeed": "Carregando seed…",
+    "noAttemptsLeft": "Sem tentativas hoje — volte amanhã.",
+    "watchAdHint": "Assista um anúncio para desbloquear uma tentativa extra.",
+    "extraReady": "Tentativa extra pronta.",
+    "freeReady": "Tentativa gratuita pronta hoje.",
+    "thisWeekLeaderboard": "Ranking da semana",
+    "viewLeaderboard": "Ver ranking semanal",
+    "viewLeaderboardLoading": "CARREGANDO…",
+    "noScoresThisWeek": "Nenhuma pontuação esta semana ainda.",
+    "yourBest": "Sua melhor",
+    "noScoreYet": "Nenhuma pontuação ainda",
+    "noScoresWeek": "Nenhuma pontuação esta semana.",
+    "bottomHint": "Tentativas resetam à meia-noite UTC e ficam salvas neste dispositivo.",
+    "watchAdBold": "Assistir anúncio",
+    "playBold": "Jogar",
+    "bottomHintEnd": "aparece só depois que a tentativa gratuita é usada; {{playBold}} carrega a seed compartilhada de hoje. O ranking mostra sua melhor pontuação e o Top 10 semanal.",
+    "weekOf": "Semana de {{start}} – {{end}}"
+  },
+  "runWon": {
+    "dailyCleared": "DESAFIO DIÁRIO · CONCLUÍDO",
+    "allRoundsCleared": "TODAS AS {{rounds}} RODADAS CONCLUÍDAS",
+    "dailyComplete": "Diário Completo!",
+    "runComplete": "Run Completa!",
+    "forgedRun": "{{forger}} forjou uma run de {{score}} pontos.",
+    "newUnlocks": "NOVOS DESBLOQUEIOS",
+    "newUnlock": "NOVO DESBLOQUEIO",
+    "finalScore": "Pontuação Final",
+    "activeRelics": "Relíquias ativas",
+    "playAgain": "Jogar Novamente",
+    "dailyChallenge": "Desafio Diário",
+    "changeForger": "Trocar Forjador"
+  },
+  "runLost": {
+    "soClose": "Quase lá!",
+    "runOver": "Run encerrada",
+    "shortOfTarget": "Você ficou <1>{{pts}} pontos ({{pct}}%)</1> abaixo do alvo.",
+    "targetSlipped": "O alvo escapou.",
+    "runTotal": "Total da run: {{pts}} pts",
+    "tryAgain": "TENTAR NOVAMENTE",
+    "dailyChallenge": "DESAFIO DIÁRIO",
+    "changeForger": "TROCAR FORJADOR"
+  },
+  "roundWon": {
+    "roundCleared": "Rodada {{number}} concluída",
+    "targetBeaten": "Alvo superado!",
+    "score": "Pontuação",
+    "target": "Alvo",
+    "margin": "Margem",
+    "runTotal": "{{forger}} · Total da run {{pts}} pts",
+    "activeRelics": "Relíquias ativas",
+    "nextRound": "Próxima Rodada →"
+  },
+  "onboarding": {
+    "selectCards": {
+      "title": "Selecione Cartas",
+      "body": "Toque nas cartas da sua mão para escolher entre 1 e 5. Elas formam sua jogada da rodada.",
+      "tip": "Dica: cartas selecionadas sobem com borda dourada."
+    },
+    "scorePattern": {
+      "title": "Pontue o Padrão",
+      "body": "Suas cartas formam um padrão — de Carta Alta até Quadra. Padrões mais fortes pontuam mais.",
+      "tip": "Dica: base = bônus do padrão + valor das cartas."
+    },
+    "rideCombo": {
+      "title": "Ride o Combo",
+      "body": "Cada jogada aumenta o Multiplicador de Combo — ×1, ×2, ×3, ×4 — então jogadas depois valem mais.",
+      "tip": "Dica: o multiplicador reseta a cada rodada."
+    },
+    "beatTarget": {
+      "title": "Vença o Alvo",
+      "body": "Alcance o alvo da rodada antes que suas jogadas acabem. Ganhar rodadas 1–5 abre a Forja.",
+      "tip": "Dica: passe todas as 6 rodadas para ganhar a run."
+    },
+    "letsForge": "Vamos Forjar"
+  },
+  "unlockChoice": {
+    "milestoneReached": "Marco alcançado",
+    "pickUnlock": "Escolha qual desbloqueio vem primeiro — os outros ficam disponíveis na Coleção.",
+    "new": "Novo"
+  },
+  "dailySubmit": {
+    "submitting": "Enviando pontuação…",
+    "submitted": "✓ Pontuação enviada",
+    "failed": "Pontuação não enviada"
+  },
+  "breakReminder": {
+    "title": "☕ Hora de uma pausa?",
+    "body": "Você está forjando muitas runs seguidas. Uma pausa curta mantém seu foco afiado.",
+    "button": "OK, VOU FAZER UMA PAUSA"
+  },
+  "format": {
+    "noRelic": "Sem relíquia inicial — puro skill.",
+    "pattern": {
+      "highCard": "Carta Alta",
+      "pair": "Par",
+      "twoPair": "Dois Pares",
+      "threeOfAKind": "Trinca",
+      "straight": "Sequência",
+      "fullHouse": "Full House",
+      "fourOfAKind": "Quadra"
+    },
+    "forgeEffect": {
+      "valueBonus": "Adiciona +{{amount}} ao valor da carta",
+      "multiplier": "Multiplica o valor da carta por ×{{multiplier}}",
+      "wildcard": "Conta como qualquer valor e naipe para formar padrões",
+      "trigger": "Adiciona +{{bonus}} pts quando jogado na jogada {{triggerPlay}} de uma rodada"
+    },
+    "relic": {
+      "suit": "Cartas de {{suit}} ×{{multiplier}}",
+      "pattern": "Bônus de {{pattern}} +{{bonus}}",
+      "discard": "+{{amount}} descarte por rodada",
+      "handSize": "+{{amount}} carta na mão",
+      "comboStart": "Combo começa em ×{{multiplier}}",
+      "comboGrowth": "Combo cresce +{{step}} por jogada"
+    },
+    "suit": {
+      "spades": "Espadas",
+      "hearts": "Copas",
+      "diamonds": "Ouros",
+      "clubs": "Paus"
+    }
+  },
+  "ad": {
+    "testAd": "Anúncio de teste"
+  }
+}

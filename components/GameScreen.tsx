@@ -3,6 +3,7 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import { activeRelics, cardKey, cosmeticItemById, currentMultiplier, getForger } from '../engine';
 
+import { useTranslation } from '../i18n';
 import { PlayingCard } from './PlayingCard';
 import { PATTERN_NAME } from './format';
 import { PhaseScreen } from './PhaseScreen';
@@ -12,6 +13,7 @@ import { fonts } from './typography';
 import { MAX_SELECTION, selectionPreview, useGameStore } from '../store/gameStore';
 
 export function GameScreen() {
+  const { t } = useTranslation();
   const [showAbandon, setShowAbandon] = useState(false);
   const run = useGameStore((state) => state.run);
   const runMode = useGameStore((state) => state.runMode);
@@ -50,8 +52,8 @@ export function GameScreen() {
           <Text style={styles.navBtnText}>←</Text>
         </Pressable>
         <View style={styles.roundLabelWrap}>
-          <Text style={styles.roundLabel}>Round {run.roundNumber}</Text>
-          {runMode === 'daily' && <Text style={styles.dailyBadge}>Daily</Text>}
+          <Text style={styles.roundLabel}>{t('game.round', { number: run.roundNumber })}</Text>
+          {runMode === 'daily' && <Text style={styles.dailyBadge}>{t('game.daily')}</Text>}
         </View>
         <View style={styles.scoreBlock}>
           <Text style={styles.scoreValue}>{run.score}</Text>
@@ -68,11 +70,11 @@ export function GameScreen() {
         {/* HUD row: Plays + Combo only */}
         <View style={styles.hudRow}>
           <View style={styles.hudBox}>
-            <Text style={styles.hudLabel}>Plays</Text>
+            <Text style={styles.hudLabel}>{t('game.plays')}</Text>
             <Text style={styles.hudValue}>{run.playsRemaining}</Text>
           </View>
           <View style={styles.hudBox}>
-            <Text style={styles.hudLabel}>Combo</Text>
+            <Text style={styles.hudLabel}>{t('game.combo')}</Text>
             <Text style={[styles.hudValue, { color: comboAccent }]}>×{multiplier}</Text>
           </View>
         </View>
@@ -89,8 +91,7 @@ export function GameScreen() {
                 Base {preview.baseValue} · <Text style={styles.patternPointsBold}>{preview.baseValue * multiplier} pts</Text> with ×{multiplier}
               </Text>
             </>
-          ) : (
-            <Text style={styles.patternHint}>Select cards to form a play</Text>
+          ) : (              <Text style={styles.patternHint}>{t('game.patternHint')}</Text>
           )}
         </View>
 
@@ -119,7 +120,7 @@ export function GameScreen() {
               onPress={clearSelection}
               style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPressed]}
             >
-              <Text style={[styles.btnSecondaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>Clear</Text>
+              <Text style={[styles.btnSecondaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>{t('game.clear')}</Text>
             </Pressable>
             <Pressable
               accessibilityLabel="Discard selected cards"
@@ -130,7 +131,7 @@ export function GameScreen() {
               style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabled, pressed && styles.btnPressed]}
             >
               <Text style={[styles.btnSecondaryText, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>
-                Discard <Text style={[styles.hintBadge, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>· {discardsRemaining}</Text>
+                {t('game.discard')} <Text style={[styles.hintBadge, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>· {discardsRemaining}</Text>
               </Text>
             </Pressable>
           </View>
@@ -142,7 +143,7 @@ export function GameScreen() {
             onPress={playSelection}
             style={({ pressed }) => [styles.btn, styles.btnPrimary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPrimaryPressed]}
           >
-            <Text style={[styles.btnPrimaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>PLAY</Text>
+            <Text style={[styles.btnPrimaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>{t('game.play')}</Text>
           </Pressable>
         </View>
       </ScrollView>
@@ -151,8 +152,8 @@ export function GameScreen() {
       {showAbandon && (
         <View style={styles.overlay}>
           <View style={styles.overlayCard}>
-            <Text style={styles.overlayTitle}>Abandon run?</Text>
-            <Text style={styles.overlaySub}>Your progress in this round will be lost.</Text>
+            <Text style={styles.overlayTitle}>{t('game.abandonTitle')}</Text>
+            <Text style={styles.overlaySub}>{t('game.abandonSub')}</Text>
             <View style={styles.overlayActions}>
               <Pressable
                 accessibilityLabel="Keep playing"
@@ -160,7 +161,7 @@ export function GameScreen() {
                 onPress={() => setShowAbandon(false)}
                 style={({ pressed }) => [styles.overlayBtn, styles.overlayBtnPrimary, pressed && styles.btnPressed]}
               >
-                <Text style={styles.overlayBtnPrimaryText}>Keep playing</Text>
+                <Text style={styles.overlayBtnPrimaryText}>{t('game.keepPlaying')}</Text>
               </Pressable>
               <Pressable
                 accessibilityLabel="Abandon run"
@@ -168,7 +169,7 @@ export function GameScreen() {
                 onPress={backToStart}
                 style={({ pressed }) => [styles.overlayBtn, styles.overlayBtnDanger, pressed && styles.btnPressed]}
               >
-                <Text style={styles.overlayBtnDangerText}>Abandon</Text>
+                <Text style={styles.overlayBtnDangerText}>{t('game.abandon')}</Text>
               </Pressable>
             </View>
           </View>

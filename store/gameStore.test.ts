@@ -394,7 +394,7 @@ describe('Desafio Diário (ticket 13)', () => {
   test('anúncio não assistido (provider falso) não libera a extra', async () => {
     const store = createGameStore({
       dailyBackend: makeFakeDailyBackend(),
-      adProvider: { requestRewardedAd: async () => false },
+      adProvider: { requestRewardedAd: async () => false, requestInterstitialAd: async () => false },
     });
     await store.getState().startDailyChallenge();
     await store.getState().watchAdForExtraAttempt();
@@ -408,6 +408,7 @@ describe('Desafio Diário (ticket 13)', () => {
         requestRewardedAd: async () => {
           throw new Error('anúncio fora do ar');
         },
+        requestInterstitialAd: async () => false,
       },
     });
     await store.getState().startDailyChallenge();
@@ -426,6 +427,7 @@ describe('Desafio Diário (ticket 13)', () => {
         requestRewardedAd: async () => {
           throw new Error('sem anúncios');
         },
+        requestInterstitialAd: async () => false,
       },
     });
     await store.getState().startDailyChallenge();

@@ -2,6 +2,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { computeUnlocks, MILESTONES } from '../engine';
 
+import { useTranslation } from '../i18n';
+import i18n from '../i18n';
 import { Suit } from '../engine';
 import { SuitSymbol } from './SuitSymbol';
 import { colors } from './theme';
@@ -10,6 +12,7 @@ import { useGameStore } from '../store/gameStore';
 import TopButton from './TopButton';
 
 export function ProfileScreen() {
+  const { t } = useTranslation();
   const progression = useGameStore((state) => state.progression);
   const backToStart = useGameStore((state) => state.backToStart);
 
@@ -29,38 +32,38 @@ export function ProfileScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.eyebrow}>Player stats</Text>
-        <Text style={styles.title}>Profile</Text>
-        <Text style={styles.screenDesc}>Your record across every run, your favorite cards and your milestone progress.</Text>
+        <Text style={styles.eyebrow}>{t('profile.eyebrow')}</Text>
+        <Text style={styles.title}>{t('profile.title')}</Text>
+        <Text style={styles.screenDesc}>{t('profile.desc')}</Text>
 
         {/* Stats card — 2×2 grid */}
         <View style={styles.statCard}>
           <View style={styles.statsGrid}>
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{stats.bestRunScore.toLocaleString()}</Text>
-              <Text style={styles.statLabel}>Best run score</Text>
+              <Text style={styles.statLabel}>{t('profile.bestRunScore')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{stats.runsWon}/{stats.runsStarted}</Text>
-              <Text style={styles.statLabel}>Runs won</Text>
+              <Text style={styles.statLabel}>{t('profile.runsWon')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{winRate}%</Text>
-              <Text style={styles.statLabel}>Win rate</Text>
+              <Text style={styles.statLabel}>{t('profile.winRate')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={styles.statValue}>×{stats.maxMultiplier}</Text>
-              <Text style={styles.statLabel}>Biggest combo</Text>
+              <Text style={styles.statLabel}>{t('profile.biggestCombo')}</Text>
             </View>
           </View>
         </View>
 
         {/* Favorite cards — mini playing cards */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Favorite cards</Text>
+          <Text style={styles.sectionTitle}>{t('profile.favoriteCards')}</Text>
         </View>
         {favorites.length === 0 ? (
-          <Text style={styles.emptyText}>No cards played yet — start a run!</Text>
+          <Text style={styles.emptyText}>{t('profile.noCardsYet')}</Text>
         ) : (
           <View style={styles.favCards}>
             {favorites.map(([key, count]) => {
@@ -74,7 +77,7 @@ export function ProfileScreen() {
                       <SuitSymbol suit={suit as Suit} color={isRed ? colors.red : colors.cardInk} size={22} />
                     </View>
                   </View>
-                  <Text style={styles.favPlays}>{count} plays</Text>
+                  <Text style={styles.favPlays}>{count} {t('profile.plays')}</Text>
                 </View>
               );
             })}
@@ -83,7 +86,7 @@ export function ProfileScreen() {
 
         {/* Milestones */}
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Milestones</Text>
+          <Text style={styles.sectionTitle}>{t('profile.milestones')}</Text>
         </View>
         <View style={styles.milestoneList}>
           {MILESTONES.map((milestone) => {
@@ -104,7 +107,7 @@ export function ProfileScreen() {
                 </View>
                 <View style={styles.milestoneBadge}>
                   <Text style={[styles.milestoneBadgeText, claimed && styles.milestoneBadgeDone, !claimed && reached && styles.milestoneBadgeReady]}>
-                    {claimed ? 'Done' : reached ? 'Ready' : 'Locked'}
+                    {claimed ? t('common.done') : reached ? t('common.ready') : t('common.locked')}
                   </Text>
                 </View>
               </View>
@@ -112,10 +115,34 @@ export function ProfileScreen() {
           })}
         </View>
 
+        {/* Language switcher */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t('profile.language')}</Text>
+        </View>
+        <View style={styles.langRow}>
+          {[{ code: 'pt', label: 'Português' }, { code: 'en', label: 'English' }].map((lang) => (
+            <Pressable
+              key={lang.code}
+              accessibilityRole="button"
+              accessibilityState={{ selected: i18n.language === lang.code }}
+              onPress={() => void i18n.changeLanguage(lang.code)}
+              style={({ pressed }) => [
+                styles.langBtn,
+                i18n.language === lang.code && styles.langBtnSelected,
+                pressed && styles.btnPressed,
+              ]}
+            >
+              <Text style={[styles.langBtnText, i18n.language === lang.code && styles.langBtnTextSelected]}>
+                {lang.label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+
         {/* Forgers note */}
         <View style={styles.forgersNote}>
           <Text style={styles.forgersIcon}>⚒</Text>
-          <Text style={styles.forgersText}>Forgers unlocked: <Text style={styles.forgersCount}>{unlocks.forgers.length}/3</Text></Text>
+          <Text style={styles.forgersText}>{t('profile.forgersUnlocked', { count: unlocks.forgers.length })}</Text>
         </View>
       </ScrollView>
     </View>
@@ -406,5 +433,35 @@ const styles = StyleSheet.create({
   forgersCount: {
     color: colors.gold,
     fontWeight: '700',
+  },
+  /* ── Language switcher ── */
+  langRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  langBtn: {
+    flex: 1,
+    borderRadius: 10,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  langBtnSelected: {
+    borderColor: colors.gold,
+    backgroundColor: colors.surfaceSelected,
+  },
+  langBtnText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    fontWeight: '700',
+    color: colors.textDim,
+  },
+  langBtnTextSelected: {
+    color: colors.gold,
+  },
+  btnPressed: {
+    opacity: 0.8,
   },
 });

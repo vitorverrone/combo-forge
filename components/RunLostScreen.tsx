@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { activeRelics, getForger, RunState } from '../engine';
 
+import { useTranslation } from '../i18n';
 import { DailySubmitStatus } from './DailySubmitStatus';
 import { RelicRow } from './RelicRow';
 import { colors } from './theme';
@@ -15,6 +16,7 @@ interface RunLostScreenProps {
 
 /** Derrota: destaque do "quase lá" (distância que faltou) e restart imediato. */
 export function RunLostScreen({ run }: RunLostScreenProps) {
+  const { t } = useTranslation();
   const restartRun = useGameStore((state) => state.restartRun);
   const backToStart = useGameStore((state) => state.backToStart);
   const recentUnlocks = useGameStore((state) => state.recentUnlocks);
@@ -22,8 +24,18 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
   const daily = useGameStore((state) => state.daily);
   const openDaily = useGameStore((state) => state.openDaily);
   const submitDailyScore = useGameStore((state) => state.submitDailyScore);
+  const showInterstitial = useGameStore((state) => state.showInterstitial);
+  const dismissInterstitial = useGameStore((state) => state.dismissInterstitial);
+  const adProvider = useGameStore((state) => state.adProvider);
 
   const dailyEnd = runMode === 'daily';
+
+  // Intersticial entre Runs: exibe ao montar a tela de fim quando marcado.
+  useEffect(() => {
+    if (!showInterstitial || dailyEnd) return;
+    dismissInterstitial();
+    void adProvider.requestInterstitialAd();
+  }, [showInterstitial, dailyEnd, dismissInterstitial, adProvider]);
   const missing = Math.max(run.target - run.score, 0);
   // Barra "quase cheia" quando a margem é pequena (Efeito Zeigarnik).
   const progress = Math.min(run.score / run.target, 1);
@@ -56,21 +68,20 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
       <Text style={styles.eyebrow}>
         {dailyEnd ? 'DAILY CHALLENGE · ' : ''}ROUND {run.roundNumber} · {getForger(run.forger).name}
       </Text>
-      <Text style={styles.title}>{soClose ? 'So close!' : 'Run over'}</Text>
+      <Text style={styles.title}>{soClose ? t('runLost.soClose') : t('runLost.runOver')}</Text>
 
       {missing > 0 ? (
         <Text style={styles.missingText}>
-          You were <Text style={styles.missingValue}>{missing} pts ({marginPct}%)</Text> short of
-          the target.
+          {t('runLost.shortOfTarget', { pts: missing, pct: marginPct })}
         </Text>
       ) : (
-        <Text style={styles.missingText}>The target slipped away.</Text>
+        <Text style={styles.missingText}>{t('runLost.targetSlipped')}</Text>
       )}
 
       {!dailyEnd && recentUnlocks.length > 0 && (
         <View style={styles.unlockBanner}>
-          <Text style={styles.unlockBannerText}>
-            NEW UNLOCK{recentUnlocks.length > 1 ? 'S' : ''}: {recentUnlocks.join(' · ')}
+          <          Text style={styles.unlockBannerText}>
+            {recentUnlocks.length > 1 ? t('runWon.newUnlocks') : t('runWon.newUnlock')}: {recentUnlocks.join(' · ')}
           </Text>
         </View>
       )}
@@ -97,7 +108,7 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
         <Text style={styles.progressLabel}>target {run.target}</Text>
       </View>
 
-      <Text style={styles.runTotal}>Run total: {run.runScore} pts</Text>
+      <Text style={styles.runTotal}>{t('runLost.runTotal', { pts: run.runScore })}</Text>
 
       <RelicRow relics={activeRelics(run.startingRelic, run.relics)} compact />
 
@@ -107,7 +118,7 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
           onPress={openDaily}
           style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
         >
-          <Text style={styles.primaryButtonText}>DAILY CHALLENGE</Text>
+          <Text style={styles.primaryButtonText}>{t('runLost.dailyChallenge')}</Text>
         </Pressable>
       ) : (
         <Pressable
@@ -116,7 +127,7 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
           onPress={restartRun}
           style={({ pressed }) => [styles.primaryButton, pressed && styles.buttonPressed]}
         >
-          <Text style={styles.primaryButtonText}>TRY AGAIN</Text>
+          <Text style={styles.primaryButtonText}>{t('runLost.tryAgain')}</Text>
         </Pressable>
       )}
       <Pressable
@@ -125,7 +136,7 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
         onPress={backToStart}
         style={({ pressed }) => [styles.secondaryButton, pressed && styles.buttonPressed]}
       >
-        <Text style={styles.secondaryButtonText}>{dailyEnd ? 'HOME' : 'CHANGE FORGER'}</Text>
+        <Text style={styles.secondaryButtonText}>{dailyEnd ? t('common.home') : t('runLost.changeForger')}</Text>
       </Pressable>
     </View>
   );

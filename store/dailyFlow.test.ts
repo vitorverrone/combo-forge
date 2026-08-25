@@ -49,7 +49,7 @@ function makeDeps(overrides: Partial<DailyFlowDeps> = {}): DailyFlowDeps {
   return {
     storage: createMemoryDailyChallengeStorage(),
     backend: makeFakeDailyBackend(),
-    adProvider: { requestRewardedAd: async () => true },
+    adProvider: { requestRewardedAd: async () => true, requestInterstitialAd: async () => true },
     now: () => NOW,
     ...overrides,
   };
@@ -154,7 +154,7 @@ describe('runDailyCommand — watchAd', () => {
   });
 
   test('anúncio não assistido não libera a extra', async () => {
-    const deps = makeDeps({ adProvider: { requestRewardedAd: async () => false } });
+    const deps = makeDeps({ adProvider: { requestRewardedAd: async () => false, requestInterstitialAd: async () => false } });
     const result = await runDailyCommand(usedFree(), deps, { type: 'watchAd' });
     expect(result.daily.attempts.extraUnlocked).toBe(false);
   });
@@ -165,6 +165,7 @@ describe('runDailyCommand — watchAd', () => {
         requestRewardedAd: async () => {
           throw new Error('anúncio fora do ar');
         },
+        requestInterstitialAd: async () => false,
       },
     });
     const result = await runDailyCommand(usedFree(), deps, { type: 'watchAd' });

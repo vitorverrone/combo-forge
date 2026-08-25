@@ -39,7 +39,8 @@
         }
       ],
       "./plugins/withKotlinVersionPin",
-      "expo-font"
+      "expo-font",
+      "expo-localization"
     ],
     "extra": {
       "eas": {

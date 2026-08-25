@@ -10,6 +10,7 @@ import {
   utcDateIso,
 } from '../engine';
 
+import { useTranslation } from '../i18n';
 import { colors } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -22,6 +23,7 @@ import TopButton from './TopButton';
  * (nunca expõe derrotas ou identidades de ninguém).
  */
 export function DailyChallengeScreen() {
+  const { t } = useTranslation();
   const daily = useGameStore((state) => state.daily);
   const startDailyChallenge = useGameStore((state) => state.startDailyChallenge);
   const watchAdForExtraAttempt = useGameStore((state) => state.watchAdForExtraAttempt);
@@ -40,14 +42,14 @@ export function DailyChallengeScreen() {
   let hintText = '';
   let hintDim = false;
   if (rem === 0 && attempts.extraUnlocked) {
-    hintText = 'No attempts left today — come back tomorrow.';
+    hintText = t('daily.noAttemptsLeft');
     hintDim = true;
   } else if (rem === 0) {
-    hintText = 'Watch an ad to unlock an extra attempt.';
+    hintText = t('daily.watchAdHint');
   } else if (attempts.extraUnlocked) {
-    hintText = 'Extra attempt ready.';
+    hintText = t('daily.extraReady');
   } else {
-    hintText = 'Free attempt ready today.';
+    hintText = t('daily.freeReady');
   }
 
   const currentWeekLabel = () => {
@@ -69,14 +71,14 @@ export function DailyChallengeScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.header}>
-          <Text style={styles.title}>Daily Challenge</Text>
+          <Text style={styles.title}>{t('daily.title')}</Text>
           <Text style={styles.subtitle}>
-            One attempt is free each day. Watch a rewarded ad to unlock a second.
+            {t('daily.subtitle')}
           </Text>
         </View>
 
         <View style={styles.attemptsCard}>
-          <Text style={styles.attemptsHead}>Attempts left</Text>
+          <Text style={styles.attemptsHead}>{t('daily.attemptsLeft')}</Text>
           <Text style={styles.attemptsValue}>
             {rem}
             <Text style={styles.attemptsValueSlash}>/{DAILY_MAX_ATTEMPTS}</Text>
@@ -111,7 +113,7 @@ export function DailyChallengeScreen() {
               <Line x1={12} y1={17} x2={12} y2={21} />
             </Svg>
             <Text style={styles.btnSecondaryText}>
-              {daily.adLoading ? 'WATCHING…' : 'Watch ad · Extra attempt'}
+              {daily.adLoading ? t('daily.watchAdLoading') : t('daily.watchAd')}
             </Text>
           </Pressable>
         )}
@@ -129,7 +131,7 @@ export function DailyChallengeScreen() {
           ]}
         >
           <Text style={styles.btnPrimaryText}>
-            {daily.status === 'loading' ? 'Loading seed…' : 'Play Daily Challenge'}
+            {daily.status === 'loading' ? t('daily.loadingSeed') : t('daily.playDaily')}
           </Text>
         </Pressable>
 
@@ -142,7 +144,7 @@ export function DailyChallengeScreen() {
         <View style={styles.divider} />
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>This week's leaderboard</Text>
+          <Text style={styles.sectionTitle}>{t('daily.thisWeekLeaderboard')}</Text>
           <Text style={styles.sectionWeek}>{currentWeekLabel()}</Text>
         </View>
 
@@ -156,7 +158,7 @@ export function DailyChallengeScreen() {
             style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnPressed]}
           >
             <Text style={styles.btnSecondaryText}>
-              {daily.leaderboardLoading ? 'LOADING…' : 'View weekly leaderboard'}
+              {daily.leaderboardLoading ? t('daily.viewLeaderboardLoading') : t('daily.viewLeaderboard')}
             </Text>
           </Pressable>
         ) : (
@@ -170,10 +172,9 @@ export function DailyChallengeScreen() {
         )}
 
         <Text style={styles.bottomHint}>
-          Attempts reset at midnight UTC and are stored on this device.{' '}
-          <Text style={styles.bottomHintBold}>Watch ad</Text> appears only after the
-          free attempt is used; <Text style={styles.bottomHintBold}>Play</Text> loads
-          today's shared seed. Leaderboard shows your best plus the weekly Top 10.
+          {t('daily.bottomHint')}{' '}
+          <Text style={styles.bottomHintBold}>{t('daily.watchAdBold')}</Text>{' '}
+          {t('daily.bottomHintEnd', { playBold: t('daily.playBold') })}
         </Text>
       </ScrollView>
     </View>
@@ -181,18 +182,19 @@ export function DailyChallengeScreen() {
 }
 
 function LeaderboardList({ leaderboard }: { leaderboard: DailyLeaderboard }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.leaderboard}>
       <View style={styles.yourBest}>
-        <Text style={styles.yourBestLabel}>Your best</Text>
+        <Text style={styles.yourBestLabel}>{t('daily.yourBest')}</Text>
         <Text style={styles.yourBestValue}>
           {leaderboard.own === null
-            ? 'No score yet'
+            ? t('daily.noScoreYet')
             : `#${leaderboard.own.rank} · ${leaderboard.own.score.toLocaleString('en-US')}`}
         </Text>
       </View>
       {leaderboard.top.length === 0 ? (
-        <Text style={styles.emptyTop}>No scores this week yet.</Text>
+        <Text style={styles.emptyTop}>{t('daily.noScoresWeek')}</Text>
       ) : (
         leaderboard.top.map((entry, index) => {
           const isFirst = entry.rank === 1;

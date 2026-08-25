@@ -18,12 +18,14 @@ import {
   unlockStatuses,
 } from '../engine';
 
+import { useTranslation } from '../i18n';
 import { cardLabel, forgeEffectDescription, forgeEffectLabel, isRedSuit, relicDescription } from './format';
 import { colors } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 
 export function CollectionScreen() {
+  const { t } = useTranslation();
   const progression = useGameStore((state) => state.progression);
   const claimUnlock = useGameStore((state) => state.claimUnlock);
   const backToStart = useGameStore((state) => state.backToStart);
@@ -58,26 +60,26 @@ export function CollectionScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.eyebrow}>Meta-progression</Text>
-        <Text style={styles.title}>Collection</Text>
-        <Text style={styles.subtitle}>Everything you've earned across runs. Locked items show their unlock condition.</Text>
+        <Text style={styles.eyebrow}>{t('collection.eyebrow')}</Text>
+        <Text style={styles.title}>{t('collection.title')}</Text>
+        <Text style={styles.subtitle}>{t('collection.subtitle')}</Text>
 
         {/* Progress card */}
         <View style={styles.progressCard}>
           <View style={styles.statsGrid}>
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{stats.runsWon}</Text>
-              <Text style={styles.statLabel}>Runs won</Text>
+              <Text style={styles.statLabel}>{t('collection.runsWon')}</Text>
             </View>
             <View style={styles.statBox}>
               <Text style={styles.statValue}>{stats.bestRunScore.toLocaleString()}</Text>
-              <Text style={styles.statLabel}>Best score</Text>
+              <Text style={styles.statLabel}>{t('collection.bestScore')}</Text>
             </View>
           </View>
 
           <View style={styles.milestonesLabel}>
             <Text style={styles.milestonesLabelText}>
-              Milestones <Text style={styles.milestonesLabelCount}>{milestoneProgress}/{milestoneTotal}</Text>
+              {t('collection.milestones')} <Text style={styles.milestonesLabelCount}>{milestoneProgress}/{milestoneTotal}</Text>
             </Text>
           </View>
           <View style={styles.milestoneTrack}>
@@ -107,7 +109,7 @@ export function CollectionScreen() {
         </View>
 
         {/* Forgers */}
-        <SectionHeader label="Forgers" count={`${unlocks.forgers.length}/${FORGERS.length}`} />
+        <SectionHeader label={t('collection.forgers')} count={`${unlocks.forgers.length}/${FORGERS.length}`} />
         {FORGERS.map((forger) => {
           const unlocked = isForgerUnlocked(unlocks, forger.id);
           const milestone = milestoneForForger(forger.id);
@@ -156,7 +158,7 @@ export function CollectionScreen() {
 
         {/* Relics */}
         <SectionHeader
-          label="Relics"
+          label={t('collection.relics')}
           count={`${RELIC_POOL.length - (unlocks.rareRelics ? 0 : RELIC_POOL.filter((r) => r.rarity === 'rare').length)}/${RELIC_POOL.length}`}
         />
         <View style={styles.relicGrid}>
@@ -174,7 +176,7 @@ export function CollectionScreen() {
                 {!locked ? (
                   <Text style={styles.relicEffect}>{relicDescription(relic)}</Text>
                 ) : (
-                  <Text style={styles.relicLock}>{rareMilestone?.description ?? 'Locked'}</Text>
+                  <Text style={styles.relicLock}>{rareMilestone?.description ?? t('common.locked')}</Text>
                 )}
               </View>
             );
@@ -183,7 +185,7 @@ export function CollectionScreen() {
 
         {/* Forge Effects */}
         <SectionHeader
-          label="Forge Effects"
+          label={t('collection.forgeEffects')}
           count={`${FORGE_EFFECT_POOL.length + unlocks.extraEffects.length}/${FORGE_EFFECT_POOL.length + BONUS_FORGE_EFFECTS.length}`}
         />
         {FORGE_EFFECT_POOL.map((option) => (
@@ -224,7 +226,7 @@ export function CollectionScreen() {
                   onPress={() => claimUnlock(option.id)}
                   style={({ pressed }) => [styles.unlockBtn, pressed && styles.btnPressed]}
                 >
-                  <Text style={styles.unlockBtnText}>Unlock</Text>
+                  <Text style={styles.unlockBtnText}>{t('common.unlock')}</Text>
                 </Pressable>
               ) : (
                 <StatusBadge unlocked={false} />
@@ -235,7 +237,7 @@ export function CollectionScreen() {
 
         {lockedForgers.length > 0 && (
           <Text style={styles.lockedSummary}>
-            {lockedForgers.length} forger{lockedForgers.length === 1 ? '' : 's'} to unlock · win runs to progress
+            {t('collection.lockedSummary', { count: lockedForgers.length })}
           </Text>
         )}
       </ScrollView>
@@ -253,17 +255,18 @@ function SectionHeader({ label, count }: { label: string; count: string }) {
 }
 
 function StatusBadge({ unlocked, hint }: { unlocked: boolean; hint?: string }) {
+  const { t } = useTranslation();
   if (unlocked) {
     return (
       <View style={styles.badgeUnlocked}>
-        <Text style={styles.badgeUnlockedText}>Unlocked</Text>
+        <Text style={styles.badgeUnlockedText}>{t('common.unlocked')}</Text>
       </View>
     );
   }
   return (
     <View style={styles.badgeLocked}>
       <Text style={styles.badgeLockedText} numberOfLines={2}>
-        {hint ?? 'Locked'}
+        {hint ?? t('common.locked')}
       </Text>
     </View>
   );

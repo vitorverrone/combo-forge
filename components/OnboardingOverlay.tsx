@@ -2,6 +2,7 @@ import { SQLiteStorage } from 'expo-sqlite/kv-store';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useTranslation } from '../i18n';
 import { colors } from './theme';
 
 const STORAGE_KEY = 'combo-forge:onboarding-seen';
@@ -14,32 +15,9 @@ interface Step {
   readonly visual: 'cards' | 'pattern' | 'combo' | 'target';
 }
 
-const STEPS: Step[] = [
-  {
-    title: 'Select Cards',
-    body: 'Tap cards in your hand to choose between 1 and 5. They form your play for the round.',
-    tip: 'Tip: selected cards lift up with a gold border.',
-    visual: 'cards',
-  },
-  {
-    title: 'Score the Pattern',
-    body: 'Your cards form a pattern — from High Card up to Four of a Kind. Stronger patterns score more.',
-    tip: 'Tip: base = pattern bonus + the cards\' values.',
-    visual: 'pattern',
-  },
-  {
-    title: 'Ride the Combo',
-    body: 'Every play raises the Combo Multiplier — ×1, ×2, ×3, ×4 — so later plays are worth more.',
-    tip: 'Tip: the multiplier resets every round.',
-    visual: 'combo',
-  },
-  {
-    title: 'Beat the Target',
-    body: 'Reach the round\'s target before your plays run out. Winning rounds 1–5 opens the Forge.',
-    tip: 'Tip: clear all 6 rounds to win the run.',
-    visual: 'target',
-  },
-];
+// Steps are defined via i18n keys — the visual type maps to each step.
+const STEP_KEYS = ['selectCards', 'scorePattern', 'rideCombo', 'beatTarget'] as const;
+const STEP_VISUALS: readonly Step['visual'][] = ['cards', 'pattern', 'combo', 'target'];
 
 export function hasSeenOnboarding(): boolean {
   return kv.getItemSync(STORAGE_KEY) === 'true';
@@ -59,12 +37,19 @@ interface Props {
 }
 
 export function OnboardingOverlay({ visible, onComplete }: Props) {
+  const { t } = useTranslation();
   const [step, setStep] = useState(0);
 
   if (!visible) return null;
 
-  const current = STEPS[step];
-  const isLast = step === STEPS.length - 1;
+  const stepKey = STEP_KEYS[step];
+  const current = {
+    title: t(`onboarding.${stepKey}.title` as any),
+    body: t(`onboarding.${stepKey}.body` as any),
+    tip: t(`onboarding.${stepKey}.tip` as any),
+    visual: STEP_VISUALS[step],
+  };
+  const isLast = step === STEP_KEYS.length - 1;
 
   return (
     <Modal transparent visible animationType="fade">
@@ -73,11 +58,11 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
           {/* Dots + counter */}
           <View style={styles.topRow}>
             <View style={styles.dots}>
-              {STEPS.map((_, i) => (
+              {STEP_KEYS.map((_, i) => (
                 <View key={i} style={[styles.dot, i <= step && styles.dotOn]} />
               ))}
             </View>
-            <Text style={styles.counter}>{step + 1}/{STEPS.length}</Text>
+            <Text style={styles.counter}>{step + 1}/{STEP_KEYS.length}</Text>
           </View>
 
           {/* Visual area */}
@@ -102,7 +87,7 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
               onPress={onComplete}
               style={({ pressed }) => [styles.skipBtn, pressed && styles.btnPressed]}
             >
-              <Text style={styles.skipBtnText}>Skip</Text>
+              <Text style={styles.skipBtnText}>{t('common.skip')}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -110,7 +95,7 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
               onPress={() => (isLast ? onComplete() : setStep(step + 1))}
               style={({ pressed }) => [styles.nextBtn, pressed && styles.btnPressed]}
             >
-              <Text style={styles.nextBtnText}>{isLast ? "Let's Forge" : 'Next'}</Text>
+              <Text style={styles.nextBtnText}>{isLast ? t('onboarding.letsForge') : t('common.next')}</Text>
             </Pressable>
           </View>
         </View>

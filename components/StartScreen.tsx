@@ -1,6 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import Svg, { Circle, Path } from 'react-native-svg';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withSpring
+} from 'react-native-reanimated';
 
 import {
   canPlayDaily,
@@ -14,6 +18,7 @@ import {
   utcDateIso,
 } from '../engine';
 
+import { useTranslation } from '../i18n';
 import { relicDescription } from './format';
 import { completeOnboarding, hasSeenOnboarding, OnboardingOverlay } from './OnboardingOverlay';
 import { PlayingCard } from './PlayingCard';
@@ -23,6 +28,7 @@ import { useGameStore } from '../store/gameStore';
 import TopButton from './TopButton';
 
 export function StartScreen() {
+  const { t } = useTranslation();
   const [showOnboarding, setShowOnboarding] = useState(!hasSeenOnboarding());
   const forger = useGameStore((state) => state.forger);
   const chooseForger = useGameStore((state) => state.chooseForger);
@@ -43,6 +49,29 @@ export function StartScreen() {
     setShowOnboarding(false);
   };
 
+  const progress = useSharedValue(0);
+
+  useEffect(() => {
+    // Dispara a animação assim que a tela carrega
+    progress.value = withSpring(1, { damping: 12, stiffness: 30 });
+  }, []);
+
+  const leftStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: progress.value * -50 },
+      { translateY: progress.value * 5 },
+      { rotate: `${progress.value * -12}deg` },
+    ],
+  }));
+
+  const rightStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: progress.value * 50 },
+      { translateY: progress.value * 5 },
+      { rotate: `${progress.value * 12}deg` },
+    ],
+  }));
+
   return (
     <>
       <OnboardingOverlay visible={showOnboarding} onComplete={handleOnboardingComplete} />
@@ -56,7 +85,7 @@ export function StartScreen() {
             onPress={openShop}
             style={({ pressed }) => [styles.shopBtn, pressed && styles.navBtnPressed]}
           >
-            <Text style={styles.shopBtnText}>Shop</Text>
+            <Text style={styles.shopBtnText}>{t('start.shop')}</Text>
           </Pressable>
         </View>
 
@@ -64,19 +93,27 @@ export function StartScreen() {
         <View style={styles.homeContent}>
           {/* Title block */}
           <View style={styles.titleBlock}>
-            <Text style={styles.title}>COMBO FORGE</Text>
-            <Text style={styles.tagline}>Build combos. Beat the Target. Repeat.</Text>
+            <Text style={styles.title}>{t('start.title')}</Text>
+            <Text style={styles.tagline}>{t('start.tagline')}</Text>
           </View>
 
           {/* Card fan */}
           <View style={styles.cardFan}>
-            <PlayingCard card={{ suit: 'spades', value: 1 }} style={styles.fanCardLeft} />
-            <PlayingCard card={{ suit: 'hearts', value: 7 }} style={styles.fanCardCenter} />
-            <PlayingCard card={{ suit: 'diamonds', value: 10 }} style={styles.fanCardRight} />
+            <Animated.View style={[styles.fanCardLeft, leftStyle]}>
+              <PlayingCard card={{ suit: 'spades', value: 1 }} />
+            </Animated.View>
+
+            <Animated.View style={[styles.fanCardCenter]}>
+              <PlayingCard card={{ suit: 'hearts', value: 7 }} />
+            </Animated.View>
+
+            <Animated.View style={[styles.fanCardRight, rightStyle]}>
+              <PlayingCard card={{ suit: 'diamonds', value: 10 }} />
+            </Animated.View>
           </View>
 
           {/* Forger section */}
-          <Text style={styles.sectionLabel}>Forger</Text>
+          <Text style={styles.sectionLabel}>{t('start.forger')}</Text>
           <View style={styles.forgerRow}>
             {FORGERS.map((candidate) => {
               const unlocked = isForgerUnlocked(unlocks, candidate.id);
@@ -121,7 +158,7 @@ export function StartScreen() {
               onPress={startRun}
               style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
             >
-              <Text style={styles.btnPrimaryText}>Start Run</Text>
+              <Text style={styles.btnPrimaryText}>{t('start.startRun')}</Text>
             </Pressable>
 
             <Pressable
@@ -130,9 +167,9 @@ export function StartScreen() {
               onPress={openDaily}
               style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnSecondaryPressed]}
             >
-              <Text style={styles.btnSecondaryText}>Daily Challenge</Text>
+              <Text style={styles.btnSecondaryText}>{t('start.dailyChallenge')}</Text>
               <Text style={styles.btnSecondaryHint}>
-                · {dailyAttempts.attemptsUsed}/{DAILY_MAX_ATTEMPTS} attempts used
+                {t('start.attemptsUsed', { used: dailyAttempts.attemptsUsed, max: DAILY_MAX_ATTEMPTS })}
               </Text>
             </Pressable>
 
@@ -143,7 +180,7 @@ export function StartScreen() {
                 onPress={openCollection}
                 style={({ pressed }) => [styles.bottomNavBtn, pressed && styles.navBtnPressed]}
               >
-                <Text style={styles.bottomNavBtnText}>Collection</Text>
+                <Text style={styles.bottomNavBtnText}>{t('start.collection')}</Text>
               </Pressable>
             </View>
           </View>
@@ -237,22 +274,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    position: 'relative'
   },
 
   fanCardLeft: {
     position: 'absolute',
-    transform: [{ translateX: -52 }, { rotate: '-14deg' }],
-    zIndex: 1,
+    top: 0,
+    zIndex: 0,
   },
   fanCardCenter: {
     position: 'absolute',
-    transform: [{ translateY: -6 }],
-    zIndex: 3,
+    top: 0,
+    zIndex: 2,
   },
   fanCardRight: {
     position: 'absolute',
-    transform: [{ translateX: 52 }, { rotate: '14deg' }],
-    zIndex: 2,
+    top: 0,
+    zIndex: 1,
   },
   /* ── Forger chips ── */
   sectionLabel: {

@@ -12,6 +12,7 @@ import {
   SUITS,
 } from '../engine';
 
+import { useTranslation } from '../i18n';
 import {
   forgeEffectDescription,
   forgeEffectLabel,
@@ -28,6 +29,7 @@ interface ForgeScreenProps {
 }
 
 export function ForgeScreen({ run }: ForgeScreenProps) {
+  const { t } = useTranslation();
   const applyForgeOffer = useGameStore((state) => state.applyForgeOffer);
   const [activeOffer, setActiveOffer] = useState<number | null>(null);
   const [targetKey, setTargetKey] = useState<string | null>(null);
@@ -75,16 +77,16 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
       {/* Topbar with relic counter */}
       <View style={styles.topbar}>
         <View style={styles.relicCounter}>
-          <Text style={styles.relicCounterLabel}>Relics</Text>
+          <Text style={styles.relicCounterLabel}>{t('forge.relics')}</Text>
           <Text style={styles.relicCounterValue}>{relicCount}/3</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
         {/* Screen header */}
-        <Text style={styles.eyebrow}>Round {run.roundNumber} cleared</Text>
-        <Text style={styles.title}>Forge</Text>
-        <Text style={styles.subtitle}>Choose 1 of 3 offers to strengthen your run.</Text>
+        <Text style={styles.eyebrow}>{t('forge.roundCleared', { number: run.roundNumber })}</Text>
+        <Text style={styles.title}>{t('forge.title')}</Text>
+        <Text style={styles.subtitle}>{t('forge.subtitle')}</Text>
 
         {/* Offers */}
         <View style={styles.offerList}>
@@ -118,7 +120,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
                 pressed && !forgeDisabled && styles.btnPressed,
               ]}
             >
-              <Text style={[styles.btnPrimaryText, forgeDisabled && styles.btnDisabledText]}>Forge</Text>
+              <Text style={[styles.btnPrimaryText, forgeDisabled && styles.btnDisabledText]}>{t('forge.forgeButton')}</Text>
             </Pressable>
           );
         })()}
@@ -128,7 +130,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
       {active !== undefined && active.type === 'cardEffect' && !cardEffectConfirmed && (
         <View style={styles.overlay}>
           <View style={styles.pickerPanel}>
-            <Text style={styles.pickerTitle}>Choose a card</Text>
+            <Text style={styles.pickerTitle}>{t('forge.chooseCard')}</Text>
             <Text style={styles.pickerSub}>
               {forgeEffectLabel(active.effect)} — {forgeEffectDescription(active.effect)}
             </Text>
@@ -168,7 +170,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
                 onPress={() => { setActiveOffer(null); setTargetKey(null); }}
                 style={({ pressed }) => [styles.btnDanger, pressed && styles.btnPressed]}
               >
-                <Text style={styles.btnDangerText}>Cancel</Text>
+                <Text style={styles.btnDangerText}>{t('common.cancel')}</Text>
               </Pressable>
               <Pressable
                 accessibilityRole="button"
@@ -182,7 +184,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
                   pressed && targetKey !== null && styles.btnPressed,
                 ]}
               >
-                <Text style={[styles.btnPrimaryText, targetKey === null && styles.btnDisabledText]}>Apply</Text>
+                <Text style={[styles.btnPrimaryText, targetKey === null && styles.btnDisabledText]}>{t('common.apply')}</Text>
               </Pressable>
             </View>
           </View>
@@ -201,6 +203,7 @@ interface OfferCardProps {
 }
 
 function OfferCard({ offer, selected, deck, forgedCards, onPress }: OfferCardProps) {
+  const { t } = useTranslation();
   if (offer.type === 'relic') {
     return (
       <Pressable
@@ -217,7 +220,7 @@ function OfferCard({ offer, selected, deck, forgedCards, onPress }: OfferCardPro
           <View style={styles.relicGem} />
         </View>
         <View style={styles.offerInfo}>
-          <Text style={styles.offerType}>Relic</Text>
+          <Text style={styles.offerType}>{t('forge.relic')}</Text>
           <Text style={styles.offerName}>{offer.relic.name}</Text>
           <Text style={styles.offerDesc}>{relicDescription(offer.relic)}</Text>
         </View>
@@ -252,7 +255,7 @@ function OfferCard({ offer, selected, deck, forgedCards, onPress }: OfferCardPro
         </View>
       </View>
       <View style={styles.offerInfo}>
-        <Text style={styles.offerType}>Card Effect</Text>
+        <Text style={styles.offerType}>{t('forge.cardEffect')}</Text>
         <Text style={styles.offerName}>{forgeEffectLabel(offer.effect)}</Text>
         <Text style={styles.offerDesc}>{forgeEffectDescription(offer.effect)}</Text>
       </View>

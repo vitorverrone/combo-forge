@@ -2,6 +2,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { bonusForgeEffectById, MilestoneOption } from '../engine';
 
+import { useTranslation } from '../i18n';
 import { forgeEffectDescription } from './format';
 import { colors } from './theme';
 import { fonts } from './typography';
@@ -26,6 +27,7 @@ function optionIcon(option: MilestoneOption): string {
 }
 
 export function UnlockChoiceModal() {
+  const { t } = useTranslation();
   const choice = useGameStore((state) => state.unlockChoice);
   const claimUnlock = useGameStore((state) => state.claimUnlock);
   const dismiss = useGameStore((state) => state.dismissUnlockChoice);
@@ -38,11 +40,11 @@ export function UnlockChoiceModal() {
       <View style={styles.backdrop}>
         <View style={styles.card}>
           {/* Eyebrow */}
-          <Text style={styles.eyebrow}>Milestone reached</Text>
+          <Text style={styles.eyebrow}>{t('unlockChoice.milestoneReached')}</Text>
           <Text style={styles.title}>{milestone.title}</Text>
           <Text style={styles.subtitle}>{milestone.description}</Text>
           <Text style={styles.prompt}>
-            Pick which unlock comes first — the rest stay available in the Collection.
+            {t('unlockChoice.pickUnlock')}
           </Text>
 
           {/* Options */}
@@ -62,7 +64,7 @@ export function UnlockChoiceModal() {
                   <View style={styles.optionTitleRow}>
                     <Text style={styles.optionTitle}>{option.title}</Text>
                     <View style={styles.newBadge}>
-                      <Text style={styles.newBadgeText}>New</Text>
+                      <Text style={styles.newBadgeText}>{t('unlockChoice.new')}</Text>
                     </View>
                   </View>
                   {optionHint(option) !== null && (
@@ -80,7 +82,7 @@ export function UnlockChoiceModal() {
             onPress={dismiss}
             style={({ pressed }) => [styles.laterBtn, pressed && styles.btnPressed]}
           >
-            <Text style={styles.laterBtnText}>Decide Later</Text>
+            <Text style={styles.laterBtnText}>{t('common.decideLater')}</Text>
           </Pressable>
         </View>
       </View>

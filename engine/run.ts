@@ -77,15 +77,15 @@ export interface RunState {
 
 export type RunEvent =
   | {
-      type: 'played';
-      roundNumber: number;
-      baseValue: number;
-      multiplier: number;
-      points: number;
-      score: number;
-      target: number;
-      playsRemaining: number;
-    }
+    type: 'played';
+    roundNumber: number;
+    baseValue: number;
+    multiplier: number;
+    points: number;
+    score: number;
+    target: number;
+    playsRemaining: number;
+  }
   | { type: 'roundWon'; roundNumber: number; score: number; target: number }
   | { type: 'roundLost'; roundNumber: number; score: number; target: number }
   | { type: 'runWon'; roundNumber: number; runScore: number }

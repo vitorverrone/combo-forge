@@ -35,9 +35,12 @@ export function shouldShowBanner(
  */
 export interface AdProvider {
   requestRewardedAd(): Promise<boolean>;
+  /** Anúncio intersticial entre Runs. Resolve true quando exibido; false se
+   * falhou ou indisponível. Nunca rejeita. */
+  requestInterstitialAd(): Promise<boolean>;
 }
 
 /** Implementação de desenvolvimento: anúncio sempre concluído. */
 export function createDevAdProvider(): AdProvider {
-  return { requestRewardedAd: async () => true };
+  return { requestRewardedAd: async () => true, requestInterstitialAd: async () => true };
 }

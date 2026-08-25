@@ -113,6 +113,9 @@ export type RunMode = 'normal' | 'daily';
 /** Máximo de cartas selecionáveis (tamanho máximo de uma Jogada). */
 export const MAX_SELECTION = 5;
 
+/** Intervalo de Runs entre anúncios intersticiais (ticket 02). */
+const INTERSTITIAL_RUNS_INTERVAL = 2;
+
 export interface GameState {
   readonly screen: Screen;
   readonly forger: ForgerId;
@@ -153,6 +156,10 @@ export interface GameState {
   readonly breakSuggestion: boolean;
   readonly breakHistory: BreakHistory;
   readonly breakStorage: BreakStorage;
+  /** Contador de Runs desde o último intersticial. */
+  readonly interstitialRunsSinceAd: number;
+  /** True quando um intersticial deve ser exibido (Run end screens consomem). */
+  readonly showInterstitial: boolean;
 
   readonly chooseForger: (forger: ForgerId) => void;
   readonly startRun: () => void;
@@ -186,6 +193,8 @@ export interface GameState {
   readonly restorePurchases: () => Promise<void>;
   /** Dispensa o lembrete de pausa atual (cooldown; o jogo nunca é bloqueado). */
   readonly dismissBreakReminder: () => void;
+  /** Marca o intersticial como exibido (reseta o flag). */
+  readonly dismissInterstitial: () => void;
   readonly toggleCard: (key: string) => void;
   readonly clearSelection: () => void;
   readonly playSelection: () => void;
@@ -390,6 +399,8 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     breakSuggestion: false,
     breakHistory: initialBreakHistory,
     breakStorage,
+    interstitialRunsSinceAd: 0,
+    showInterstitial: false,
 
     dismissBreakReminder: () => {
       const { breakHistory, breakStorage } = get();
@@ -397,6 +408,8 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       breakStorage.save(next);
       set({ breakHistory: next, breakSuggestion: false });
     },
+
+    dismissInterstitial: () => set({ showInterstitial: false }),
 
     openShop: () => {
       set({ screen: 'shop' });
@@ -527,9 +540,25 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
           });
         } else {
           persistRoundEnd(result.run, result.events, storage);
+          const ended = result.events.some(
+            (event) => event.type === 'runWon' || event.type === 'runLost',
+          );
+          // Intersticial entre Runs (ticket 02): incrementa o contador a cada
+          // Run concluída e agenda um intersticial quando atinge o intervalo.
+          // Desafio Diário não conta (já tratado acima).
+          let interstitialPatch: Partial<GameState> = {};
+          if (ended && !get().adsRemoved) {
+            const nextCount = get().interstitialRunsSinceAd + 1;
+            if (nextCount >= INTERSTITIAL_RUNS_INTERVAL) {
+              interstitialPatch = { interstitialRunsSinceAd: 0, showInterstitial: true };
+            } else {
+              interstitialPatch = { interstitialRunsSinceAd: nextCount };
+            }
+          }
           set({
             ...advanceProgression(result, played, progression, get().unlockChoice, get().recentUnlocks, progressionStorage),
             ...breakPatch,
+            ...interstitialPatch,
           });
         }
       } catch {

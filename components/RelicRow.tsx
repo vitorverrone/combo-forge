@@ -2,6 +2,7 @@ import { StyleSheet, Text, View } from 'react-native';
 
 import { Relic } from '../engine';
 
+import { useTranslation } from '../i18n';
 import { relicDescription } from './format';
 import { colors } from './theme';
 
@@ -16,6 +17,7 @@ interface RelicRowProps {
  * Em modo compact (forge, round summary), exibe como chips menores.
  */
 export function RelicRow({ relics, compact = false }: RelicRowProps) {
+  const { t } = useTranslation();
   if (relics.length === 0) return null;
 
   if (compact) {
@@ -34,7 +36,7 @@ export function RelicRow({ relics, compact = false }: RelicRowProps) {
 
   return (
     <View style={styles.overlay}>
-      <Text style={styles.overlayLabel}>ACTIVE RELICS</Text>
+      <Text style={styles.overlayLabel}>{t('runWon.activeRelics').toUpperCase()}</Text>
       <View style={styles.overlayList}>
         {relics.map((relic) => (
           <View key={relic.id} style={styles.overlayItem} accessibilityLabel={`Relic: ${relic.name} — ${relicDescription(relic)}`} accessibilityRole="text">

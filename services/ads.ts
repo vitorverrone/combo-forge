@@ -18,7 +18,7 @@
 
 import { Platform } from 'react-native';
 
-import { AdProvider, createDevAdProvider } from '../engine';
+import { AdProvider } from '../engine';
 
 const AD_UNIT_ANDROID = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID;
 const AD_UNIT_IOS = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS;
@@ -51,8 +51,12 @@ export function bannerAdUnitId(): string | undefined {
  */
 export function createAppAdProvider(): AdProvider {
   const adUnitId = adUnitIdForPlatform();
-  if (adUnitId === undefined) return createDevAdProvider();
-  return { requestRewardedAd: () => requestAdMobRewarded(adUnitId) };
+  // Em dev usa TestIds oficiais do SDK (banner já faz o mesmo);
+  // em produção só usa ad unit real se configurado via env.
+  return {
+    requestRewardedAd: () => requestAdMobRewarded(adUnitId),
+    requestInterstitialAd: () => requestAdMobInterstitial(adUnitId),
+  };
 }
 
 /**
@@ -61,7 +65,7 @@ export function createAppAdProvider(): AdProvider {
  * falha de carregamento (ERROR) ou ambiente sem módulo nativo → false.
  * Nunca rejeita: a chamada não pode quebrar o fluxo do jogo.
  */
-async function requestAdMobRewarded(adUnitId: string): Promise<boolean> {
+async function requestAdMobRewarded(adUnitId: string | undefined): Promise<boolean> {
   try {
     const {
       AdEventType,
@@ -72,7 +76,11 @@ async function requestAdMobRewarded(adUnitId: string): Promise<boolean> {
     } = await import('react-native-google-mobile-ads');
     await MobileAds().initialize();
     // Em dev usa o TestId oficial (não exibe impressão real de produção).
-    const unitId = process.env.NODE_ENV === 'production' ? adUnitId : TestIds.REWARDED;
+    // Sem env configurado → TestId também (sem anúncio real, mas exibe o de teste).
+    const unitId =
+      process.env.NODE_ENV === 'production' && adUnitId
+        ? adUnitId
+        : TestIds.REWARDED;
     const rewarded = RewardedAd.createForAdRequest(unitId, {
       requestNonPersonalizedAdsOnly: true,
     });
@@ -112,6 +120,63 @@ async function requestAdMobRewarded(adUnitId: string): Promise<boolean> {
         unsubscribeError();
       };
       rewarded.load();
+    });
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Mostra um anúncio intersticial (tela cheia) entre Runs. Resolve true
+ * quando exibido com sucesso; false se falhou ou indisponível. Nunca rejeita:
+ * o fluxo do jogo nunca é interrompido.
+ */
+async function requestAdMobInterstitial(adUnitId: string | undefined): Promise<boolean> {
+  try {
+    const {
+      AdEventType,
+      InterstitialAd,
+      MobileAds,
+      TestIds,
+    } = await import('react-native-google-mobile-ads');
+    await MobileAds().initialize();
+    // Em dev usa o TestId oficial; sem env configurado → TestId também.
+    const unitId =
+      process.env.NODE_ENV === 'production' && adUnitId
+        ? adUnitId
+        : TestIds.INTERSTITIAL;
+    const interstitial = InterstitialAd.createForAdRequest(unitId, {
+      requestNonPersonalizedAdsOnly: true,
+    });
+
+    return await new Promise<boolean>((resolve) => {
+      let settled = false;
+      const settle = (value: boolean) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        resolve(value);
+      };
+      const unsubscribeLoaded = interstitial.addAdEventListener(
+        AdEventType.LOADED,
+        () => {
+          void interstitial.show().catch(() => settle(false));
+        },
+      );
+      const unsubscribeClosed = interstitial.addAdEventListener(
+        AdEventType.CLOSED,
+        () => settle(true),
+      );
+      const unsubscribeError = interstitial.addAdEventListener(
+        AdEventType.ERROR,
+        () => settle(false),
+      );
+      const cleanup = () => {
+        unsubscribeLoaded();
+        unsubscribeClosed();
+        unsubscribeError();
+      };
+      interstitial.load();
     });
   } catch {
     return false;

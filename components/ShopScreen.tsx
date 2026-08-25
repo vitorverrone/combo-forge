@@ -8,6 +8,7 @@ import {
   REMOVE_ADS_PRODUCT_ID,
 } from '../engine';
 
+import { useTranslation } from '../i18n';
 import { SuitSymbol } from './SuitSymbol';
 import { colors } from './theme';
 import { fonts } from './typography';
@@ -15,6 +16,7 @@ import { useGameStore } from '../store/gameStore';
 import TopButton from './TopButton';
 
 export function ShopScreen() {
+  const { t } = useTranslation();
   const shop = useGameStore((state) => state.shop);
   const adsRemoved = useGameStore((state) => state.adsRemoved);
   const backToStart = useGameStore((state) => state.backToStart);
@@ -36,12 +38,12 @@ export function ShopScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.eyebrow}>Cosmetics</Text>
-        <Text style={styles.title}>Shop</Text>
-        <Text style={styles.subtitle}>100% visual — Deck skins never affect gameplay power.</Text>
+        <Text style={styles.eyebrow}>{t('shop.eyebrow')}</Text>
+        <Text style={styles.title}>{t('shop.title')}</Text>
+        <Text style={styles.subtitle}>{t('shop.subtitle')}</Text>
 
         {/* Deck Skins */}
-        <SectionHeader label="Decks" count={`${COSMETIC_CATALOG.filter(isDeckSkinItem).filter((item) => isOwned(shop.owned, item.id)).length}/${COSMETIC_CATALOG.filter(isDeckSkinItem).length}`} />
+        <SectionHeader label={t('shop.decks')} count={`${COSMETIC_CATALOG.filter(isDeckSkinItem).filter((item) => isOwned(shop.owned, item.id)).length}/${COSMETIC_CATALOG.filter(isDeckSkinItem).length}`} />
         {COSMETIC_CATALOG.filter(isDeckSkinItem).map((item) => {
           const owned = item.id == 'deck-classic' ? true : isOwned(shop.owned, item.id);
           const equipped = shop.owned.equippedDeckSkin === item.id;
@@ -54,15 +56,14 @@ export function ShopScreen() {
                 <Text style={styles.shopSub}>{item.description}</Text>
               </View>
               <View style={styles.shopAction}>
-                {owned && equipped ? (
-                  <Text style={styles.shopEquippedLabel}>Equipped</Text>
+                {owned && equipped ? (                    <Text style={styles.shopEquippedLabel}>{t('shop.equipped')}</Text>
                 ) : owned && !equipped ? (
                   <Pressable
                     accessibilityLabel={`Equip ${item.name}`}
                     onPress={() => equipCosmetic(item.id)}
                     style={({ pressed }) => [styles.equipBtn, pressed && styles.btnPressed]}
                   >
-                    <Text style={styles.equipBtnText}>Equip</Text>
+                    <Text style={styles.equipBtnText}>{t('shop.equip')}</Text>
                   </Pressable>
                 ) : (
                   <Pressable
@@ -80,12 +81,11 @@ export function ShopScreen() {
         })}
 
         {/* Remove Ads */}
-        <SectionHeader label="Remove Ads" />
+        <SectionHeader label={t('shop.removeAds')} />
         <View style={[styles.offerCard, adsRemoved && styles.shopRowEquipped]}>
-          <Text style={styles.offerTitle}>Remove Ads</Text>
+          <Text style={styles.offerTitle}>{t('shop.removeAds')}</Text>
           <Text style={styles.offerDesc}>
-            Hides the banner and interstitial ads. Doesn't affect the optional
-            rewarded ad in the Daily Challenge.
+            {t('shop.removeAdsDesc')}
           </Text>
           {!adsRemoved ? (
             <Pressable
@@ -96,10 +96,10 @@ export function ShopScreen() {
               onPress={() => void purchaseRemoveAds()}
               style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
             >
-              <Text style={styles.btnPrimaryText}>{removeAdsBusy ? '…' : `Buy for ${removeAdsPrice}`}</Text>
+              <Text style={styles.btnPrimaryText}>{removeAdsBusy ? '…' : t('shop.buyFor', { price: removeAdsPrice })}</Text>
             </Pressable>
           ) : (
-            <Text style={styles.purchasedLabel}>✓ Purchased</Text>
+            <Text style={styles.purchasedLabel}>{t('shop.purchased')}</Text>
           )}
         </View>
 
@@ -113,12 +113,12 @@ export function ShopScreen() {
           style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnPressed]}
         >
           <Text style={styles.btnSecondaryText}>
-            {shop.restoring ? 'Restoring…' : 'Restore Purchases'}
+            {shop.restoring ? t('shop.restoring') : t('shop.restorePurchases')}
           </Text>
         </Pressable>
 
         {shop.status === 'loading' && (
-          <Text style={styles.statusText}>Loading prices…</Text>
+          <Text style={styles.statusText}>{t('shop.loadingPrices')}</Text>
         )}
         {shop.status === 'error' && <Text style={styles.errorText}>⚠ {shop.error}</Text>}
       </ScrollView>

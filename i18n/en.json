@@ -1,0 +1,232 @@
+{
+  "common": {
+    "back": "←",
+    "locked": "Locked",
+    "unlocked": "Unlocked",
+    "ready": "Ready",
+    "done": "Done",
+    "new": "New",
+    "retry": "RETRY",
+    "loading": "LOADING…",
+    "equip": "Equip",
+    "equipped": "Equipped",
+    "unlock": "Unlock",
+    "decideLater": "Decide Later",
+    "skip": "Skip",
+    "next": "Next",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "home": "Home",
+    "close": "Close"
+  },
+  "start": {
+    "title": "COMBO FORGE",
+    "tagline": "Build combos. Beat the Target. Repeat.",
+    "shop": "Shop",
+    "forger": "Forger",
+    "startRun": "Start Run",
+    "dailyChallenge": "Daily Challenge",
+    "attemptsUsed": "· {{used}}/{{max}} attempts used",
+    "collection": "Collection"
+  },
+  "game": {
+    "round": "Round {{number}}",
+    "daily": "Daily",
+    "plays": "Plays",
+    "combo": "Combo",
+    "patternHint": "Select cards to form a play",
+    "base": "Base",
+    "pts": "pts",
+    "clear": "Clear",
+    "discard": "Discard",
+    "play": "PLAY",
+    "abandonTitle": "Abandon run?",
+    "abandonSub": "Your progress in this round will be lost.",
+    "keepPlaying": "Keep playing",
+    "abandon": "Abandon"
+  },
+  "shop": {
+    "eyebrow": "Cosmetics",
+    "title": "Shop",
+    "subtitle": "100% visual — Deck skins never affect gameplay power.",
+    "decks": "Decks",
+    "removeAds": "Remove Ads",
+    "removeAdsDesc": "Hides the banner and interstitial ads. Doesn't affect the optional rewarded ad in the Daily Challenge.",
+    "buyFor": "Buy for {{price}}",
+    "purchased": "✓ Purchased",
+    "restorePurchases": "Restore Purchases",
+    "restoring": "Restoring…",
+    "loadingPrices": "Loading prices…"
+  },
+  "profile": {
+    "eyebrow": "Player stats",
+    "title": "Profile",
+    "desc": "Your record across every run, your favorite cards and your milestone progress.",
+    "bestRunScore": "Best run score",
+    "runsWon": "Runs won",
+    "winRate": "Win rate",
+    "biggestCombo": "Biggest combo",
+    "favoriteCards": "Favorite cards",
+    "noCardsYet": "No cards played yet — start a run!",
+    "plays": "plays",
+    "milestones": "Milestones",
+    "forgersUnlocked": "Forgers unlocked: {{count}}/3",
+    "language": "Language"
+  },
+  "forge": {
+    "relics": "Relics",
+    "roundCleared": "Round {{number}} cleared",
+    "title": "Forge",
+    "subtitle": "Choose 1 of 3 offers to strengthen your run.",
+    "relic": "Relic",
+    "cardEffect": "Card Effect",
+    "chooseCard": "Choose a card",
+    "forgeButton": "Forge"
+  },
+  "collection": {
+    "eyebrow": "Meta-progression",
+    "title": "Collection",
+    "subtitle": "Everything you've earned across runs. Locked items show their unlock condition.",
+    "runsWon": "Runs won",
+    "bestScore": "Best score",
+    "milestones": "Milestones",
+    "forgers": "Forgers",
+    "relics": "Relics",
+    "forgeEffects": "Forge Effects",
+    "lockedSummary_one": "{{count}} forger to unlock · win runs to progress",
+    "lockedSummary_other": "{{count}} forgers to unlock · win runs to progress",
+    "allCards": "All 40 base cards are always available — forge effects shape them."
+  },
+  "daily": {
+    "title": "Daily Challenge",
+    "subtitle": "One attempt is free each day. Watch a rewarded ad to unlock a second.",
+    "attemptsLeft": "Attempts left",
+    "watchAd": "Watch ad · Extra attempt",
+    "watchAdLoading": "WATCHING…",
+    "playDaily": "Play Daily Challenge",
+    "loadingSeed": "Loading seed…",
+    "noAttemptsLeft": "No attempts left today — come back tomorrow.",
+    "watchAdHint": "Watch an ad to unlock an extra attempt.",
+    "extraReady": "Extra attempt ready.",
+    "freeReady": "Free attempt ready today.",
+    "thisWeekLeaderboard": "This week's leaderboard",
+    "viewLeaderboard": "View weekly leaderboard",
+    "viewLeaderboardLoading": "LOADING…",
+    "noScoresThisWeek": "No scores this week yet.",
+    "yourBest": "Your best",
+    "noScoreYet": "No score yet",
+    "noScoresWeek": "No scores this week.",
+    "bottomHint": "Attempts reset at midnight UTC and are stored on this device.",
+    "watchAdBold": "Watch ad",
+    "playBold": "Play",
+    "bottomHintEnd": "appears only after the free attempt is used; {{playBold}} loads today's shared seed. Leaderboard shows your best plus the weekly Top 10.",
+    "weekOf": "Week of {{start}} – {{end}}"
+  },
+  "runWon": {
+    "dailyCleared": "DAILY CHALLENGE · CLEARED",
+    "allRoundsCleared": "ALL {{rounds}} ROUNDS CLEARED",
+    "dailyComplete": "Daily Complete!",
+    "runComplete": "Run Complete!",
+    "forgedRun": "{{forger}} forged a {{score}}-point run.",
+    "newUnlocks": "NEW UNLOCKS",
+    "newUnlock": "NEW UNLOCK",
+    "finalScore": "Final Score",
+    "activeRelics": "Active relics",
+    "playAgain": "Play Again",
+    "dailyChallenge": "Daily Challenge",
+    "changeForger": "Change Forger"
+  },
+  "runLost": {
+    "soClose": "So close!",
+    "runOver": "Run over",
+    "shortOfTarget": "You were <1>{{pts}} pts ({{pct}}%)</1> short of the target.",
+    "targetSlipped": "The target slipped away.",
+    "runTotal": "Run total: {{pts}} pts",
+    "tryAgain": "TRY AGAIN",
+    "dailyChallenge": "DAILY CHALLENGE",
+    "changeForger": "CHANGE FORGER"
+  },
+  "roundWon": {
+    "roundCleared": "Round {{number}} cleared",
+    "targetBeaten": "Target beaten!",
+    "score": "Score",
+    "target": "Target",
+    "margin": "Margin",
+    "runTotal": "{{forger}} · Run total {{pts}} pts",
+    "activeRelics": "Active relics",
+    "nextRound": "Next Round →"
+  },
+  "onboarding": {
+    "selectCards": {
+      "title": "Select Cards",
+      "body": "Tap cards in your hand to choose between 1 and 5. They form your play for the round.",
+      "tip": "Tip: selected cards lift up with a gold border."
+    },
+    "scorePattern": {
+      "title": "Score the Pattern",
+      "body": "Your cards form a pattern — from High Card up to Four of a Kind. Stronger patterns score more.",
+      "tip": "Tip: base = pattern bonus + the cards' values."
+    },
+    "rideCombo": {
+      "title": "Ride the Combo",
+      "body": "Every play raises the Combo Multiplier — ×1, ×2, ×3, ×4 — so later plays are worth more.",
+      "tip": "Tip: the multiplier resets every round."
+    },
+    "beatTarget": {
+      "title": "Beat the Target",
+      "body": "Reach the round's target before your plays run out. Winning rounds 1–5 opens the Forge.",
+      "tip": "Tip: clear all 6 rounds to win the run."
+    },
+    "letsForge": "Let's Forge"
+  },
+  "unlockChoice": {
+    "milestoneReached": "Milestone reached",
+    "pickUnlock": "Pick which unlock comes first — the rest stay available in the Collection.",
+    "new": "New"
+  },
+  "dailySubmit": {
+    "submitting": "Submitting score…",
+    "submitted": "✓ Score submitted",
+    "failed": "Score not submitted"
+  },
+  "breakReminder": {
+    "title": "☕ Time for a break?",
+    "body": "You've been forging a lot of runs back to back. A short pause keeps your focus sharp.",
+    "button": "OK, I'LL TAKE A MOMENT"
+  },
+  "format": {
+    "noRelic": "No starting relic — pure skill.",
+    "pattern": {
+      "highCard": "High Card",
+      "pair": "Pair",
+      "twoPair": "Two Pair",
+      "threeOfAKind": "Three of a Kind",
+      "straight": "Straight",
+      "fullHouse": "Full House",
+      "fourOfAKind": "Four of a Kind"
+    },
+    "forgeEffect": {
+      "valueBonus": "Adds +{{amount}} to the card's value",
+      "multiplier": "Multiplies the card's value by ×{{multiplier}}",
+      "wildcard": "Counts as any value and suit to form patterns",
+      "trigger": "Adds +{{bonus}} pts when played on play {{triggerPlay}} of a round"
+    },
+    "relic": {
+      "suit": "{{suit}} cards ×{{multiplier}}",
+      "pattern": "{{pattern}} bonus +{{bonus}}",
+      "discard": "+{{amount}} discard per round",
+      "handSize": "+{{amount}} card in hand",
+      "comboStart": "Combo starts at ×{{multiplier}}",
+      "comboGrowth": "Combo grows +{{step}} per play"
+    },
+    "suit": {
+      "spades": "Spades",
+      "hearts": "Hearts",
+      "diamonds": "Diamonds",
+      "clubs": "Clubs"
+    }
+  },
+  "ad": {
+    "testAd": "Test Ad"
+  }
+}

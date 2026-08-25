@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useTranslation } from '../i18n';
 import { colors } from './theme';
 
 /** Status da submissão da pontuação do Desafio Diário (com retry). */
@@ -10,29 +11,30 @@ export function DailySubmitStatus({
   readonly submitStatus: 'idle' | 'submitting' | 'submitted' | 'failed';
   readonly onRetry: () => void;
 }) {
+  const { t } = useTranslation();
   if (submitStatus === 'submitting') {
     return (
       <View style={styles.submitRow}>
-        <Text style={styles.submitText}>Submitting score…</Text>
+        <Text style={styles.submitText}>{t('dailySubmit.submitting')}</Text>
       </View>
     );
   }
   if (submitStatus === 'submitted') {
     return (
       <View style={[styles.submitRow, styles.submitRowOk]}>
-        <Text style={styles.submitTextOk}>✓ Score submitted</Text>
+        <Text style={styles.submitTextOk}>{t('dailySubmit.submitted')}</Text>
       </View>
     );
   }
   if (submitStatus === 'failed') {
     return (
       <View style={[styles.submitRow, styles.submitRowFail]}>
-        <Text style={styles.submitTextFail}>Score not submitted</Text>
+        <Text style={styles.submitTextFail}>{t('dailySubmit.failed')}</Text>
         <Pressable
           onPress={onRetry}
           style={({ pressed }) => [styles.retryButton, pressed && styles.buttonPressed]}
         >
-          <Text style={styles.retryButtonText}>RETRY</Text>
+          <Text style={styles.retryButtonText}>{t('common.retry')}</Text>
         </Pressable>
       </View>
     );

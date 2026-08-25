@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useTranslation } from '../i18n';
 import { colors } from './theme';
 import { useGameStore } from '../store/gameStore';
 
@@ -9,6 +10,7 @@ import { useGameStore } from '../store/gameStore';
  * intervalo curto. É apenas uma sugestão dismissível — nunca bloqueia o jogo.
  */
 export function BreakReminderBanner() {
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const suggestion = useGameStore((state) => state.breakSuggestion);
   const dismiss = useGameStore((state) => state.dismissBreakReminder);
@@ -18,16 +20,16 @@ export function BreakReminderBanner() {
   return (
     <View style={[styles.overlay, { paddingTop: insets.top + 16 }]}>
       <View style={styles.banner}>
-        <Text style={styles.title}>☕ Time for a break?</Text>
+        <Text style={styles.title}>{t('breakReminder.title')}</Text>
         <Text style={styles.body}>
-          You've been forging a lot of runs back to back. A short pause keeps your focus sharp.
+          {t('breakReminder.body')}
         </Text>
         <Pressable
           accessibilityLabel="Dismiss break reminder"
           onPress={dismiss}
           style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
         >
-          <Text style={styles.buttonText}>OK, I'LL TAKE A MOMENT</Text>
+          <Text style={styles.buttonText}>{t('breakReminder.button')}</Text>
         </Pressable>
       </View>
     </View>

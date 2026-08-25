@@ -1,7 +1,9 @@
+import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { activeRelics, getForger, ROUNDS_PER_RUN, RunState } from '../engine';
 
+import { useTranslation } from '../i18n';
 import { DailySubmitStatus } from './DailySubmitStatus';
 import { RelicRow } from './RelicRow';
 import { colors } from './theme';
@@ -13,6 +15,7 @@ interface RunWonScreenProps {
 }
 
 export function RunWonScreen({ run }: RunWonScreenProps) {
+  const { t } = useTranslation();
   const restartRun = useGameStore((state) => state.restartRun);
   const backToStart = useGameStore((state) => state.backToStart);
   const recentUnlocks = useGameStore((state) => state.recentUnlocks);
@@ -20,8 +23,18 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
   const daily = useGameStore((state) => state.daily);
   const openDaily = useGameStore((state) => state.openDaily);
   const submitDailyScore = useGameStore((state) => state.submitDailyScore);
+  const showInterstitial = useGameStore((state) => state.showInterstitial);
+  const dismissInterstitial = useGameStore((state) => state.dismissInterstitial);
+  const adProvider = useGameStore((state) => state.adProvider);
 
   const dailyEnd = runMode === 'daily';
+
+  // Intersticial entre Runs: exibe ao montar a tela de fim quando marcado.
+  useEffect(() => {
+    if (!showInterstitial || dailyEnd) return;
+    dismissInterstitial();
+    void adProvider.requestInterstitialAd();
+  }, [showInterstitial, dailyEnd, dismissInterstitial, adProvider]);
 
   return (
     <View style={styles.container}>
@@ -31,11 +44,11 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
       </View>
 
       <Text style={styles.eyebrow}>
-        {dailyEnd ? 'DAILY CHALLENGE · CLEARED' : `ALL ${ROUNDS_PER_RUN} ROUNDS CLEARED`}
+        {dailyEnd ? t('runWon.dailyCleared') : t('runWon.allRoundsCleared', { rounds: ROUNDS_PER_RUN })}
       </Text>
-      <Text style={styles.title}>{dailyEnd ? 'Daily Complete!' : 'Run Complete!'}</Text>
+      <Text style={styles.title}>{dailyEnd ? t('runWon.dailyComplete') : t('runWon.runComplete')}</Text>
       <Text style={styles.subtitle}>
-        {getForger(run.forger).name} forged a {run.runScore}-point run.
+        {t('runWon.forgedRun', { forger: getForger(run.forger).name, score: run.runScore })}
       </Text>
 
       {/* Unlock banner */}
@@ -44,7 +57,7 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
           <View style={styles.unlockGem} />
           <View>
             <Text style={styles.unlockBannerLabel}>
-              NEW UNLOCK{recentUnlocks.length > 1 ? 'S' : ''}
+              {recentUnlocks.length > 1 ? t('runWon.newUnlocks') : t('runWon.newUnlock')}
             </Text>
             <Text style={styles.unlockBannerName}>
               {recentUnlocks.join(' · ')}
@@ -55,7 +68,7 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
 
       {/* Final score card */}
       <View style={styles.finalCard}>
-        <Text style={styles.finalLabel}>Final Score</Text>
+        <Text style={styles.finalLabel}>{t('runWon.finalScore')}</Text>
         <Text style={styles.finalValue}>{run.runScore}</Text>
       </View>
 
@@ -68,7 +81,7 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
 
       {/* Relics */}
       <View style={styles.relicsBlock}>
-        <Text style={styles.relicsLabel}>Active relics</Text>
+        <Text style={styles.relicsLabel}>{t('runWon.activeRelics')}</Text>
         <RelicRow relics={activeRelics(run.startingRelic, run.relics)} compact />
       </View>
 
@@ -80,7 +93,7 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
             onPress={openDaily}
             style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
           >
-            <Text style={styles.btnPrimaryText}>Daily Challenge</Text>
+            <Text style={styles.btnPrimaryText}>{t('runWon.dailyChallenge')}</Text>
           </Pressable>
         ) : (
           <Pressable
@@ -89,7 +102,7 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
             onPress={restartRun}
             style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
           >
-            <Text style={styles.btnPrimaryText}>Play Again</Text>
+            <Text style={styles.btnPrimaryText}>{t('runWon.playAgain')}</Text>
           </Pressable>
         )}
         <Pressable
@@ -98,7 +111,7 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
           onPress={backToStart}
           style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnPressed]}
         >
-          <Text style={styles.btnSecondaryText}>{dailyEnd ? 'Home' : 'Change Forger'}</Text>
+          <Text style={styles.btnSecondaryText}>{dailyEnd ? t('common.home') : t('runWon.changeForger')}</Text>
         </Pressable>
       </View>
     </View>

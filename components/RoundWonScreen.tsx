@@ -2,6 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { activeRelics, getForger, RunState } from '../engine';
 
+import { useTranslation } from '../i18n';
 import { RelicRow } from './RelicRow';
 import { colors } from './theme';
 import { fonts } from './typography';
@@ -12,6 +13,7 @@ interface RoundWonScreenProps {
 }
 
 export function RoundWonScreen({ run }: RoundWonScreenProps) {
+  const { t } = useTranslation();
   const nextRound = useGameStore((state) => state.nextRound);
 
   return (
@@ -21,38 +23,36 @@ export function RoundWonScreen({ run }: RoundWonScreenProps) {
         <Text style={styles.winBadgeIcon}>✓</Text>
       </View>
 
-      <Text style={styles.eyebrow}>Round {run.roundNumber} cleared</Text>
-      <Text style={styles.title}>Target beaten!</Text>
+      <Text style={styles.eyebrow}>{t('roundWon.roundCleared', { number: run.roundNumber })}</Text>
+      <Text style={styles.title}>{t('roundWon.targetBeaten')}</Text>
 
       {/* Stats card */}
       <View style={styles.statsCard}>
         <View style={styles.statsGrid}>
           <View style={styles.stat}>
             <Text style={[styles.statValue, styles.statValueScore]}>{run.score}</Text>
-            <Text style={styles.statLabel}>Score</Text>
+            <Text style={styles.statLabel}>{t('roundWon.score')}</Text>
           </View>
           <View style={styles.stat}>
             <Text style={styles.statValue}>{run.target}</Text>
-            <Text style={styles.statLabel}>Target</Text>
+            <Text style={styles.statLabel}>{t('roundWon.target')}</Text>
           </View>
           <View style={styles.stat}>
             <Text style={[styles.statValue, styles.statValueMargin]}>
               +{run.score - run.target}
             </Text>
-            <Text style={styles.statLabel}>Margin</Text>
+            <Text style={styles.statLabel}>{t('roundWon.margin')}</Text>
           </View>
         </View>
       </View>
 
-      {/* Forger note */}
-      <Text style={styles.forgerNote}>
-        <Text style={styles.forgerNoteBold}>{getForger(run.forger).name}</Text> · Run total{' '}
-        {run.runScore} pts
+      {/* Forger note */}        <Text style={styles.forgerNote}>
+        {t('roundWon.runTotal', { forger: getForger(run.forger).name, pts: run.runScore })}
       </Text>
 
       {/* Relics */}
       <View style={styles.relicsBlock}>
-        <Text style={styles.relicsLabel}>Active relics</Text>
+        <Text style={styles.relicsLabel}>{t('roundWon.activeRelics')}</Text>
         <RelicRow relics={activeRelics(run.startingRelic, run.relics)} compact />
       </View>
 
@@ -63,7 +63,7 @@ export function RoundWonScreen({ run }: RoundWonScreenProps) {
           onPress={nextRound}
           style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
         >
-          <Text style={styles.btnPrimaryText}>Next Round →</Text>
+          <Text style={styles.btnPrimaryText}>{t('roundWon.nextRound')}</Text>
         </Pressable>
       </View>
     </View>
