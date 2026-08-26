@@ -1,0 +1,79 @@
+# ==========================================
+# DEPENDÊNCIAS, CACHES E ESTRUTURA EXPO
+# ==========================================
+node_modules/
+.expo/
+.eas/
+dist/
+web-build/
+expo-env.d.ts
+.metro-health-check*
+
+# ==========================================
+# PASTAS NATIVAS E CACHES LOCALMENTE GERADOS
+# (Importante para Managed Workflow / Expo Prebuild)
+# ==========================================
+android/
+ios/
+.kotlin/
+
+# ==========================================
+# BINÁRIOS, CERTIFICADOS E CHAVES DE SEGURANÇA
+# ==========================================
+*.aab
+*.apk
+*.ipa
+*.jks
+*.p8
+*.p12
+*.key
+*.pem
+*.mobileprovision
+*.orig.*
+
+# ==========================================
+# VARIÁVEIS DE AMBIENTE E SEGREDO
+# ==========================================
+.env
+.env.local
+.env.*.local
+
+# ==========================================
+# TESTES E COBERTURA
+# ==========================================
+__tests__/
+*.test.ts
+*.test.tsx
+coverage/
+
+# ==========================================
+# DESIGN, DOCUMENTAÇÃO E SCREENSHOTS
+# ==========================================
+*.md
+!README.md
+design-references/
+screenshots/
+emulator-screenshot*.png
+
+# ==========================================
+# AGENTES, EDITOR E FERRAMENTAS LOCALMENTE VINCULADAS
+# ==========================================
+.vscode/
+.idea/
+.claude/
+.agents/
+agent/
+.codex/
+.impeccable/
+.scratch/
+skills-lock.json
+
+# ==========================================
+# TYPESCRIPT, LOGS E SISTEMA OPERACIONAL
+# ==========================================
+*.tsbuildinfo
+*.log
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store

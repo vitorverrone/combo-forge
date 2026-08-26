@@ -34,7 +34,7 @@ export function DailyChallengeScreen() {
   const today = utcDateIso();
   const attempts = dailyAttemptsForDay(daily.attempts, today);
   const playable = canPlayDaily(attempts);
-  const canAd = !attempts.extraUnlocked;
+  const canAd = canWatchExtraAd(attempts);
 
   // Cálculo de tentativas restantes
   const rem = (attempts.attemptsUsed === 0 ? 1 : 0) + (attempts.extraUnlocked && attempts.attemptsUsed < 2 ? 1 : 0);

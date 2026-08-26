@@ -18,7 +18,7 @@ import {
 } from '../engine';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_KEY;
 
 /** URL e anon key configuradas? (anon é pública por design, embutida no app.) */
 export function isSupabaseConfigured(): boolean {
