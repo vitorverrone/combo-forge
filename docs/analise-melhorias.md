@@ -15,8 +15,7 @@ erradas de design.
 
 | Severidade | Itens |
 |---|---|
-| 🔴 Quebrado hoje | `.env.example` dessincronizado (Supabase) |
-| ✅ Corrigido | ~~14 testes falhando~~ · ~~`deviceId` nunca persistia~~ · ~~intersticial com ad unit errado~~ (2026-08-26) |
+| ✅ Corrigido | ~~14 testes falhando~~ · ~~`deviceId` nunca persistia~~ · ~~intersticial com ad unit errado~~ · ~~variável do Supabase dessincronizada~~ (2026-08-26) |
 | 🟠 Estrutura | 107 MB de binário no histórico do git · nenhum linter/formatter · 4 docs de requisito concorrentes |
 | 🟡 Consistência | Lacunas de i18n · sem escala de espaçamento · regra duplicada entre engine e UI |
 
@@ -162,14 +161,37 @@ manual, lendo a nova função lado a lado com a antiga).
 
 ---
 
-## 🔴 4. `.env.example` aponta para uma variável que o código não lê
+## ✅ 4. Variável do Supabase dessincronizada — corrigido em 2026-08-26 (era regressão do código, não do doc)
 
-- [.env.example:15](.env.example#L15) documenta `EXPO_PUBLIC_SUPABASE_ANON_KEY`
-- [services/supabase.ts:21](services/supabase.ts#L21) lê `EXPO_PUBLIC_SUPABASE_KEY`
+**Correção da análise original:** o item foi escrito lendo só `.env.example`
+vs. `services/supabase.ts` e concluiu que o `.env.example` estava errado. Ao
+checar o histórico, é o oposto: o commit `4478f14` (2026-08-25, um dia antes
+desta análise) renomeou a variável em `services/supabase.ts` de
+`EXPO_PUBLIC_SUPABASE_ANON_KEY` para `EXPO_PUBLIC_SUPABASE_KEY` — sem motivo
+declarado além de "fix" no commit — e não tocou em mais nenhum outro lugar do
+repositório.
 
-Quem clonar o repo e seguir o `.env.example` à risca cai no caminho silencioso
-do `createUnavailableDailyBackend()` — o Desafio Diário simplesmente aparece
-indisponível, sem erro. É um deslize de uma palavra com custo de depuração alto.
+**Toda outra referência ao mesmo valor** — `.env.example`, `README.md`,
+`SRS_Combo_Forge.md`, e principalmente os comandos `eas env:set` já executados
+e documentados em [docs/release-checklist.md:327](docs/release-checklist.md#L327)
+— usa `EXPO_PUBLIC_SUPABASE_ANON_KEY`. Ou seja: o ambiente de **preview real no
+EAS já tem essa variável configurada com esse nome** (verificado e validado em
+2026-08-16, antes da regressão). O commit de ontem, se tivesse ido para
+produção sem essa correção, teria feito `isSupabaseConfigured()` devolver
+`false` no build de preview/produção — o Desafio Diário cairia em
+`createUnavailableDailyBackend()` silenciosamente, apesar do EAS estar
+corretamente configurado.
+
+**Correção aplicada:** revertida a linha em
+[services/supabase.ts](services/supabase.ts) de volta para
+`EXPO_PUBLIC_SUPABASE_ANON_KEY`, e o `.env` local (não versionado) renomeado
+para acompanhar — sem essa segunda parte, o ambiente de desenvolvimento local
+é que pararia de funcionar (o `.env` local já tinha sido atualizado para o
+nome novo, incorreto, pelo mesmo commit de ontem).
+
+`tsc --noEmit` limpo e 329/329 testes passando (nenhum teste cobre
+`services/supabase.ts` diretamente — usa `@supabase/supabase-js` de verdade;
+`supabase/contract.test.ts` testa o contrato RPC, não a leitura de env).
 
 ---
 
@@ -389,7 +411,7 @@ ainda que o número em si tenha ficado desatualizado.
 1. ~~Consertar os 14 testes~~ (itens 1a/1b) — ✅ feito em 2026-08-26.
 2. ~~`deviceId` do SQLite~~ (item 2) — ✅ feito em 2026-08-26.
 3. ~~Ad unit do intersticial~~ (item 3) — ✅ código corrigido em 2026-08-26; falta só criar a unidade real no dashboard AdMob (checklist atualizado).
-4. **`.gitignore` com `*.aab`** (item 5, parte barata) — impede que o problema cresça enquanto a limpeza do histórico não acontece.
-5. **`.env.example` do Supabase** (item 4) — só quebra em produção, então precisa entrar antes do release, não depois.
+4. ~~Variável do Supabase~~ (item 4) — ✅ feito em 2026-08-26 (revertida uma regressão de um dia atrás).
+5. **`.gitignore` com `*.aab`** (item 5, parte barata) — impede que o problema cresça enquanto a limpeza do histórico não acontece.
 6. **ESLint + Prettier** (item 6) — barato, e trava a erosão dos itens 8, 9 e 10 daqui para frente.
 7. **Consolidar os docs** (item 7) e **escala de espaçamento** (item 9) — dívida real, mas nenhuma delas sangra hoje.
