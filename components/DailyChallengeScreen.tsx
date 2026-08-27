@@ -10,7 +10,7 @@ import {
   utcDateIso,
 } from '../engine';
 
-import { useTranslation } from '../i18n';
+import i18n, { useTranslation } from '../i18n';
 import { colors } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -57,9 +57,9 @@ export function DailyChallengeScreen() {
     const day = (d.getUTCDay() + 6) % 7; // Monday = 0
     const monday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - day));
     const sunday = new Date(monday.getTime() + 6 * 86400000);
-    const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-    const short = (t: Date) => `${MONTHS[t.getUTCMonth()]} ${t.getUTCDate()}`;
-    return `Week of ${short(monday)} – ${short(sunday)}`;
+    // Abreviação do mês no idioma atual (não hardcoded em inglês).
+    const fmt = new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+    return t('daily.weekOf', { start: fmt.format(monday), end: fmt.format(sunday) });
   };
 
   return (
@@ -90,7 +90,7 @@ export function DailyChallengeScreen() {
 
         {canAd && (
           <Pressable
-            accessibilityLabel="Watch ad for extra attempt"
+            accessibilityLabel={t('a11y.watchAdExtraAttempt')}
             accessibilityRole="button"
             accessibilityState={{ disabled: daily.adLoading }}
             disabled={daily.adLoading}
@@ -119,7 +119,7 @@ export function DailyChallengeScreen() {
         )}
 
         <Pressable
-          accessibilityLabel="Play daily challenge"
+          accessibilityLabel={t('a11y.playDailyChallenge')}
           accessibilityRole="button"
           accessibilityState={{ disabled: !playable || daily.status === 'loading' }}
           disabled={!playable || daily.status === 'loading'}
@@ -137,7 +137,7 @@ export function DailyChallengeScreen() {
 
         {daily.status === 'error' && (
           <View style={styles.errorCard} role="alert">
-            <Text style={styles.errorText}>⚠ {daily.error ?? "Couldn't load today's seed. Please try again."}</Text>
+            <Text style={styles.errorText}>⚠ {daily.error ?? t('daily.seedLoadError')}</Text>
           </View>
         )}
 
@@ -150,7 +150,7 @@ export function DailyChallengeScreen() {
 
         {daily.leaderboard === null ? (
           <Pressable
-            accessibilityLabel="View weekly leaderboard"
+            accessibilityLabel={t('a11y.viewWeeklyLeaderboard')}
             accessibilityRole="button"
             accessibilityState={{ disabled: daily.leaderboardLoading }}
             disabled={daily.leaderboardLoading}

@@ -37,6 +37,7 @@
     "patternHint": "Select cards to form a play",
     "base": "Base",
     "pts": "pts",
+    "previewSuffix": "with ×{{multiplier}}",
     "clear": "Clear",
     "discard": "Discard",
     "play": "PLAY",
@@ -120,7 +121,8 @@
     "watchAdBold": "Watch ad",
     "playBold": "Play",
     "bottomHintEnd": "appears only after the free attempt is used; {{playBold}} loads today's shared seed. Leaderboard shows your best plus the weekly Top 10.",
-    "weekOf": "Week of {{start}} – {{end}}"
+    "weekOf": "Week of {{start}} – {{end}}",
+    "seedLoadError": "Couldn't load today's seed. Please try again."
   },
   "runWon": {
     "dailyCleared": "DAILY CHALLENGE · CLEARED",
@@ -144,7 +146,9 @@
     "runTotal": "Run total: {{pts}} pts",
     "tryAgain": "TRY AGAIN",
     "dailyChallenge": "DAILY CHALLENGE",
-    "changeForger": "CHANGE FORGER"
+    "changeForger": "CHANGE FORGER",
+    "eyebrowRound": "ROUND {{number}} · {{forger}}",
+    "progressTarget": "target {{target}}"
   },
   "roundWon": {
     "roundCleared": "Round {{number}} cleared",
@@ -177,7 +181,8 @@
       "body": "Reach the round's target before your plays run out. Winning rounds 1–5 opens the Forge.",
       "tip": "Tip: clear all 6 rounds to win the run."
     },
-    "letsForge": "Let's Forge"
+    "letsForge": "Let's Forge",
+    "patternExampleBase": "10 + card values"
   },
   "unlockChoice": {
     "milestoneReached": "Milestone reached",
@@ -228,5 +233,39 @@
   },
   "ad": {
     "testAd": "Test Ad"
+  },
+  "a11y": {
+    "back": "Back",
+    "openProfile": "Open profile",
+    "openShop": "Open shop",
+    "openCollection": "Open collection",
+    "dismissBreakReminder": "Dismiss break reminder",
+    "abandonRun": "Abandon run",
+    "clearSelection": "Clear selection",
+    "discardSelectedCards": "Discard selected cards",
+    "playSelectedCards": "Play selected cards",
+    "backToHome": "Back to home",
+    "skipTutorial": "Skip tutorial",
+    "startPlaying": "Start playing",
+    "nextStep": "Next step",
+    "confirmForge": "Confirm forge",
+    "cardOfSuit": "{{value}} of {{suit}}",
+    "applyEffect": "Apply {{effect}}",
+    "takeRelic": "Take relic {{name}}",
+    "forgeEffect": "Forge effect {{effect}}",
+    "unlockItem": "Unlock {{name}}",
+    "watchAdExtraAttempt": "Watch ad for extra attempt",
+    "playDailyChallenge": "Play daily challenge",
+    "viewWeeklyLeaderboard": "View weekly leaderboard",
+    "backToDailyChallenge": "Back to daily challenge",
+    "playAnotherRun": "Play another run",
+    "backToStart": "Back to start",
+    "tryAgainImmediately": "Try again immediately",
+    "startNextRound": "Start next round",
+    "equipItem": "Equip {{name}}",
+    "buyItem": "Buy {{name}}",
+    "forgerOption": "{{name}} forger",
+    "forgerOptionLocked": "{{name}} forger (locked)",
+    "relicSummary": "Relic: {{name}} — {{description}}"
   }
 }

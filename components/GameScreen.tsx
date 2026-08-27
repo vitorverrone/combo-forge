@@ -5,7 +5,7 @@ import { activeRelics, cardKey, cosmeticItemById, currentMultiplier } from '../e
 
 import { useTranslation } from '../i18n';
 import { PlayingCard } from './PlayingCard';
-import { PATTERN_NAME } from './format';
+import { patternName } from './format';
 import { PhaseScreen } from './PhaseScreen';
 import { RelicRow } from './RelicRow';
 import { colors } from './theme';
@@ -44,7 +44,7 @@ export function GameScreen() {
       {/* Top bar */}
       <View style={styles.topbar}>
         <Pressable
-          accessibilityLabel="Abandon run"
+          accessibilityLabel={t('a11y.abandonRun')}
           accessibilityRole="button"
           onPress={() => setShowAbandon(true)}
           style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
@@ -86,9 +86,9 @@ export function GameScreen() {
         <View style={styles.patternPreview}>
           {preview !== null ? (
             <>
-              <Text style={styles.patternName}>{PATTERN_NAME[preview.pattern.kind]}</Text>
+              <Text style={styles.patternName}>{patternName(preview.pattern.kind)}</Text>
               <Text style={styles.patternPoints}>
-                Base {preview.baseValue} · <Text style={styles.patternPointsBold}>{preview.baseValue * multiplier} pts</Text> with ×{multiplier}
+                {t('game.base')} {preview.baseValue} · <Text style={styles.patternPointsBold}>{preview.baseValue * multiplier} {t('game.pts')}</Text> {t('game.previewSuffix', { multiplier })}
               </Text>
             </>
           ) : (<Text style={styles.patternHint}>{t('game.patternHint')}</Text>
@@ -113,7 +113,7 @@ export function GameScreen() {
         <View style={styles.actions}>
           <View style={styles.actionsSecondary}>
             <Pressable
-              accessibilityLabel="Clear selection"
+              accessibilityLabel={t('a11y.clearSelection')}
               accessibilityRole="button"
               accessibilityState={{ disabled: selectedKeys.length === 0 }}
               disabled={selectedKeys.length === 0}
@@ -123,7 +123,7 @@ export function GameScreen() {
               <Text style={[styles.btnSecondaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>{t('game.clear')}</Text>
             </Pressable>
             <Pressable
-              accessibilityLabel="Discard selected cards"
+              accessibilityLabel={t('a11y.discardSelectedCards')}
               accessibilityRole="button"
               accessibilityState={{ disabled: selectedKeys.length === 0 || discardsRemaining <= 0 }}
               disabled={selectedKeys.length === 0 || discardsRemaining <= 0}
@@ -136,7 +136,7 @@ export function GameScreen() {
             </Pressable>
           </View>
           <Pressable
-            accessibilityLabel="Play selected cards"
+            accessibilityLabel={t('a11y.playSelectedCards')}
             accessibilityRole="button"
             accessibilityState={{ disabled: selectedKeys.length === 0 }}
             disabled={selectedKeys.length === 0}
@@ -156,7 +156,7 @@ export function GameScreen() {
             <Text style={styles.overlaySub}>{t('game.abandonSub')}</Text>
             <View style={styles.overlayActions}>
               <Pressable
-                accessibilityLabel="Keep playing"
+                accessibilityLabel={t('game.keepPlaying')}
                 accessibilityRole="button"
                 onPress={() => setShowAbandon(false)}
                 style={({ pressed }) => [styles.overlayBtn, styles.overlayBtnPrimary, pressed && styles.btnPressed]}
@@ -164,7 +164,7 @@ export function GameScreen() {
                 <Text style={styles.overlayBtnPrimaryText}>{t('game.keepPlaying')}</Text>
               </Pressable>
               <Pressable
-                accessibilityLabel="Abandon run"
+                accessibilityLabel={t('a11y.abandonRun')}
                 accessibilityRole="button"
                 onPress={backToStart}
                 style={({ pressed }) => [styles.overlayBtn, styles.overlayBtnDanger, pressed && styles.btnPressed]}

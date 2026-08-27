@@ -2,7 +2,8 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { cardKey, Card, DeckSkinPalette, ForgedCard } from '../engine';
 
-import { forgeEffectLabel, isRedSuit } from './format';
+import { useTranslation } from '../i18n';
+import { forgeEffectLabel, isRedSuit, suitName } from './format';
 import { SuitSymbol } from './SuitSymbol';
 import { colors } from './theme';
 import { fonts } from './typography';
@@ -38,6 +39,7 @@ export function PlayingCard({
   skin,
   style,
 }: PlayingCardProps) {
+  const { t } = useTranslation();
   const forged = forgedCards?.find((c) => cardKey(c.card) === cardKey(card));
   const red = isRedSuit(card.suit);
   const face = skin?.cardFace ?? colors.cardFace;
@@ -86,7 +88,7 @@ export function PlayingCard({
     return (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${card.value} of ${card.suit}`}
+        accessibilityLabel={t('a11y.cardOfSuit', { value: card.value, suit: suitName(card.suit) })}
         accessibilityState={{ disabled, selected }}
         disabled={disabled}
         onPress={onPress}

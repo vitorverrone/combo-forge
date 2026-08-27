@@ -2,7 +2,10 @@ import { SQLiteStorage } from 'expo-sqlite/kv-store';
 import { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { PatternKind } from '../engine';
+
 import { useTranslation } from '../i18n';
+import { patternName } from './format';
 import { colors } from './theme';
 
 const STORAGE_KEY = 'combo-forge:onboarding-seen';
@@ -83,7 +86,7 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
           <View style={styles.actions}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Skip tutorial"
+              accessibilityLabel={t('a11y.skipTutorial')}
               onPress={onComplete}
               style={({ pressed }) => [styles.skipBtn, pressed && styles.btnPressed]}
             >
@@ -91,7 +94,7 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
             </Pressable>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={isLast ? 'Start playing' : 'Next step'}
+              accessibilityLabel={isLast ? t('a11y.startPlaying') : t('a11y.nextStep')}
               onPress={() => (isLast ? onComplete() : setStep(step + 1))}
               style={({ pressed }) => [styles.nextBtn, pressed && styles.btnPressed]}
             >
@@ -106,6 +109,7 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
 
 /** Step-specific visual illustrations. */
 function StepVisual({ kind }: { kind: Step['visual'] }) {
+  const { t } = useTranslation();
   switch (kind) {
     case 'cards':
       return (
@@ -127,8 +131,8 @@ function StepVisual({ kind }: { kind: Step['visual'] }) {
     case 'pattern':
       return (
         <View style={styles.vPattern}>
-          <Text style={styles.vPatternName}>Pair</Text>
-          <Text style={styles.vPatternBase}>10 + card values</Text>
+          <Text style={styles.vPatternName}>{patternName(PatternKind.Pair)}</Text>
+          <Text style={styles.vPatternBase}>{t('onboarding.patternExampleBase')}</Text>
         </View>
       );
     case 'combo':

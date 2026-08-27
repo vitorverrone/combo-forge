@@ -18,6 +18,7 @@ import {
   forgeEffectLabel,
   isRedSuit,
   relicDescription,
+  suitName,
 } from './format';
 import { SuitSymbol } from './SuitSymbol';
 import { colors } from './theme';
@@ -111,7 +112,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
             <Pressable
               accessibilityRole="button"
               accessibilityState={{ disabled: forgeDisabled }}
-              accessibilityLabel="Confirm forge"
+              accessibilityLabel={t('a11y.confirmForge')}
               disabled={forgeDisabled}
               onPress={handleConfirm}
               style={({ pressed }) => [
@@ -145,7 +146,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
                       <Pressable
                         key={cardKey(card)}
                         accessibilityRole="button"
-                        accessibilityLabel={`${card.value} of ${card.suit}`}
+                        accessibilityLabel={t('a11y.cardOfSuit', { value: card.value, suit: suitName(card.suit) })}
                         onPress={() => setTargetKey(cardKey(card))}
                         style={({ pressed }) => [
                           styles.pickCard,
@@ -166,7 +167,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
             <View style={styles.pickerActions}>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Cancel"
+                accessibilityLabel={t('common.cancel')}
                 onPress={() => { setActiveOffer(null); setTargetKey(null); }}
                 style={({ pressed }) => [styles.btnDanger, pressed && styles.btnPressed]}
               >
@@ -175,7 +176,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
               <Pressable
                 accessibilityRole="button"
                 accessibilityState={{ disabled: targetKey === null }}
-                accessibilityLabel={`Apply ${active ? forgeEffectLabel(active.effect) : ''}`}
+                accessibilityLabel={t('a11y.applyEffect', { effect: active ? forgeEffectLabel(active.effect) : '' })}
                 disabled={targetKey === null}
                 onPress={handleApplyCardEffect}
                 style={({ pressed }) => [
@@ -208,7 +209,7 @@ function OfferCard({ offer, selected, deck, forgedCards, onPress }: OfferCardPro
     return (
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`Take relic ${offer.relic.name}`}
+        accessibilityLabel={t('a11y.takeRelic', { name: offer.relic.name })}
         onPress={onPress}
         style={({ pressed }) => [
           styles.offer,
@@ -237,7 +238,7 @@ function OfferCard({ offer, selected, deck, forgedCards, onPress }: OfferCardPro
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={`Forge effect ${forgeEffectLabel(offer.effect)}`}
+      accessibilityLabel={t('a11y.forgeEffect', { effect: forgeEffectLabel(offer.effect) })}
       onPress={onPress}
       style={({ pressed }) => [
         styles.offer,
