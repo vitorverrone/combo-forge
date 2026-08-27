@@ -1,0 +1,371 @@
+# Análise do projeto — recomendações de melhoria
+
+Levantamento feito em 2026-08-26 sobre o estado de `master` + as mudanças não
+commitadas na árvore de trabalho. Cada item abaixo foi **verificado** rodando o
+código, o `tsc` e a suíte de testes — nada aqui é suposição.
+
+Para calibrar a leitura: a arquitetura deste projeto é sólida (ver
+[O que está bem](#o-que-está-bem-e-não-deve-ser-mexido) no fim). Os problemas
+listados são quase todos de **manutenção que ficou para trás**, não de decisões
+erradas de design.
+
+---
+
+## Resumo
+
+| Severidade | Itens |
+|---|---|
+| 🔴 Quebrado hoje | `deviceId` do leaderboard troca entre sessões · intersticial com ad unit errado · `.env.example` dessincronizado |
+| ✅ Corrigido | ~~14 testes falhando~~ — 329/329 passando (2026-08-26) |
+| 🟠 Estrutura | 107 MB de binário no histórico do git · nenhum linter/formatter · 4 docs de requisito concorrentes |
+| 🟡 Consistência | Lacunas de i18n · sem escala de espaçamento · regra duplicada entre engine e UI |
+
+---
+
+## ✅ 1. A suíte de testes estava vermelha (14 falhas) — corrigido em 2026-08-26
+
+`npx jest` chegou a reportar **4 suítes falhando, 14 testes, 315 passando**. O
+`tsc --noEmit` passava limpo, então nada disso aparecia no typecheck.
+
+Eram dois clusters, ambos com a mesma causa raiz: **uma constante mudou e os
+testes não acompanharam**. Estado atual: **329/329 testes passando, typecheck
+limpo**.
+
+### 1a. `TARGET_GROWTH` — revertido para 1,7 pelo usuário
+
+O commit `4478f14` ("fix: session fixes — ... target growth ...") tinha trocado
+[engine/run.ts:43](engine/run.ts#L43) de `1.7` para `1.1`. O usuário reverteu
+manualmente para `1.7` antes desta correção — a docstring
+([engine/run.ts:97-100](engine/run.ts#L97-L100)), `engine/run.test.ts` e os três
+documentos de requisito (`CONTEXT.md`, `SRS_Combo_Forge.md`,
+`ESPECIFICACAO_FUNCIONAL_Combo_Forge.md`) já diziam 1,7 desde o início — não
+precisaram de nenhum ajuste. `engine/run.test.ts` voltou a passar sozinho.
+
+### 1b. Os ids do catálogo cosmético foram renomeados — testes atualizados
+
+O commit `a0dc638` renomeou os ids internos de `skin-*` para `deck-*` e
+adicionou `deck-classic` (item grátis, índice 0 do catálogo). Os testes ainda
+usavam os nomes antigos. Corrigido:
+
+- [store/shopFlow.test.ts](store/shopFlow.test.ts) — `skin-obsidian` → `deck-obsidian`, `skin-emerald` → `deck-emerald`, `skin-royal` → `deck-royal` (5 testes)
+- [store/gameStore.test.ts:573-608](store/gameStore.test.ts#L573-L608) — mesma troca (3 testes)
+- [engine/shop.test.ts](engine/shop.test.ts) — mesma troca + `'tem 3 skins de baralho'` → `'tem 4 skins de baralho'` (o catálogo agora tem `deck-classic` além das 3 pagas), `toHaveLength(3)` → `toHaveLength(4)`
+
+Os `productId` do RevenueCat (`combo_forge_skin_obsidian` etc., usados em
+chamadas ao provider como `provider.purchase('combo_forge_skin_obsidian')`) **não**
+foram tocados — são um contrato externo diferente do id interno, e não mudaram
+com o rename. Confirmado que não há risco de compra órfã.
+
+**Um quinto ponto de falha apareceu só depois desses ajustes** (mascarado pelos
+outros até então): `engine/shop.test.ts` assumia que `offerings[0]` era sempre
+a skin Obsidian (`$0.99`), mas `deck-classic` (grátis, `$0`) agora entra como
+primeiro item do catálogo. Trocado o acesso por índice por uma busca pelo
+`productId` correto:
+
+```ts
+// antes: expect(offerings[0].price).toBe('$0.99');
+const obsidian = offerings.find((o) => o.productId === 'combo_forge_skin_obsidian');
+expect(obsidian?.price).toBe('$0.99');
+```
+
+> **Por que isso importava:** com a suíte vermelha, o `/implement` do fluxo de
+> tickets não conseguia mais usar "testes passando" como portão de merge. Isso
+> está restaurado.
+
+---
+
+## 🔴 2. O `deviceId` do leaderboard muda entre a 1ª e a 2ª sessão
+
+[store/sqlite.ts:86-96](store/sqlite.ts#L86-L96) — o par de leitura/escrita do
+`deviceId` é assimétrico, diferente de todas as outras chaves do arquivo:
+
+```ts
+loadDeviceId: () => {
+  const raw = kv.getItemSync(DAILY_DEVICE_ID_KEY);
+  return raw ?? null;              // ← lê CRU, sem JSON.parse
+},
+saveDeviceId: (id) => writeJson(DAILY_DEVICE_ID_KEY, id),  // ← grava com JSON.stringify
+```
+
+O efeito em sequência:
+
+1. **Sessão 1:** `createDeviceId()` gera `abc-123`. Usado em memória como `abc-123`. Gravado como `"abc-123"` (com aspas literais).
+2. **Sessão 2:** lê `"abc-123"` cru → o `deviceId` agora é `"abc-123"`, **com as aspas dentro da string**.
+3. Sessões seguintes: estável em `"abc-123"`.
+
+Ou seja: a pontuação que o jogador enviou na primeira sessão fica registrada sob
+uma identidade diferente de todas as outras. Como o `deviceId` é exatamente a
+chave do leaderboard — passado a `submitScore` e `fetchLeaderboard`
+([store/dailyFlow.ts:210,231](store/dailyFlow.ts#L210)) — o jogador perde o
+recorde do primeiro dia e pode aparecer duplicado no ranking semanal.
+
+**Correção:** usar `readJson<string>` no `loadDeviceId`, igual às outras chaves.
+Vale considerar uma migração leve (se o valor lido começa e termina com `"`,
+desempacotar) para não descartar a identidade de quem já instalou.
+
+---
+
+## 🔴 3. O anúncio intersticial usa o ad unit do recompensado
+
+[services/ads.ts:52-60](services/ads.ts#L52-L60):
+
+```ts
+export function createAppAdProvider(): AdProvider {
+  const adUnitId = adUnitIdForPlatform();   // ← EXPO_PUBLIC_ADMOB_REWARDED_...
+  return {
+    requestRewardedAd: () => requestAdMobRewarded(adUnitId),
+    requestInterstitialAd: () => requestAdMobInterstitial(adUnitId),  // ← o MESMO id
+  };
+}
+```
+
+Não existe `EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_*` em lugar nenhum — nem
+no [.env.example](.env.example), nem no código.
+
+O próprio `.env.example:41` já documenta a regra certa para o banner: *"Ad unit
+de banner é SEPARADA da rewarded no dashboard"*. O mesmo vale para intersticial —
+ad units do AdMob são específicas por formato. Em produção, o
+`InterstitialAd.createForAdRequest()` com um id de rewarded não serve anúncio.
+
+Em desenvolvimento isso passa despercebido porque a linha 145-147 cai no
+`TestIds.INTERSTITIAL` sempre que `NODE_ENV !== 'production'` — o bug só aparece
+no build de loja.
+
+O resto da cadeia está correto e completo: o contador em
+[store/gameStore.ts:549-557](store/gameStore.ts#L549-L557), o consumo em
+[RunWonScreen.tsx:33-37](components/RunWonScreen.tsx#L33-L37) e
+[RunLostScreen.tsx:34-38](components/RunLostScreen.tsx#L34-L38). Só falta a
+variável de ambiente e um terceiro parâmetro no provider.
+
+---
+
+## 🔴 4. `.env.example` aponta para uma variável que o código não lê
+
+- [.env.example:15](.env.example#L15) documenta `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+- [services/supabase.ts:21](services/supabase.ts#L21) lê `EXPO_PUBLIC_SUPABASE_KEY`
+
+Quem clonar o repo e seguir o `.env.example` à risca cai no caminho silencioso
+do `createUnavailableDailyBackend()` — o Desafio Diário simplesmente aparece
+indisponível, sem erro. É um deslize de uma palavra com custo de depuração alto.
+
+---
+
+## 🟠 5. 107 MB de binário no histórico do git
+
+```
+combo-forge-production.aab   →  106,9 MB, commitado em a0dc638
+.git/                        →  769 MB
+```
+
+A causa exata: o [.easignore](.easignore) tem `*.aab` (correto — o EAS não faz
+upload dele), mas o [.gitignore](.gitignore) **não tem**. O arquivo escorregou
+pela brecha entre os dois.
+
+Já foi enviado para os dois remotes (`origin` e `pages`), então tirar do
+histórico exige `git filter-repo`/BFG + `push --force` nos dois. É viável (repo
+privado, provavelmente sem outros clones), mas é uma operação coordenada — não
+dá para fazer de passagem.
+
+**Mínimo imediato**, mesmo adiando a limpeza do histórico: acrescentar
+`*.aab`, `*.apk` e `*.ipa` ao `.gitignore` para não repetir. Hoje nada impede o
+próximo build de entrar junto.
+
+---
+
+## 🟠 6. Não há linter nem formatter configurado
+
+Não existe `.eslintrc*`, `eslint.config.*`, `.prettierrc*` nem `biome.json`, e o
+`package.json` não tem script `lint`. Os sintomas aparecem espalhados pelo
+código — todos seriam pegos automaticamente:
+
+| Arquivo | Problema |
+|---|---|
+| [components/GameScreen.tsx:2](components/GameScreen.tsx#L2) | `Modal` importado e nunca usado (o modal de abandono é uma `View` na mão) |
+| [components/ShopScreen.tsx:48](components/ShopScreen.tsx#L48) | `item.id == 'deck-classic'` — `==` solto; todo o resto do repo usa `===` |
+| [components/ShopScreen.tsx:139](components/ShopScreen.tsx#L139) | `function DeckPreview({ item }: any)` — sendo que `DeckSkinItem` já existe |
+| [components/RunLostScreen.tsx:83](components/RunLostScreen.tsx#L83) | `<          Text style=...>` — compila, mas é lixo de formatação |
+| [components/ShopScreen.tsx:59](components/ShopScreen.tsx#L59) | `) ? (                    <Text ...>` — mesmo caso |
+
+O código tem só 4 escapes de tipo no projeto inteiro (`as any` × 3 +
+`: any` × 1), o que é sinal de disciplina real. Um ESLint com
+`@typescript-eslint` + `eslint-plugin-react-hooks` custaria pouco e travaria
+essa erosão. O `react-hooks/exhaustive-deps` em particular vale por si só num
+app com `useEffect` disparando anúncio.
+
+---
+
+## 🟠 7. Quatro documentos de requisito concorrentes
+
+Na raiz do projeto:
+
+| Documento | Linhas |
+|---|---|
+| `GDD_Combo_Forge.md` | 144 |
+| `PRD_Combo_Forge.md` | 234 |
+| `SRS_Combo_Forge.md` | 397 |
+| `ESPECIFICACAO_FUNCIONAL_Combo_Forge.md` | 542 |
+| **subtotal** | **1.317** |
+
+Mais `CONTEXT.md`, `README.md`, `PRODUCT.md` e `DESIGN.md` (os dois últimos do
+Impeccable) — 8 documentos de topo no total.
+
+O fluxo definido no `CLAUDE.md` da raiz de JOGOS prevê **GDD + `CONTEXT.md` +
+`docs/adr/`**. O PRD/SRS/Especificação Funcional são camadas extras, todos
+carimbados "v1.0 — Agosto de 2026", e o item 1a já mostra o custo: a curva de
+Meta está desatualizada em três deles simultaneamente. Quanto mais cópias da
+mesma regra, mais caro fica cada mudança de balanceamento.
+
+Sugestão: eleger `CONTEXT.md` como fonte da verdade do domínio e mover o trio
+para `docs/historico/` (ou deletar — o git guarda). Se forem entregáveis
+contratuais que precisam existir, ao menos marcar no topo de cada um que são
+snapshots congelados e não refletem o código atual.
+
+**`DESIGN.md` também derivou:** declara `fontFamily: "System"` em toda a escala
+tipográfica, mas [components/typography.ts](components/typography.ts) usa
+`Rubik` e `Selawik` desde que as fontes entraram. As **cores**, essas sim, estão
+perfeitamente sincronizadas com [components/theme.ts](components/theme.ts) —
+conferi token a token.
+
+---
+
+## 🟡 8. i18n aplicado pela metade
+
+O [i18n/index.ts](i18n/index.ts) é bem construído: tipos inferidos do `pt.json`,
+resolução por SQLite → locale do device → fallback. Mas a adoção nas telas ficou
+incompleta.
+
+**28 `accessibilityLabel` em inglês fixo**, em 13 componentes — de
+`"Abandon run"` a `"Restore purchases"`. Num app que já detecta locale pt-BR,
+todo leitor de tela em português vai ouvir rótulos em inglês. Como acessibilidade,
+é a parte da i18n que mais importa e a única 100% não traduzida.
+
+**Texto visível fora do `t()`:**
+
+| Local | Texto |
+|---|---|
+| [components/GameScreen.tsx:91](components/GameScreen.tsx#L91) | `Base {n} · {n} pts with ×{n}` |
+| [components/RunLostScreen.tsx:69](components/RunLostScreen.tsx#L69) | `'DAILY CHALLENGE · '` + `ROUND {n} · {forjador}` |
+| [components/RunLostScreen.tsx:108](components/RunLostScreen.tsx#L108) | `target {run.target}` |
+| [components/CollectionScreen.tsx:141](components/CollectionScreen.tsx#L141) | `All 40 base cards are always available — forge effects shape them.` |
+| [components/OnboardingOverlay.tsx:130-131](components/OnboardingOverlay.tsx#L130-L131) | `Pair` / `10 + card values` |
+
+*(Conferi o "40 base cards": 4 naipes × valores 1–10 = 40. O texto está correto,
+só não está traduzido.)*
+
+**Chaves dinâmicas anulam a tipagem:**
+[components/OnboardingOverlay.tsx:47-49](components/OnboardingOverlay.tsx#L47-L49)
+usa `t(\`onboarding.${stepKey}.title\` as any)`. São exatamente os 3 `as any` do
+projeto. O `as any` derrota o sistema de tipos que o `i18n/index.ts` foi feito
+para oferecer — uma chave removida do `pt.json` não daria erro de compilação
+aqui. Um mapa explícito `STEP_KEYS → chave` resolveria sem cast.
+
+---
+
+## 🟡 9. `theme.ts` tem cores, mas não tem escala de espaçamento
+
+O [components/theme.ts](components/theme.ts) define 17 cores bem nomeadas e
+comentadas. Não define espaçamento, raio de borda nem tamanho de toque. O
+resultado nos componentes:
+
+- **431 valores numéricos crus** de `padding`/`margin`/`gap`/`borderRadius`
+- **24 valores distintos**: `0 1 2 3 4 5 6 7 8 10 11 12 14 16 18 20 22 24 28 40 44 70 80 100`
+
+Uma escala real não tem `7`, `11`, `22` e `70` — esses números são deriva
+acumulada, não decisão. Um `spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 }`
+no mesmo arquivo das cores daria à UI a mesma consistência que a paleta já tem.
+
+Caso concreto de deriva: [components/GameScreen.tsx:380](components/GameScreen.tsx#L380)
+tem `marginTop: 100` no bloco de ações — um número grande e arbitrário para
+empurrar os botões para baixo, exatamente o tipo de ajuste que quebra em telas
+de altura diferente.
+
+---
+
+## 🟡 10. Duplicações que valem uma extração
+
+**O efeito do intersticial é idêntico nas duas telas de fim.**
+[RunWonScreen.tsx:26-37](components/RunWonScreen.tsx#L26-L37) e
+[RunLostScreen.tsx:27-38](components/RunLostScreen.tsx#L27-L38) têm o mesmo
+bloco — 3 assinaturas do store + o mesmo `useEffect`, linha por linha. Um
+`useInterstitialOnRunEnd(dailyEnd)` eliminaria a cópia e garantiria que uma
+correção futura pegue as duas telas.
+
+**A regra "o baralho clássico é grátis" está escrita duas vezes, de formas
+diferentes:**
+
+```ts
+// engine/shop.ts:177
+if (itemId !== 'deck-classic' && !isOwned(state, itemId)) return state;
+
+// components/ShopScreen.tsx:48
+const owned = item.id == 'deck-classic' ? true : isOwned(shop.owned, item.id);
+```
+
+O conceito "item grátis / padrão" não está modelado — é um literal de string
+comparado em duas camadas. Um campo `free: true` no `DeckSkinItem` (ou um
+`isFreeItem(item)` exportado pelo engine) daria uma fonte só.
+
+**E essa duplicação já produziu uma inconsistência visível:**
+[ShopScreen.tsx:46](components/ShopScreen.tsx#L46) monta o contador
+`{comprados}/{total}` usando `isOwned` — que devolve `false` para o clássico —
+enquanto a linha 48 trata o clássico como possuído. Jogador novo abre a loja e vê
+**"0/4"** mesmo tendo um baralho jogável e equipado.
+
+Detalhe menor no mesmo tema: `deck-classic` carrega um `productId`
+(`combo_forge_skin_classic`) que nunca será comprado, e que não existe no
+[docs/release-checklist.md](docs/release-checklist.md) — os outros 5 estão lá.
+Configuração morta.
+
+---
+
+## O que está bem (e não deve ser mexido)
+
+Sendo justo com o que o projeto acertou, porque isso também orienta decisões
+futuras:
+
+**O motor puro é o ponto forte da arquitetura.** `engine/` não importa React
+Native, Skia, Reanimated, Zustand nem SQLite — nada. A regra de jogo inteira é
+testável em milissegundos, e é por isso que existem 315 testes passando em ~6s.
+Isso não é acidente: está declarado em [engine/index.ts:1-7](engine/index.ts#L1-L7)
+e foi respeitado em todos os 14 módulos.
+
+**A aleatoriedade injetada foi pensada de verdade.** O
+[engine/random.ts](engine/random.ts) não só injeta o `Rng` — o comentário
+explica *por que* as ofertas de Forja precisam de uma stream separada do
+embaralhamento (decisões do jogador consomem números diferentes, o que quebraria
+a justiça do Desafio Diário). Esse é o tipo de raciocínio que normalmente se
+perde e vira bug seis meses depois.
+
+**Ports & adapters aplicado com consistência.** `DdaStorage`,
+`ProgressionStorage`, `DailyChallengeStorage`, `ShopStorage`, `BreakStorage`,
+`ShopProvider`, `AdProvider`, `DailyBackend` — todos com implementação em
+memória para teste e SQLite/SDK real no app, trocados num único ponto
+([store/bootstrap.ts](store/bootstrap.ts)). E o bootstrap degrada com elegância:
+sem SQLite a sessão continua jogável, só não persiste.
+
+**Cobertura onde importa.** 14 arquivos de teste no engine (só `cards.ts` e
+`random.ts` ficam sem, e são triviais) + 3 no store, incluindo um
+`gameStore.test.ts` de 887 linhas. Componentes sem teste é uma escolha
+defensável dado que eles são finos e a lógica está toda no engine — não
+considero isso um problema.
+
+**A garantia de "cosmético nunca afeta poder" está documentada no código**
+([engine/shop.ts:1-14](engine/shop.ts#L1-L14)), não só no PRD. Boa prática de
+monetização, e o tipo de coisa que impede alguém de "só adicionar um bônus
+pequeno" na skin paga daqui a um ano.
+
+**Os docstrings em pt-br explicam o porquê, não o quê.** O comentário sobre
+arredondamento em [engine/run.ts:99](engine/run.ts#L99) ("não 'corrigir' o
+arredondamento") é literalmente uma armadilha desarmada para o próximo leitor —
+ainda que o número em si tenha ficado desatualizado.
+
+---
+
+## Ordem sugerida
+
+1. ~~Consertar os 14 testes~~ (itens 1a/1b) — ✅ feito em 2026-08-26.
+2. **`deviceId` do SQLite** (item 2) — corrompe dados de jogador silenciosamente, e quanto mais instalações, pior a migração.
+3. **`.gitignore` com `*.aab`** (item 5, parte barata) — impede que o problema cresça enquanto a limpeza do histórico não acontece.
+4. **Ad unit do intersticial + `.env.example` do Supabase** (itens 3 e 4) — os dois só quebram em produção, então precisam entrar antes do release, não depois.
+5. **ESLint + Prettier** (item 6) — barato, e trava a erosão dos itens 8, 9 e 10 daqui para frente.
+6. **Consolidar os docs** (item 7) e **escala de espaçamento** (item 9) — dívida real, mas nenhuma delas sangra hoje.
