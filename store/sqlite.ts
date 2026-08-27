@@ -87,10 +87,7 @@ export function createSqliteDailyChallengeStorage(): DailyChallengeStorage {
   return {
     loadAttempts: () => readJson<DailyAttempts>(DAILY_ATTEMPTS_KEY),
     saveAttempts: (state) => writeJson(DAILY_ATTEMPTS_KEY, state),
-    loadDeviceId: () => {
-      const raw = kv.getItemSync(DAILY_DEVICE_ID_KEY);
-      return raw ?? null;
-    },
+    loadDeviceId: () => readJson<string>(DAILY_DEVICE_ID_KEY),
     saveDeviceId: (id) => writeJson(DAILY_DEVICE_ID_KEY, id),
   };
 }

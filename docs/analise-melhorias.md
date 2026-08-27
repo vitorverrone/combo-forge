@@ -15,8 +15,8 @@ erradas de design.
 
 | Severidade | Itens |
 |---|---|
-| 🔴 Quebrado hoje | `deviceId` do leaderboard troca entre sessões · intersticial com ad unit errado · `.env.example` dessincronizado |
-| ✅ Corrigido | ~~14 testes falhando~~ — 329/329 passando (2026-08-26) |
+| 🔴 Quebrado hoje | intersticial com ad unit errado · `.env.example` dessincronizado |
+| ✅ Corrigido | ~~14 testes falhando~~ · ~~`deviceId` nunca persistia~~ (2026-08-26) |
 | 🟠 Estrutura | 107 MB de binário no histórico do git · nenhum linter/formatter · 4 docs de requisito concorrentes |
 | 🟡 Consistência | Lacunas de i18n · sem escala de espaçamento · regra duplicada entre engine e UI |
 
@@ -74,34 +74,57 @@ expect(obsidian?.price).toBe('$0.99');
 
 ---
 
-## 🔴 2. O `deviceId` do leaderboard muda entre a 1ª e a 2ª sessão
+## ✅ 2. O `deviceId` do leaderboard — corrigido em 2026-08-26
 
-[store/sqlite.ts:86-96](store/sqlite.ts#L86-L96) — o par de leitura/escrita do
-`deviceId` é assimétrico, diferente de todas as outras chaves do arquivo:
+A investigação inicial (via [store/sqlite.ts](store/sqlite.ts) isolado) apontou
+uma assimetria JSON entre `loadDeviceId`/`saveDeviceId`. Ao rastrear onde esse
+código é chamado de verdade, o bug real era **maior**: no app publicado, o
+`deviceId` nunca chegava a ser lido do SQLite nenhuma vez — era recriado do
+zero a cada abertura do app.
+
+**Causa raiz:** o store singleton (`export const gameStore = createGameStore();`
+em [store/gameStore.ts:711](store/gameStore.ts#L711)) é construído na avaliação
+do módulo, **antes** do bootstrap rodar — e nesse momento usa sempre o port de
+memória padrão (`deps.dailyStorage ?? createMemoryDailyChallengeStorage()`,
+[store/gameStore.ts:333](store/gameStore.ts#L333)). É ali que
+`daily.deviceId` é resolvido, uma única vez, gravado no objeto de estado
+inicial. Só depois `App.tsx` chama `initializeSqlitePersistence()`
+([store/bootstrap.ts](store/bootstrap.ts)), que troca `state.dailyStorage`
+pelo SQLite real — mas **não re-derivava `daily.deviceId`**, só `attempts`. O
+campo ficava para sempre com o id gerado em memória, e o `saveDeviceId`
+chamado na construção do store gravava numa instância de storage que era
+descartada logo em seguida.
+
+Efeito prático: cada sessão usava (e submetia ao leaderboard) um `deviceId`
+novo, aleatório, nunca persistido de verdade — o jogador nunca teria uma
+identidade estável no ranking semanal entre dois lançamentos do app.
+
+**Correção aplicada** (espelhando o padrão que `attempts` já usava em
+`bootstrap.ts`):
 
 ```ts
-loadDeviceId: () => {
-  const raw = kv.getItemSync(DAILY_DEVICE_ID_KEY);
-  return raw ?? null;              // ← lê CRU, sem JSON.parse
-},
-saveDeviceId: (id) => writeJson(DAILY_DEVICE_ID_KEY, id),  // ← grava com JSON.stringify
+// store/bootstrap.ts — dentro de initializeSqlitePersistence(), após obter o dailyStorage real
+const savedDeviceId = dailyStorage.loadDeviceId();
+const deviceId = savedDeviceId ?? createDeviceId();
+if (deviceId !== savedDeviceId) dailyStorage.saveDeviceId(deviceId);
+// ...
+daily: { ...gameStore.getState().daily, deviceId, attempts: /* já existia */ },
 ```
 
-O efeito em sequência:
+Além disso, a assimetria original de fato existia e foi corrigida junto —
+`loadDeviceId` em [store/sqlite.ts](store/sqlite.ts) agora usa `readJson<string>`,
+simétrico com o `writeJson` do `saveDeviceId` (mesmo padrão das outras chaves
+do arquivo). Sem essa correção, mesmo com o bootstrap consertado, a primeira
+leitura pós-gravação viria com aspas literais.
 
-1. **Sessão 1:** `createDeviceId()` gera `abc-123`. Usado em memória como `abc-123`. Gravado como `"abc-123"` (com aspas literais).
-2. **Sessão 2:** lê `"abc-123"` cru → o `deviceId` agora é `"abc-123"`, **com as aspas dentro da string**.
-3. Sessões seguintes: estável em `"abc-123"`.
+**Sem migração necessária:** o Play Console ainda está "em validação"
+([docs/release-checklist.md](docs/release-checklist.md)) — não há instalação
+real em campo cujo `deviceId` precise ser preservado.
 
-Ou seja: a pontuação que o jogador enviou na primeira sessão fica registrada sob
-uma identidade diferente de todas as outras. Como o `deviceId` é exatamente a
-chave do leaderboard — passado a `submitScore` e `fetchLeaderboard`
-([store/dailyFlow.ts:210,231](store/dailyFlow.ts#L210)) — o jogador perde o
-recorde do primeiro dia e pode aparecer duplicado no ranking semanal.
-
-**Correção:** usar `readJson<string>` no `loadDeviceId`, igual às outras chaves.
-Vale considerar uma migração leve (se o valor lido começa e termina com `"`,
-desempacotar) para não descartar a identidade de quem já instalou.
+`tsc --noEmit` limpo e 329/329 testes passando após a mudança (nenhum teste
+cobria `bootstrap.ts` diretamente — ele toca `expo-sqlite/kv-store`, módulo
+nativo indisponível em Jest; verificação foi manual, lendo o fluxo de ponta a
+ponta).
 
 ---
 
@@ -364,7 +387,7 @@ ainda que o número em si tenha ficado desatualizado.
 ## Ordem sugerida
 
 1. ~~Consertar os 14 testes~~ (itens 1a/1b) — ✅ feito em 2026-08-26.
-2. **`deviceId` do SQLite** (item 2) — corrompe dados de jogador silenciosamente, e quanto mais instalações, pior a migração.
+2. ~~`deviceId` do SQLite~~ (item 2) — ✅ feito em 2026-08-26.
 3. **`.gitignore` com `*.aab`** (item 5, parte barata) — impede que o problema cresça enquanto a limpeza do histórico não acontece.
 4. **Ad unit do intersticial + `.env.example` do Supabase** (itens 3 e 4) — os dois só quebram em produção, então precisam entrar antes do release, não depois.
 5. **ESLint + Prettier** (item 6) — barato, e trava a erosão dos itens 8, 9 e 10 daqui para frente.

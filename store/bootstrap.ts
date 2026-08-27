@@ -7,6 +7,7 @@
  * Chamado uma única vez, na avaliação do módulo de App.tsx.
  */
 import {
+  createDeviceId,
   createInitialBreakHistory,
   createInitialDailyAttempts,
   dailyAttemptsForDay,
@@ -28,6 +29,14 @@ export function initializeSqlitePersistence(): void {
       createSqlitePersistence();
     const saved = progressionStorage.load();
     const savedAttempts = dailyStorage.loadAttempts();
+    // deviceId (chave do leaderboard): o store singleton resolve um deviceId
+    // já na construção do módulo, mas com o port em memória (padrão) — a
+    // troca de dailyStorage acima não re-deriva esse campo sozinha. Repete
+    // aqui o mesmo "carrega ou cria e persiste" da construção do store,
+    // agora contra o SQLite real, e substitui o gerado em memória.
+    const savedDeviceId = dailyStorage.loadDeviceId();
+    const deviceId = savedDeviceId ?? createDeviceId();
+    if (deviceId !== savedDeviceId) dailyStorage.saveDeviceId(deviceId);
     // Loja persistida (comprados + equipados + remoção de anúncios), com
     // default aplicado a saves antigos sem o campo adsRemoved.
     const loadedShop = normalizeShopState(shopStorage.load());
@@ -43,6 +52,7 @@ export function initializeSqlitePersistence(): void {
       progression: saved ?? DEFAULT_PROGRESSION,
       daily: {
         ...gameStore.getState().daily,
+        deviceId,
         attempts: dailyAttemptsForDay(
           savedAttempts ?? createInitialDailyAttempts(utcDateIso()),
           utcDateIso(),
