@@ -11,15 +11,25 @@ preservar. Testável via API/Postgres real (Docker), sem depender do app.
 
 **Blocked by:** Nenhum — pode começar imediatamente
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Tabela `players` existe (chave `device_id`, coluna `display_name`)
-- [ ] `set_display_name(device_id, name)` grava o nome quando válido (3–16 caracteres; letras
+- [x] Tabela `players` existe (chave `device_id`, coluna `display_name`)
+- [x] `set_display_name(device_id, name)` grava o nome quando válido (3–16 caracteres; letras
       com acento, números e espaço; sem emoji/símbolo; fora da lista de termos proibidos) e
       rejeita com erro claro quando inválido em qualquer um desses critérios
-- [ ] `set_display_name` não exige unicidade — dois dispositivos podem ter o mesmo nome
-- [ ] `get_weekly_leaderboard` devolve o `display_name` de cada entrada do top 10 e da posição
+- [x] `set_display_name` não exige unicidade — dois dispositivos podem ter o mesmo nome
+- [x] `get_weekly_leaderboard` devolve o `display_name` de cada entrada do top 10 e da posição
       própria (fallback previsível quando o dispositivo ainda não tem nome cadastrado)
-- [ ] A migração zera `daily_submissions`
-- [ ] `supabase/contract.ts` espelha a lista de termos proibidos e a validação de formato;
+- [x] A migração zera `daily_submissions`
+- [x] `supabase/contract.ts` espelha a lista de termos proibidos e a validação de formato;
       `verify-contract.mjs` compara nomes de teste (aceitos e rejeitados) contra o Postgres real
+
+## Comments
+
+Implementado em `feat/01-backend-nome-exibicao`, mergeado em `master`. `/code-review`
+(Standards + Spec) rodou antes do merge — achados de Standards (ordem de fases da migração,
+checagem de tamanho duplicada, e a lista de termos proibidos sem verificação de igualdade
+exata entre SQL e o espelho TS) foram corrigidos; Spec não teve achados. `npm run verify:backend`
+confirmado contra Postgres real via Docker — todas as 5 seções (seed, Nome de Exibição,
+submissão, leaderboard, acesso anônimo) passaram, incluindo a comparação da lista de termos
+proibidos inteira (33 termos, sem drift).
