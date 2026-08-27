@@ -15,6 +15,7 @@ import i18n, { useTranslation } from '../i18n';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
+import { DisplayNameModal } from './DisplayNameModal';
 import TopButton from './TopButton';
 
 /**
@@ -29,6 +30,7 @@ export function DailyChallengeScreen() {
   const startDailyChallenge = useGameStore((state) => state.startDailyChallenge);
   const watchAdForExtraAttempt = useGameStore((state) => state.watchAdForExtraAttempt);
   const fetchLeaderboard = useGameStore((state) => state.fetchLeaderboard);
+  const setDisplayName = useGameStore((state) => state.setDisplayName);
   const backToStart = useGameStore((state) => state.backToStart);
 
   // Rollover para o dia atual (fronteira UTC, igual ao backend).
@@ -57,16 +59,6 @@ export function DailyChallengeScreen() {
   } else {
     hintText = t('daily.freeReady');
   }
-
-  const currentWeekLabel = () => {
-    const d = new Date();
-    const day = (d.getUTCDay() + 6) % 7; // Monday = 0
-    const monday = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() - day));
-    const sunday = new Date(monday.getTime() + 6 * 86400000);
-    // Abreviação do mês no idioma atual (não hardcoded em inglês).
-    const fmt = new Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric', timeZone: 'UTC' });
-    return t('daily.weekOf', { start: fmt.format(monday), end: fmt.format(sunday) });
-  };
 
   return (
     <View style={styles.container}>
@@ -151,7 +143,6 @@ export function DailyChallengeScreen() {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('daily.thisWeekLeaderboard')}</Text>
-          <Text style={styles.sectionWeek}>{currentWeekLabel()}</Text>
         </View>
 
         {daily.leaderboard === null ? (
@@ -179,10 +170,17 @@ export function DailyChallengeScreen() {
 
         <Text style={styles.bottomHint}>
           {t('daily.bottomHint')}{' '}
-          <Text style={styles.bottomHintBold}>{t('daily.watchAdBold')}</Text>{' '}
           {t('daily.bottomHintEnd', { playBold: t('daily.playBold') })}
         </Text>
       </ScrollView>
+
+      {daily.displayName === null && (
+        <DisplayNameModal
+          saving={daily.displayNameStatus === 'saving'}
+          error={daily.displayNameStatus === 'error' ? daily.displayNameError : null}
+          onSave={(name) => void setDisplayName(name)}
+        />
+      )}
     </View>
   );
 }

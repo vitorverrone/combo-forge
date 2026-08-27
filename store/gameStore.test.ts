@@ -53,6 +53,7 @@ function makeFakeDailyBackend(seed = 424242): DailyBackend & {
       own: { rank: 1, score: 4242 },
       top: [{ rank: 1, score: 4242 }],
     }),
+    setDisplayName: async (_deviceId, name) => name,
   };
 }
 
@@ -548,6 +549,37 @@ describe('Desafio Diário (ticket 13)', () => {
     await failing.getState().fetchLeaderboard();
     expect(failing.getState().daily.leaderboardError).toBe('sem leaderboard');
     expect(failing.getState().daily.leaderboard).toBeNull();
+  });
+
+  test('setDisplayName (ticket 02) salva, persiste, e sobrevive à recriação do store', async () => {
+    const storage = createMemoryDailyChallengeStorage();
+    const store = createGameStore({ dailyStorage: storage, dailyBackend: makeFakeDailyBackend() });
+    expect(store.getState().daily.displayName).toBeNull(); // sem nome salvo ainda
+    await store.getState().setDisplayName('Fulano');
+    expect(store.getState().daily.displayName).toBe('Fulano');
+    expect(store.getState().daily.displayNameStatus).toBe('idle');
+    expect(storage.loadDisplayName()).toBe('Fulano');
+    // Recriar o store (nova sessão do app) carrega o nome persistido.
+    const reopened = createGameStore({ dailyStorage: storage, dailyBackend: makeFakeDailyBackend() });
+    expect(reopened.getState().daily.displayName).toBe('Fulano');
+  });
+
+  test('setDisplayName com falha do servidor marca erro e não persiste', async () => {
+    const storage = createMemoryDailyChallengeStorage();
+    const store = createGameStore({
+      dailyStorage: storage,
+      dailyBackend: {
+        ...makeFakeDailyBackend(),
+        setDisplayName: async () => {
+          throw new Error('invalid_display_name: prohibited term');
+        },
+      },
+    });
+    await store.getState().setDisplayName('Fulano');
+    expect(store.getState().daily.displayName).toBeNull();
+    expect(store.getState().daily.displayNameStatus).toBe('error');
+    expect(store.getState().daily.displayNameError).toBe('invalid_display_name: prohibited term');
+    expect(storage.loadDisplayName()).toBeNull();
   });
 });
 

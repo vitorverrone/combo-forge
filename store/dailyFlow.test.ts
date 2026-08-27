@@ -27,10 +27,13 @@ const NOW = new Date(`${TODAY}T12:00:00Z`);
 /** Backend fake: seed fixo e chamadas rastreáveis. */
 function makeFakeDailyBackend(seed = 424242): DailyBackend & {
   readonly submissions: { deviceId: string; score: number }[];
+  readonly displayNameCalls: { deviceId: string; name: string }[];
 } {
   const submissions: { deviceId: string; score: number }[] = [];
+  const displayNameCalls: { deviceId: string; name: string }[] = [];
   return {
     submissions,
+    displayNameCalls,
     fetchSeed: async () => seed,
     submitScore: async (deviceId, score) => {
       submissions.push({ deviceId, score });
@@ -41,6 +44,10 @@ function makeFakeDailyBackend(seed = 424242): DailyBackend & {
       own: { rank: 1, score: 4242 },
       top: [{ rank: 1, score: 4242 }],
     }),
+    setDisplayName: async (deviceId, name) => {
+      displayNameCalls.push({ deviceId, name });
+      return name;
+    },
   };
 }
 
@@ -69,6 +76,9 @@ function makeDailyState(overrides: Partial<DailyState> = {}): DailyState {
     leaderboard: null,
     leaderboardLoading: false,
     leaderboardError: null,
+    displayName: null,
+    displayNameStatus: 'idle',
+    displayNameError: null,
     ...overrides,
   };
 }
@@ -256,6 +266,71 @@ describe('runDailyCommand — fetchLeaderboard', () => {
     expect(result.daily.leaderboardError).toBe('sem leaderboard');
     expect(result.daily.leaderboard).toBeNull();
     expect(result.daily.leaderboardLoading).toBe(false);
+  });
+});
+
+describe('runDailyCommand — setDisplayName (ticket 02)', () => {
+  test('nome válido: chama o backend, persiste e atualiza o estado', async () => {
+    const storage = createMemoryDailyChallengeStorage();
+    const backend = makeFakeDailyBackend();
+    const deps = makeDeps({ storage, backend });
+    const result = await runDailyCommand(makeDailyState({ deviceId: 'device-9' }), deps, {
+      type: 'setDisplayName',
+      name: 'Fulano',
+    });
+    expect(result.daily.displayName).toBe('Fulano');
+    expect(result.daily.displayNameStatus).toBe('idle');
+    expect(result.daily.displayNameError).toBeNull();
+    expect(backend.displayNameCalls).toEqual([{ deviceId: 'device-9', name: 'Fulano' }]);
+    expect(storage.loadDisplayName()).toBe('Fulano');
+  });
+
+  test('nome inválido no cliente: rejeita sem chamar o backend (sem round-trip de rede)', async () => {
+    const backend = makeFakeDailyBackend();
+    const deps = makeDeps({ backend });
+    const result = await runDailyCommand(makeDailyState(), deps, { type: 'setDisplayName', name: 'ab' });
+    expect(result.daily.displayName).toBeNull();
+    expect(result.daily.displayNameStatus).toBe('error');
+    expect(result.daily.displayNameError).not.toBeNull();
+    expect(backend.displayNameCalls).toHaveLength(0);
+  });
+
+  test('nome válido no cliente mas rejeitado pelo servidor: erro do servidor aparece no estado', async () => {
+    const deps = makeDeps({
+      backend: {
+        ...makeFakeDailyBackend(),
+        setDisplayName: async () => {
+          throw new Error('invalid_display_name: prohibited term');
+        },
+      },
+    });
+    const result = await runDailyCommand(makeDailyState(), deps, {
+      type: 'setDisplayName',
+      name: 'Fulano',
+    });
+    expect(result.daily.displayName).toBeNull();
+    expect(result.daily.displayNameStatus).toBe('error');
+    expect(result.daily.displayNameError).toBe('invalid_display_name: prohibited term');
+  });
+
+  test('falha de rede: erro aparece no estado, nada é persistido', async () => {
+    const storage = createMemoryDailyChallengeStorage();
+    const deps = makeDeps({
+      storage,
+      backend: {
+        ...makeFakeDailyBackend(),
+        setDisplayName: async () => {
+          throw new Error('network request failed');
+        },
+      },
+    });
+    const result = await runDailyCommand(makeDailyState(), deps, {
+      type: 'setDisplayName',
+      name: 'Fulano',
+    });
+    expect(result.daily.displayNameStatus).toBe('error');
+    expect(result.daily.displayNameError).toBe('network request failed');
+    expect(storage.loadDisplayName()).toBeNull();
   });
 });
 

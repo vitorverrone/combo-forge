@@ -17,6 +17,7 @@ export * from './forgers';
 export * from './progression';
 export * from './run';
 export * from './daily';
+export * from './displayName';
 export * from './adProvider';
 export * from './shop';
 export * from './feedback';

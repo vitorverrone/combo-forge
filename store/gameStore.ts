@@ -167,6 +167,8 @@ export interface GameState {
   readonly submitDailyScore: (score: number) => Promise<void>;
   /** Opt-in: busca o leaderboard semanal (posição própria + top 10). */
   readonly fetchLeaderboard: () => Promise<void>;
+  /** Grava/troca o Nome de Exibição do dispositivo (ticket 02). */
+  readonly setDisplayName: (name: string) => Promise<void>;
   /** Abre a loja cosmética. */
   readonly openShop: () => void;
   /** Carrega as ofertas (preços) do provider e o estado persistido. */
@@ -375,6 +377,9 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       leaderboard: null,
       leaderboardLoading: false,
       leaderboardError: null,
+      displayName: dailyStorage.loadDisplayName(),
+      displayNameStatus: 'idle',
+      displayNameError: null,
     },
     dailyStorage,
     dailyBackend,
@@ -488,6 +493,14 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     fetchLeaderboard: async () => {
       const result = await runDailyCommand(get().daily, dailyFlowDeps(get(), now), {
         type: 'fetchLeaderboard',
+      });
+      set({ daily: result.daily });
+    },
+
+    setDisplayName: async (name: string) => {
+      const result = await runDailyCommand(get().daily, dailyFlowDeps(get(), now), {
+        type: 'setDisplayName',
+        name,
       });
       set({ daily: result.daily });
     },
