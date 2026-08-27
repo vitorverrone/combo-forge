@@ -15,8 +15,8 @@ erradas de design.
 
 | Severidade | Itens |
 |---|---|
-| ✅ Corrigido | ~~14 testes falhando~~ · ~~`deviceId` nunca persistia~~ · ~~intersticial com ad unit errado~~ · ~~variável do Supabase dessincronizada~~ (2026-08-26) |
-| 🟠 Estrutura | 107 MB de binário no histórico do git · nenhum linter/formatter · 4 docs de requisito concorrentes |
+| ✅ Corrigido | ~~14 testes falhando~~ · ~~`deviceId` nunca persistia~~ · ~~intersticial com ad unit errado~~ · ~~variável do Supabase dessincronizada~~ · ~~binário no `.gitignore`~~ · ~~sem linter/formatter~~ (2026-08-26) |
+| 🟠 Estrutura | limpeza do histórico do git (`.aab` já saiu do índice, mas o blob de 107 MB segue no histórico) · 4 docs de requisito concorrentes |
 | 🟡 Consistência | Lacunas de i18n · sem escala de espaçamento · regra duplicada entre engine e UI |
 
 ---
@@ -195,47 +195,73 @@ nome novo, incorreto, pelo mesmo commit de ontem).
 
 ---
 
-## 🟠 5. 107 MB de binário no histórico do git
+## ✅ 5. 107 MB de binário no histórico do git — mínimo aplicado em 2026-08-26
 
-```
-combo-forge-production.aab   →  106,9 MB, commitado em a0dc638
-.git/                        →  769 MB
-```
+A causa exata já estava certa: o [.easignore](.easignore) tem `*.aab` (correto
+— o EAS não faz upload dele), mas o [.gitignore](.gitignore) não tinha. O
+`combo-forge-production.aab` (106,9 MB, commitado em `a0dc638`) escorregou pela
+brecha entre os dois.
 
-A causa exata: o [.easignore](.easignore) tem `*.aab` (correto — o EAS não faz
-upload dele), mas o [.gitignore](.gitignore) **não tem**. O arquivo escorregou
-pela brecha entre os dois.
+**Aplicado — o "mínimo imediato" que o item já previa:**
+- `*.aab`, `*.apk` e `*.ipa` adicionados ao [.gitignore](.gitignore).
+- `git rm --cached combo-forge-production.aab` — o arquivo sai do índice do
+  git, mas **continua no disco** (build local intacto, nada deletado).
 
-Já foi enviado para os dois remotes (`origin` e `pages`), então tirar do
-histórico exige `git filter-repo`/BFG + `push --force` nos dois. É viável (repo
-privado, provavelmente sem outros clones), mas é uma operação coordenada — não
-dá para fazer de passagem.
-
-**Mínimo imediato**, mesmo adiando a limpeza do histórico: acrescentar
-`*.aab`, `*.apk` e `*.ipa` ao `.gitignore` para não repetir. Hoje nada impede o
-próximo build de entrar junto.
+**Não aplicado, continua como próximo passo separado:** a limpeza do
+histórico (`git filter-repo`/BFG + `push --force` em `origin` e `pages`). Já
+foi enviado aos dois remotes, é uma operação coordenada e destrutiva por
+natureza — fica para quando o usuário decidir explicitamente fazer essa
+faxina. O `.git/` continua em ~769 MB até lá; o que mudou é que **nenhum novo
+build vai voltar a inflar isso**.
 
 ---
 
-## 🟠 6. Não há linter nem formatter configurado
+## ✅ 6. ESLint + Prettier configurados em 2026-08-26
 
-Não existe `.eslintrc*`, `eslint.config.*`, `.prettierrc*` nem `biome.json`, e o
-`package.json` não tem script `lint`. Os sintomas aparecem espalhados pelo
-código — todos seriam pegos automaticamente:
+Não existia `.eslintrc*`, `eslint.config.*`, `.prettierrc*` nem script `lint`.
+Configurado via `npx expo lint` (que instala `eslint@^9` + `eslint-config-expo`
+e gera `eslint.config.js`) — com um ajuste importante: o `expo lint` **sem
+argumentos só varre `/src`, `/app` e `/components`** por padrão, o que deixaria
+`engine/`, `store/`, `services/` e `i18n/` — onde mora a maior parte da lógica
+— fora do lint. O script `lint` do `package.json` foi trocado para `eslint .`
+(cobre o repo inteiro; `eslint.config.js` só ignora `dist/*`).
 
-| Arquivo | Problema |
-|---|---|
-| [components/GameScreen.tsx:2](components/GameScreen.tsx#L2) | `Modal` importado e nunca usado (o modal de abandono é uma `View` na mão) |
-| [components/ShopScreen.tsx:48](components/ShopScreen.tsx#L48) | `item.id == 'deck-classic'` — `==` solto; todo o resto do repo usa `===` |
-| [components/ShopScreen.tsx:139](components/ShopScreen.tsx#L139) | `function DeckPreview({ item }: any)` — sendo que `DeckSkinItem` já existe |
-| [components/RunLostScreen.tsx:83](components/RunLostScreen.tsx#L83) | `<          Text style=...>` — compila, mas é lixo de formatação |
-| [components/ShopScreen.tsx:59](components/ShopScreen.tsx#L59) | `) ? (                    <Text ...>` — mesmo caso |
+Adicionado também `prettier` + `eslint-config-prettier` (desliga as regras de
+_estilo_ do ESLint que conflitariam com o Prettier), config em
+`.prettierrc.json` (`singleQuote`, `trailingComma: all`, `printWidth: 100` —
+calibrado no estilo que o código já usava) e os scripts `format`/`format:check`.
 
-O código tem só 4 escapes de tipo no projeto inteiro (`as any` × 3 +
-`: any` × 1), o que é sinal de disciplina real. Um ESLint com
-`@typescript-eslint` + `eslint-plugin-react-hooks` custaria pouco e travaria
-essa erosão. O `react-hooks/exhaustive-deps` em particular vale por si só num
-app com `useEffect` disparando anúncio.
+**Decisão consciente que fica registrada aqui:** `prettier --check .` acusa
+123 arquivos com diferença de formatação — o código nunca passou por um
+formatter, então isso é esperado (nenhum arquivo é *sinal de bug*, é só
+divergência de estilo: quebra de linha, espaçamento). Rodar `prettier --write .`
+agora produziria um diff enorme e não relacionado a nada que os itens 5/6
+pediam. Deixado como uma decisão separada e explícita para quando o usuário
+quiser — `*.md` já está excluído em [.prettierignore](.prettierignore)
+(Prettier não deveria reformatar prosa).
+
+**A primeira rodada de `eslint .` já achou coisa real** (35 problemas: 5 erros
++ 30 warnings). Todos corrigidos nesta mesma passada — nada ficou pendurado:
+
+| Achado | O que era | Correção |
+|---|---|---|
+| 5× erro `react-hooks/refs` em [RunLostScreen.tsx](components/RunLostScreen.tsx) | `const pulse = useRef(new Animated.Value(1)).current;` — a regra nova do `eslint-plugin-react-hooks` (v7, compatível com o React Compiler) proíbe ler `.current` durante o render | Trocado para `useMemo(() => new Animated.Value(1), [])` — o valor precisa existir no render (vai pro `style` da `Animated.View`), então `useRef` não serve aqui; `useMemo` não é rastreado como ref pela regra |
+| `item.id == 'deck-classic'` em [ShopScreen.tsx:48](components/ShopScreen.tsx#L48) | `==` solto, já sinalizado no item original | Trocado para `===`. **A duplicação de fundo** (a mesma regra "clássico é grátis" escrita separadamente em `engine/shop.ts` e aqui) é o item 10, não mexida agora — só a comparação solta |
+| `function DeckPreview({ item }: any)` em [ShopScreen.tsx:139](components/ShopScreen.tsx#L139) | `any`, já sinalizado no item original | Tipado como `{ item: DeckSkinItem }` (o tipo já existia no engine) |
+| 3× `as any` em [OnboardingOverlay.tsx:47-49](components/OnboardingOverlay.tsx#L47-L49) | chave de i18n montada por template string, cast para escapar do tipo | Removidos os casts — `tsc --noEmit` continua limpo sem eles: `STEP_KEYS[step]` (tupla `as const`) já dá a `t()` a união literal certa, o cast nunca foi necessário |
+| Formatação quebrada em `RunLostScreen.tsx`/`ShopScreen.tsx` (`<          Text`, `) ? (          <Text`) | já sinalizada no item original | Corrigida automaticamente pelo `eslint --fix` |
+| `Modal`, `getForger`, `MAX_SELECTION` não usados em [GameScreen.tsx](components/GameScreen.tsx) | `Modal` já sinalizado no item original; os outros dois apareceram no lint | Imports removidos |
+| 5 imports/vars não usados em [CollectionScreen.tsx](components/CollectionScreen.tsx) (`cardKey`, `SUITS`, `cardLabel`, `isRedSuit`, `deck`) | **achado durante a limpeza**: só eram usados dentro de um bloco JSX inteiro comentado (`{/* Deck Cards */}`, linhas 136-153) — e esse bloco já referenciava `SUIT_SYMBOL`, que nem chegou a ser importado. Ou seja, o bloco já estava quebrado antes de ser comentado, não é uma feature pronta pra voltar | Imports removidos; o bloco comentado (a feature em si) foi deixado como está — decisão de produto (reativar essa visão do baralho ou não) não é escopo de limpeza de lint |
+| `getForger`, `relicDescription`, `dailyPlayable`, `canPlayDaily` não usados em [StartScreen.tsx](components/StartScreen.tsx) | `dailyPlayable` calcula se o jogador pode jogar o Desafio Diário, mas o botão nunca ficou desabilitado com base nisso | Removidos. **Não** adicionei `disabled={!dailyPlayable}` no botão — pode ser intencional (deixar entrar na tela mesmo sem tentativas, p.ex. pra ver o leaderboard); é uma decisão de produto, não uma correção óbvia |
+| `react-hooks/exhaustive-deps` faltando `progress` em [StartScreen.tsx:57](components/StartScreen.tsx#L57) | `useSharedValue` do Reanimated é referencialmente estável entre renders | Adicionado `progress` às deps — não muda quando o efeito roda (só uma vez, no mount), só satisfaz a regra |
+| `forToday()` não usada em [store/dailyFlow.ts](store/dailyFlow.ts) | helper que calcula o rollover do dia (`dailyAttemptsForDay` + `utcDateIso`) — mas os 4 comandos (`start`/`watchAd`/`submit`/`fetchLeaderboard`) reimplementam a mesma lógica inline em vez de chamá-la | Função morta removida. **Não** refatorei os 4 call sites pra usá-la — trocaria comportamento em 4 lugares de uma vez, isso é escopo do item 10 (duplicações), não de limpeza de lint |
+| `daily`/`storage` desestruturados sem uso em [store/gameStore.ts](store/gameStore.ts) (`playSelection`/`discardSelection`) | sobra de copiar-colar entre as duas ações | Removidos da desestruturação |
+| `import/no-duplicates` (`../engine` importado 3× em `gameStore.ts`) | três blocos de import separados do mesmo módulo | `eslint --fix` mesclou automaticamente; a formatação resultante (uma linha em branco solta, `ShopStorage} from` sem espaço) foi limpa manualmente depois |
+| `import/no-named-as-default-member` em [i18n/index.ts](i18n/index.ts) | `i18n.use(...)` — falso positivo conhecido: `i18next` exporta `use` tanto como método da instância padrão quanto como named export, e `i18n.use().init()` é o jeito documentado oficialmente de inicializar | `eslint-disable-next-line` com o motivo explicado no comentário — não é código pra "consertar", já estava certo |
+| Vars não usadas em 4 arquivos de teste (`engine/deck.test.ts`, `engine/run.test.ts`, `store/gameStore.test.ts`, `store/shopFlow.test.ts`) | helpers/reatribuições não lidas | Removidos/ajustados sem mudar nenhuma asserção existente |
+
+`tsc --noEmit` limpo, `eslint .` sem nenhum problema, 329/329 testes passando
+depois de cada mudança (não só no final).
 
 ---
 
@@ -412,6 +438,5 @@ ainda que o número em si tenha ficado desatualizado.
 2. ~~`deviceId` do SQLite~~ (item 2) — ✅ feito em 2026-08-26.
 3. ~~Ad unit do intersticial~~ (item 3) — ✅ código corrigido em 2026-08-26; falta só criar a unidade real no dashboard AdMob (checklist atualizado).
 4. ~~Variável do Supabase~~ (item 4) — ✅ feito em 2026-08-26 (revertida uma regressão de um dia atrás).
-5. **`.gitignore` com `*.aab`** (item 5, parte barata) — impede que o problema cresça enquanto a limpeza do histórico não acontece.
-6. **ESLint + Prettier** (item 6) — barato, e trava a erosão dos itens 8, 9 e 10 daqui para frente.
-7. **Consolidar os docs** (item 7) e **escala de espaçamento** (item 9) — dívida real, mas nenhuma delas sangra hoje.
+5. ~~`.gitignore` com `*.aab` + ESLint/Prettier~~ (itens 5 e 6) — ✅ feito em 2026-08-26. Falta, como decisão separada e explícita: limpar o `.aab` do *histórico* do git (`filter-repo`/BFG + force-push coordenado nos dois remotes) e rodar `prettier --write .` pela primeira vez (123 arquivos, diff grande e não relacionado a bug nenhum).
+6. **Consolidar os docs** (item 7) e **escala de espaçamento** (item 9) — dívida real, mas nenhuma delas sangra hoje.

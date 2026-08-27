@@ -6,7 +6,6 @@ import {
   computeUnlocks,
   createDeck,
   COSMETIC_CATALOG,
-  createInitialBreakHistory,
   createMemoryBreakStorage,
   DEFAULT_BREAK_REMINDER_CONFIG,
   createDevShopProvider,

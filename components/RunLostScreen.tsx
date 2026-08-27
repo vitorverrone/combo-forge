@@ -1,5 +1,5 @@
-import { AccessibilityInfo, Animated, Easing, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { useEffect, useRef, useState } from 'react';
+import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
 
 import { activeRelics, getForger, RunState } from '../engine';
 
@@ -43,8 +43,10 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
   const soClose = missing > 0 && missing <= Math.round(run.target * 0.1);
 
   // Pulso suave na barra "quase cheia" (juice transiente, volta ao repouso).
-  // Respeta Reduce Motion: sem pulsação, mantém barra estática.
-  const pulse = useRef(new Animated.Value(1)).current;
+  // Respeta Reduce Motion: sem pulsação, mantém barra estática. useMemo (não
+  // useRef): o valor precisa ser lido no render (style da Animated.View), e a
+  // regra react-hooks/refs proíbe ler ref.current fora de efeitos/handlers.
+  const pulse = useMemo(() => new Animated.Value(1), []);
   const [reduceMotion, setReduceMotion] = useState(false);
   useEffect(() => {
     AccessibilityInfo.isReduceMotionEnabled().then(setReduceMotion);

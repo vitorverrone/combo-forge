@@ -111,12 +111,6 @@ export async function runDailyCommand(
   }
 }
 
-/** Estado do dia corrente (rollover UTC); mesma referência se nada mudou. */
-function forToday(state: DailyState, deps: DailyFlowDeps): DailyState {
-  const attempts = dailyAttemptsForDay(state.attempts, utcDateIso(deps.now()));
-  return attempts === state.attempts ? state : { ...state, attempts };
-}
-
 /** Inicia a Run do dia: seed do backend (cacheado), Forjador fixo, DDA off. */
 async function startDailyChallenge(
   state: DailyState,

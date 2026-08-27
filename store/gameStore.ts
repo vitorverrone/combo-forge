@@ -66,16 +66,6 @@ import {
   startNextRound,
   startRun as engineStartRun,
   utcDateIso,
-} from '../engine';
-
-import {
-  DailyFlowDeps,
-  DailyFlowResult,
-  DailyState,
-  runDailyCommand,
-} from './dailyFlow';
-
-import {
   BreakHistory,
   BreakStorage,
   createInitialBreakHistory,
@@ -84,9 +74,6 @@ import {
   markBreakSuggested,
   recordRunFinished,
   shouldSuggestBreak,
-} from '../engine';
-
-import {
   createDevShopProvider,
   createMemoryShopStorage,
   normalizeShopState,
@@ -94,6 +81,13 @@ import {
   ShopProvider,
   ShopStorage,
 } from '../engine';
+
+import {
+  DailyFlowDeps,
+  DailyFlowResult,
+  DailyState,
+  runDailyCommand,
+} from './dailyFlow';
 
 import {
   equipCosmetic as equipCosmeticFlow,
@@ -513,7 +507,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     clearSelection: () => set({ selectedKeys: [] }),
 
     playSelection: () => {
-      const { run, rng, selectedKeys, ddaStorage: storage, progression, runMode, daily } = get();
+      const { run, rng, selectedKeys, ddaStorage: storage, progression, runMode } = get();
       if (run === null || rng === null || selectedKeys.length === 0) return;
       try {
         const played = selectedCards(run, selectedKeys);
@@ -567,7 +561,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     },
 
     discardSelection: () => {
-      const { run, rng, selectedKeys, ddaStorage: storage } = get();
+      const { run, rng, selectedKeys } = get();
       if (run === null || rng === null || selectedKeys.length === 0) return;
       try {
         const nextRun = discard(run, selectedCards(run, selectedKeys), rng);

@@ -1,10 +1,8 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { computeUnlocks, MILESTONES } from '../engine';
+import { computeUnlocks, MILESTONES, Suit } from '../engine';
 
-import { useTranslation } from '../i18n';
-import i18n from '../i18n';
-import { Suit } from '../engine';
+import i18n, { useTranslation } from '../i18n';
 import { SuitSymbol } from './SuitSymbol';
 import { colors } from './theme';
 import { fonts } from './typography';

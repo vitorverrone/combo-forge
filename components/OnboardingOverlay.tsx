@@ -44,9 +44,9 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
 
   const stepKey = STEP_KEYS[step];
   const current = {
-    title: t(`onboarding.${stepKey}.title` as any),
-    body: t(`onboarding.${stepKey}.body` as any),
-    tip: t(`onboarding.${stepKey}.tip` as any),
+    title: t(`onboarding.${stepKey}.title`),
+    body: t(`onboarding.${stepKey}.body`),
+    tip: t(`onboarding.${stepKey}.tip`),
     visual: STEP_VISUALS[step],
   };
   const isLast = step === STEP_KEYS.length - 1;

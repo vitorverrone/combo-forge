@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
-import { activeRelics, cardKey, cosmeticItemById, currentMultiplier, getForger } from '../engine';
+import { activeRelics, cardKey, cosmeticItemById, currentMultiplier } from '../engine';
 
 import { useTranslation } from '../i18n';
 import { PlayingCard } from './PlayingCard';
@@ -10,7 +10,7 @@ import { PhaseScreen } from './PhaseScreen';
 import { RelicRow } from './RelicRow';
 import { colors } from './theme';
 import { fonts } from './typography';
-import { MAX_SELECTION, selectionPreview, useGameStore } from '../store/gameStore';
+import { selectionPreview, useGameStore } from '../store/gameStore';
 
 export function GameScreen() {
   const { t } = useTranslation();
@@ -91,7 +91,7 @@ export function GameScreen() {
                 Base {preview.baseValue} · <Text style={styles.patternPointsBold}>{preview.baseValue * multiplier} pts</Text> with ×{multiplier}
               </Text>
             </>
-          ) : (              <Text style={styles.patternHint}>{t('game.patternHint')}</Text>
+          ) : (<Text style={styles.patternHint}>{t('game.patternHint')}</Text>
           )}
         </View>
 
@@ -194,7 +194,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 0,
     minHeight: 48,
-    flexWrap: 'wrap'
+    flexWrap: 'wrap',
+    position: 'relative'
   },
   navBtn: {
     width: 40,
@@ -216,11 +217,17 @@ const styles = StyleSheet.create({
   },
   roundLabelWrap: {
     flex: 1,
-    height: 40,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 6,
-    paddingLeft: 32
+    paddingLeft: 0,
+    paddingBottom: 24,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    textAlign: 'center'
   },
   roundLabel: {
     fontFamily: fonts.heading,
@@ -229,7 +236,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: colors.textDim,
     textTransform: 'uppercase',
-    textAlign: 'center',
+    textAlign: 'center'
   },
   dailyBadge: {
     fontFamily: fonts.body,

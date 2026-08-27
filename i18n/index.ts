@@ -69,6 +69,9 @@ declare module 'react-i18next' {
 }
 
 // ── Init i18next ────────────────────────────────────────────────────
+// i18n.use() é o método de instância padrão do i18next (não a named export
+// `use`); é assim que toda a documentação oficial encadeia .use().init().
+// eslint-disable-next-line import/no-named-as-default-member
 i18n.use(initReactI18next).init({
   resources: {
     pt: { translation: pt },
