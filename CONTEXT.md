@@ -75,8 +75,12 @@ Um personagem jogável definido por uma Relíquia exclusiva de largada (fora do 
 _Evitar_: Personagem, classe, herói
 
 **Desafio Diário**:
-O modo diário de comparação social justa. Um seed cobre a Run inteira (embaralhamento do Baralho + ofertas de Forja e de Relíquia), idêntico para todos os jogadores, e o DDA fica desligado. São 1 tentativa gratuita por dia + 1 extra via anúncio recompensado (opt-in). O ranking é semanal, opt-in, ordenado pela pontuação final da Run e mostra apenas a própria posição e o top 10.
+O modo diário de comparação social justa. Um seed cobre a Run inteira (embaralhamento do Baralho + ofertas de Forja e de Relíquia), idêntico para todos os jogadores, e o DDA fica desligado. São 1 tentativa gratuita por dia + 1 extra via anúncio recompensado (opt-in). O ranking é semanal, ordenado pela pontuação final da Run, exige Nome de Exibição para participar e mostra sempre a própria posição e o top 10, atualizados ao abrir a tela.
 _Evitar_: Daily, desafio do dia
+
+**Nome de Exibição**:
+O apelido público do dispositivo no ranking do Desafio Diário. Obrigatório — escolhido uma única vez, num modal bloqueante na primeira abertura da tela do Desafio Diário, sem opção de pular; editável depois na tela de Perfil. 3–16 caracteres, letras (com acento)/números/espaço, sem emoji ou símbolo; sem checagem de unicidade entre dispositivos (duplicados são permitidos). Moderado contra palavrão nos dois lados — cliente e servidor — porque a chamada ao backend é pública e contorna qualquer filtro que exista só no app.
+_Evitar_: Nickname, username
 
 **Meta-Progressão**:
 O sistema de desbloqueio permanente entre Runs, sem moeda — por conquista. Marcos: 1ª Run vencida (desbloqueia o Forjador Martelo), 3ª (desbloqueia a Bigorna), 5ª (2 novos Efeitos de Forja entram no pool de ofertas) e recorde de pontuação ≥ 2.500 numa Run (Relíquias raras entram no pool). Quando um marco oferece mais de um desbloqueio, o jogador escolhe a ordem.
