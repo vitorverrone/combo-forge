@@ -2,6 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
   COSMETIC_CATALOG,
+  DeckSkinItem,
   isDeckSkinItem,
   isOwned,
   REMOVE_ADS_DEV_PRICE,
@@ -45,7 +46,7 @@ export function ShopScreen() {
         {/* Deck Skins */}
         <SectionHeader label={t('shop.decks')} count={`${COSMETIC_CATALOG.filter(isDeckSkinItem).filter((item) => isOwned(shop.owned, item.id)).length}/${COSMETIC_CATALOG.filter(isDeckSkinItem).length}`} />
         {COSMETIC_CATALOG.filter(isDeckSkinItem).map((item) => {
-          const owned = item.id == 'deck-classic' ? true : isOwned(shop.owned, item.id);
+          const owned = item.id === 'deck-classic' ? true : isOwned(shop.owned, item.id);
           const equipped = shop.owned.equippedDeckSkin === item.id;
           const busy = shop.purchasing === item.id;
           return (
@@ -136,7 +137,7 @@ function SectionHeader({ label, count }: { label: string; count?: string }) {
 }
 
 /** Deck skin preview thumbnail showing a card face. */
-function DeckPreview({ item }: any) {
+function DeckPreview({ item }: { item: DeckSkinItem }) {
   return (
     <View style={[styles.deckPreview, { backgroundColor: item.palette.cardFace, borderColor: item.palette.border }]}>
       <SuitSymbol suit="spades" color={item.palette.cardInk} size={16} />

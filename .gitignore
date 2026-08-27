@@ -19,6 +19,11 @@ expo-env.d.ts
 ios/
 android/
 
+# Build outputs (EAS já ignora via .easignore; nunca devem ir pro git também)
+*.aab
+*.apk
+*.ipa
+
 # EAS
 .eas/
 

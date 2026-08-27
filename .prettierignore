@@ -1,0 +1,11 @@
+node_modules/
+android/
+ios/
+.expo/
+dist/
+web-build/
+coverage/
+combo-forge-production.aab
+
+# Prosa, não código — Prettier não deve reformatar documentação.
+*.md

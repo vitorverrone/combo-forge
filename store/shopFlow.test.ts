@@ -77,9 +77,9 @@ describe('loja cosmética (ticket 14) — fluxo', () => {
   test('purchaseCosmetic ignora item já comprado (sem chamar o provider)', async () => {
     const provider = createDevShopProvider();
     const spy = jest.spyOn(provider, 'purchase');
-    let state = makeState();
-    state = await runShopCommand(state, makeDeps(provider), { type: 'purchaseCosmetic', itemId: 'deck-obsidian' });
-    state = await runShopCommand(state, makeDeps(provider), { type: 'purchaseCosmetic', itemId: 'deck-obsidian' });
+    const state = makeState();
+    const purchased = await runShopCommand(state, makeDeps(provider), { type: 'purchaseCosmetic', itemId: 'deck-obsidian' });
+    await runShopCommand(purchased, makeDeps(provider), { type: 'purchaseCosmetic', itemId: 'deck-obsidian' });
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
@@ -164,9 +164,9 @@ describe('remoção de anúncios (ticket 02) — fluxo', () => {
   test('já comprado: purchaseRemoveAds não chama o provider de novo', async () => {
     const provider = createDevShopProvider();
     const spy = jest.spyOn(provider, 'purchase');
-    let state = makeState();
-    state = await runShopCommand(state, makeDeps(provider), { type: 'purchaseRemoveAds' });
-    state = await runShopCommand(state, makeDeps(provider), { type: 'purchaseRemoveAds' });
+    const state = makeState();
+    const purchased = await runShopCommand(state, makeDeps(provider), { type: 'purchaseRemoveAds' });
+    await runShopCommand(purchased, makeDeps(provider), { type: 'purchaseRemoveAds' });
     expect(spy).toHaveBeenCalledTimes(1);
   });
 });

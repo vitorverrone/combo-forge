@@ -3,7 +3,6 @@ import { createSeededRng } from './random';
 import {
   createDeck,
   DECK_SIZE,
-  DeckState,
   discardCards,
   DISCARDS_PER_ROUND,
   drawToHand,
@@ -15,7 +14,6 @@ import {
 } from './deck';
 
 const cardId = (card: Card): string => `${card.suit}:${card.value}`;
-const handIds = (state: DeckState): Set<string> => new Set(state.hand.map(cardId));
 
 describe('createDeck', () => {
   test('40 cartas únicas: 4 naipes × 10 valores, sem figuras', () => {

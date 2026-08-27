@@ -7,19 +7,16 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import {
-  canPlayDaily,
   computeUnlocks,
   dailyAttemptsForDay,
   DAILY_MAX_ATTEMPTS,
   FORGERS,
-  getForger,
   isForgerUnlocked,
   milestoneForForger,
   utcDateIso,
 } from '../engine';
 
 import { useTranslation } from '../i18n';
-import { relicDescription } from './format';
 import { completeOnboarding, hasSeenOnboarding, OnboardingOverlay } from './OnboardingOverlay';
 import { PlayingCard } from './PlayingCard';
 import { colors } from './theme';
@@ -42,7 +39,6 @@ export function StartScreen() {
 
   const unlocks = computeUnlocks(progression);
   const dailyAttempts = dailyAttemptsForDay(daily.attempts, utcDateIso());
-  const dailyPlayable = canPlayDaily(dailyAttempts);
 
   const handleOnboardingComplete = () => {
     completeOnboarding();
@@ -52,9 +48,11 @@ export function StartScreen() {
   const progress = useSharedValue(0);
 
   useEffect(() => {
-    // Dispara a animação assim que a tela carrega
+    // Dispara a animação assim que a tela carrega. `progress` é um SharedValue
+    // do Reanimated — identidade estável entre renders, então incluí-lo aqui
+    // não muda quando o efeito roda (só uma vez, no mount).
     progress.value = withSpring(1, { damping: 12, stiffness: 30 });
-  }, []);
+  }, [progress]);
 
   const leftStyle = useAnimatedStyle(() => ({
     transform: [

@@ -1,11 +1,8 @@
-import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
   BONUS_FORGE_EFFECTS,
-  cardKey,
   computeUnlocks,
-  createDeck,
   FORGE_EFFECT_POOL,
   FORGERS,
   getForger,
@@ -14,12 +11,11 @@ import {
   milestoneForRareRelics,
   MILESTONES,
   RELIC_POOL,
-  SUITS,
   unlockStatuses,
 } from '../engine';
 
 import { useTranslation } from '../i18n';
-import { cardLabel, forgeEffectDescription, forgeEffectLabel, isRedSuit, relicDescription } from './format';
+import { forgeEffectDescription, forgeEffectLabel, relicDescription } from './format';
 import { colors } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -35,7 +31,6 @@ export function CollectionScreen() {
   const rareMilestone = milestoneForRareRelics();
   const statusOf = (optionId: string) => statuses.find((status) => status.option.id === optionId);
   const lockedForgers = FORGERS.filter((forger) => !isForgerUnlocked(unlocks, forger.id));
-  const deck = useMemo(() => createDeck(), []);
 
   const { stats } = progression;
   const claimedMilestones = MILESTONES.filter((m) =>

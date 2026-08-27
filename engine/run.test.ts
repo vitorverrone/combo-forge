@@ -126,7 +126,7 @@ describe('makePlay: pontuação = Valor-Base × Multiplicador', () => {
 
   test('Jogada vence a Rodada ao atingir a Meta mesmo com Jogadas sobrando; 1ª–5ª Rodada entra na Forja', () => {
     const run = makeRun([spades(7), hearts(7), diamonds(7), spades(8), hearts(8), diamonds(8)]);
-    const { run: next, events } = makePlay(run, [spades(7), hearts(7), diamonds(7)], createSeededRng(6));
+    const { run: next } = makePlay(run, [spades(7), hearts(7), diamonds(7)], createSeededRng(6));
     // 46 ≥ 50? Não — ainda não vence. Segunda jogada: 49×2 = 98 → total 144 ≥ 50
     expect(next.phase).toBe('playing');
     const second = makePlay(next, [spades(8), hearts(8), diamonds(8)], createSeededRng(6));
