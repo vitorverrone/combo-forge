@@ -13,6 +13,7 @@ desenvolvimento — nada disso é opcional para um release real.
 | RevenueCat | ✅ App + 5 produtos no dashboard (4 cosméticos + Remove Ads), chave **Test Store** no `.env` e no EAS; compra/persistência validadas | Chave pública real (`goog_...`) + Play Console (app em validação) + App Store Connect + vínculo + testar Restore real |
 | AdMob **Android** | ✅ App + unidade rewarded + banner + App ID real no `app.json`, env no `.env` e no EAS; request real validado (NO_FILL esperado até aprovar) | Vincular à loja + readiness review → revalidar recompensa |
 | Banner em todas as telas (ticket banner-01) | ✅ Implementado + ad unit real criada + env setada no EAS (preview + production) | Vincular AdMob à loja (readiness review) |
+| Intersticial entre Runs (ticket 02) | ⚠️ Implementado, mas **sem ad unit própria** — usava por engano o ad unit de rewarded (`services/ads.ts`), corrigido em 2026-08-26 para ler `EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_*` | Criar a unidade **Interstitial** do Android no dashboard AdMob e setar `EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID` no `.env` e no EAS (preview + production) — sem isso, produção não serve intersticial real |
 | Remove Ads (tickets 02/03) | ✅ Implementado + produto `combo_forge_remove_ads` criado no RevenueCat | Play Console (em validação) → criar IAP + vínculo |
 | AdMob **iOS** | ⏳ Pendente (Test App ID, sem ad unit) | Quando publicar na App Store |
 | IAPs reais nas lojas | ⏳ Play Console em validação (app não criado ainda); App Store Connect pendente | Aguardar validação do Play Console → criar 5 IAPs → vincular ao RevenueCat |
@@ -186,10 +187,20 @@ monetizar de verdade.
 
 ---
 
-## 3. AdMob (anúncio recompensado — ticket 16)
+## 3. AdMob (recompensado — ticket 16 · intersticial — ticket 02)
 
-O único anúncio é o recompensado opt-in da tentativa extra do Desafio Diário.
-**Sem configurar, o provider dev responde (anúncio sempre concluído)**.
+Dois formatos de anúncio: o recompensado opt-in da tentativa extra do Desafio
+Diário, e o intersticial entre Runs (a cada 2 Runs concluídas, sem remoção de
+anúncios comprada). **Sem configurar, o provider dev responde (anúncio sempre
+concluído)**.
+
+> ⚠️ **Bug corrigido em 2026-08-26:** `services/ads.ts` usava o ad unit de
+> **rewarded** também para o intersticial (mesma variável de env para os dois
+> formatos) — em produção isso não serve anúncio, já que ad units do AdMob são
+> específicos por formato. Corrigido para ler
+> `EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_*`, uma variável própria. **A
+> unidade de anúncio Interstitial ainda não foi criada no dashboard AdMob** —
+> ver checklist abaixo.
 
 > **Configuração guiada:** `scripts/setup-admob.sh` é um wizard que abre o
 > dashboard, captura o App ID + ad unit rewarded do **Android** e grava no
@@ -212,6 +223,9 @@ O config plugin hoje usa os **Test App IDs do Google**:
 - [x] Criar a unidade de anúncio **Rewarded** do Android (2026-08-16).
 - [x] Criar a unidade de anúncio **Banner** do Android (separada da rewarded;
       mesmo app) — (2026-08-21, ad unit `ca-app-pub-7753200620000515/1366979567`).
+- [ ] Criar a unidade de anúncio **Interstitial** do Android (separada da
+      rewarded e da banner; mesmo app) — pendente desde a correção do bug
+      acima (2026-08-26).
 - [x] Substituir o **App ID do Android** no `app.json` (validado com
       `npx expo config --type public`):
   ```json
@@ -230,6 +244,9 @@ O config plugin hoje usa os **Test App IDs do Google**:
       O `_IOS` fica para a publicação na App Store.
 - [x] `EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID` preenchido no `.env`
       (2026-08-21) e refletido no EAS (preview + production).
+- [ ] `EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID` preenchido no `.env`
+      e refletido no EAS (preview + production) — depende da unidade
+      Interstitial acima existir.
 
 ### Verificar
 
@@ -267,12 +284,15 @@ EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon public key>
 EXPO_PUBLIC_REVENUECAT_API_KEY=<revenuecat public sdk key>
 EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID=<admob rewarded ad unit id (android)>
 # EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID=<admob banner ad unit id (android)>  # quando criar a ad unit (seção 3)
+# EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID=<admob interstitial ad unit id (android)>  # quando criar a ad unit (seção 3)
 # EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS=<...>  # quando publicar iOS
 ```
 
 - [x] Nenhum valor de `.env` mantém `<...>` placeholder (verificado 2026-08-16,
       banner adicionado 2026-08-21) e todas as variáveis existem (Supabase,
       RevenueCat, AdMob Android rewarded + banner).
+- [ ] `EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID` preenchido (pendente
+      — depende da unidade Interstitial ser criada, seção 3).
 - [x] `.env` fora do git (confirmado por `git check-ignore .env`).
 
 ---
@@ -308,6 +328,7 @@ caem no fallback de dev quando a variável não existe, então:
   eas env:set --name EXPO_PUBLIC_REVENUECAT_API_KEY --value <sdk key> --environment preview --visibility plaintext
   eas env:set --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID --value <ad unit id android> --environment preview --visibility plaintext
   eas env:set --name EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID --value <banner ad unit id android> --environment preview --visibility plaintext   # ✅ setado 2026-08-21
+  eas env:set --name EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID --value <interstitial ad unit id android> --environment preview --visibility plaintext   # pendente — criar a unidade primeiro (seção 3)
   eas env:set --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS --value <ad unit id ios> --environment preview --visibility plaintext   # quando publicar iOS
   ```
   (São chaves públicas por design — embutidas no bundle — por isso
@@ -358,10 +379,11 @@ caem no fallback de dev quando a variável não existe, então:
         release sem crash. (Só o Android; iOS fica para a publicação.)
 - [ ] **Assets de loja:** ícone, telas (portrait), descrição, privacy policy URL
       (obrigatória para apps com anúncios/IAP).
-- [ ] **Testes em release build** (não dev): anúncio real (rewarded + banner),
-      IAP real em sandbox (iOS: Sandbox tester; Android: licença de teste),
-      restore (incluindo a reentrega do `remove_ads`), fluxo do Desafio Diário
-      com o Supabase de produção.
+- [ ] **Testes em release build** (não dev): anúncio real (rewarded + banner +
+      intersticial — este último só depois de criar a unidade Interstitial e
+      preencher o env, seção 3), IAP real em sandbox (iOS: Sandbox tester;
+      Android: licença de teste), restore (incluindo a reentrega do
+      `remove_ads`), fluxo do Desafio Diário com o Supabase de produção.
 
 ---
 

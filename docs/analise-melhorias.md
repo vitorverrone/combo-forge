@@ -15,8 +15,8 @@ erradas de design.
 
 | Severidade | Itens |
 |---|---|
-| 🔴 Quebrado hoje | intersticial com ad unit errado · `.env.example` dessincronizado |
-| ✅ Corrigido | ~~14 testes falhando~~ · ~~`deviceId` nunca persistia~~ (2026-08-26) |
+| 🔴 Quebrado hoje | `.env.example` dessincronizado (Supabase) |
+| ✅ Corrigido | ~~14 testes falhando~~ · ~~`deviceId` nunca persistia~~ · ~~intersticial com ad unit errado~~ (2026-08-26) |
 | 🟠 Estrutura | 107 MB de binário no histórico do git · nenhum linter/formatter · 4 docs de requisito concorrentes |
 | 🟡 Consistência | Lacunas de i18n · sem escala de espaçamento · regra duplicada entre engine e UI |
 
@@ -128,37 +128,37 @@ ponta).
 
 ---
 
-## 🔴 3. O anúncio intersticial usa o ad unit do recompensado
+## ✅ 3. O anúncio intersticial usava o ad unit do recompensado — corrigido em 2026-08-26
 
-[services/ads.ts:52-60](services/ads.ts#L52-L60):
-
-```ts
-export function createAppAdProvider(): AdProvider {
-  const adUnitId = adUnitIdForPlatform();   // ← EXPO_PUBLIC_ADMOB_REWARDED_...
-  return {
-    requestRewardedAd: () => requestAdMobRewarded(adUnitId),
-    requestInterstitialAd: () => requestAdMobInterstitial(adUnitId),  // ← o MESMO id
-  };
-}
-```
-
-Não existe `EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_*` em lugar nenhum — nem
-no [.env.example](.env.example), nem no código.
-
-O próprio `.env.example:41` já documenta a regra certa para o banner: *"Ad unit
-de banner é SEPARADA da rewarded no dashboard"*. O mesmo vale para intersticial —
-ad units do AdMob são específicas por formato. Em produção, o
+[services/ads.ts](services/ads.ts) tinha uma única variável de ad unit
+(`EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_*`) compartilhada entre
+`requestRewardedAd` e `requestInterstitialAd`. Ad units do AdMob são
+específicos por formato — o próprio `.env.example` já documentava a regra
+certa para o banner ("Ad unit de banner é SEPARADA da rewarded no dashboard"),
+mas o intersticial não seguia essa mesma regra. Em produção,
 `InterstitialAd.createForAdRequest()` com um id de rewarded não serve anúncio.
-
-Em desenvolvimento isso passa despercebido porque a linha 145-147 cai no
-`TestIds.INTERSTITIAL` sempre que `NODE_ENV !== 'production'` — o bug só aparece
+Em desenvolvimento isso passava despercebido porque cai sempre no
+`TestIds.INTERSTITIAL` quando `NODE_ENV !== 'production'` — o bug só aparecia
 no build de loja.
 
-O resto da cadeia está correto e completo: o contador em
-[store/gameStore.ts:549-557](store/gameStore.ts#L549-L557), o consumo em
-[RunWonScreen.tsx:33-37](components/RunWonScreen.tsx#L33-L37) e
-[RunLostScreen.tsx:34-38](components/RunLostScreen.tsx#L34-L38). Só falta a
-variável de ambiente e um terceiro parâmetro no provider.
+**Correção:** variável própria `EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_{ANDROID,IOS}`,
+lida por uma função separada (`interstitialAdUnitId()`, espelhando
+`rewardedAdUnitId()`) e passada ao `requestAdMobInterstitial`. Documentado em
+[.env.example](.env.example) junto com as outras duas (rewarded, banner).
+
+**Achado ao verificar o `docs/release-checklist.md`:** a unidade de anúncio
+**Interstitial nunca foi criada** no dashboard do AdMob — só rewarded e banner
+existem lá (seção 3 do checklist, histórico de 2026-08-16/21). Ou seja, o bug
+não tinha como ser pego em teste manual: mesmo com o código corrigido, ainda
+não há um ad unit real de intersticial para apontar em produção. Adicionei os
+itens pendentes correspondentes no checklist (criar a unidade, preencher
+`.env` + EAS, testar em release build) — o resto da cadeia (contador de Runs em
+[store/gameStore.ts:549-557](store/gameStore.ts#L549-L557), consumo em
+`RunWonScreen.tsx`/`RunLostScreen.tsx`) já estava correto e não precisou mudar.
+
+`tsc --noEmit` limpo e 329/329 testes passando (não há teste cobrindo
+`services/ads.ts` — toca o SDK nativo do AdMob via import dinâmico; verificação
+manual, lendo a nova função lado a lado com a antiga).
 
 ---
 
@@ -388,7 +388,8 @@ ainda que o número em si tenha ficado desatualizado.
 
 1. ~~Consertar os 14 testes~~ (itens 1a/1b) — ✅ feito em 2026-08-26.
 2. ~~`deviceId` do SQLite~~ (item 2) — ✅ feito em 2026-08-26.
-3. **`.gitignore` com `*.aab`** (item 5, parte barata) — impede que o problema cresça enquanto a limpeza do histórico não acontece.
-4. **Ad unit do intersticial + `.env.example` do Supabase** (itens 3 e 4) — os dois só quebram em produção, então precisam entrar antes do release, não depois.
-5. **ESLint + Prettier** (item 6) — barato, e trava a erosão dos itens 8, 9 e 10 daqui para frente.
-6. **Consolidar os docs** (item 7) e **escala de espaçamento** (item 9) — dívida real, mas nenhuma delas sangra hoje.
+3. ~~Ad unit do intersticial~~ (item 3) — ✅ código corrigido em 2026-08-26; falta só criar a unidade real no dashboard AdMob (checklist atualizado).
+4. **`.gitignore` com `*.aab`** (item 5, parte barata) — impede que o problema cresça enquanto a limpeza do histórico não acontece.
+5. **`.env.example` do Supabase** (item 4) — só quebra em produção, então precisa entrar antes do release, não depois.
+6. **ESLint + Prettier** (item 6) — barato, e trava a erosão dos itens 8, 9 e 10 daqui para frente.
+7. **Consolidar os docs** (item 7) e **escala de espaçamento** (item 9) — dívida real, mas nenhuma delas sangra hoje.
