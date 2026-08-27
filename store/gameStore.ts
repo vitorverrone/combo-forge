@@ -466,6 +466,9 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
 
     openDaily: () => {
       set({ screen: 'daily' });
+      // Ranking sempre atualizado (ticket 03): busca sozinho ao entrar na
+      // tela, sem exigir um toque em "ver ranking" (que deixou de existir).
+      void get().fetchLeaderboard();
     },
 
     startDailyChallenge: async () => {
@@ -488,9 +491,18 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
         score,
       });
       set({ daily: result.daily });
+      // Ranking sempre atualizado (ticket 03): só depois de uma submissão
+      // bem-sucedida — uma falha não deve disparar uma busca nova.
+      if (result.daily.submitStatus === 'submitted') {
+        void get().fetchLeaderboard();
+      }
     },
 
     fetchLeaderboard: async () => {
+      // Ticket 03 precisa do indicador de carregamento de verdade: sem este
+      // set() intermediário, leaderboardLoading nunca chega a ficar true na
+      // store (o set() final só acontece depois do await inteiro).
+      set((state) => ({ daily: { ...state.daily, leaderboardLoading: true, leaderboardError: null } }));
       const result = await runDailyCommand(get().daily, dailyFlowDeps(get(), now), {
         type: 'fetchLeaderboard',
       });

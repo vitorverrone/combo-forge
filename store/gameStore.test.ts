@@ -39,22 +39,28 @@ import { createGameStore, persistRoundEnd, selectionPreview } from './gameStore'
 /** Backend fake do Desafio Diário: seed fixo e chamadas rastreáveis. */
 function makeFakeDailyBackend(seed = 424242): DailyBackend & {
   readonly submissions: { deviceId: string; score: number }[];
+  readonly leaderboardFetches: number;
 } {
   const submissions: { deviceId: string; score: number }[] = [];
-  return {
+  const fake = {
     submissions,
+    leaderboardFetches: 0,
     fetchSeed: async () => seed,
-    submitScore: async (deviceId, score) => {
+    submitScore: async (deviceId: string, score: number) => {
       submissions.push({ deviceId, score });
       return score;
     },
-    fetchLeaderboard: async (): Promise<DailyLeaderboard> => ({
-      week: '2026-08-10',
-      own: { rank: 1, score: 4242 },
-      top: [{ rank: 1, score: 4242 }],
-    }),
-    setDisplayName: async (_deviceId, name) => name,
+    fetchLeaderboard: async (): Promise<DailyLeaderboard> => {
+      fake.leaderboardFetches += 1;
+      return {
+        week: '2026-08-10',
+        own: { rank: 1, score: 4242, name: 'Fulano' },
+        top: [{ rank: 1, score: 4242, name: 'Fulano' }],
+      };
+    },
+    setDisplayName: async (_deviceId: string, name: string) => name,
   };
+  return fake;
 }
 
 const spades = (value: number): Card => ({ suit: 'spades', value });
@@ -335,6 +341,15 @@ describe('Desafio Diário (ticket 13)', () => {
     expect(store.getState().screen).toBe('daily');
   });
 
+  test('openDaily busca o ranking sozinho, sem precisar de "ver ranking" (ticket 03)', async () => {
+    const backend = makeFakeDailyBackend();
+    const store = createGameStore({ dailyBackend: backend });
+    store.getState().openDaily();
+    await new Promise((resolve) => setTimeout(resolve, 0)); // drena o fetch fire-and-forget
+    expect(backend.leaderboardFetches).toBe(1);
+    expect(store.getState().daily.leaderboard?.own?.score).toBe(4242);
+  });
+
   test('startDailyChallenge usa o seed do backend, Forjador fixo, DDA desligado e consume a gratuita', async () => {
     const storage = createMemoryDailyChallengeStorage();
     const backend = makeFakeDailyBackend(424242);
@@ -533,7 +548,31 @@ describe('Desafio Diário (ticket 13)', () => {
     expect(store.getState().daily.submitStatus).toBe('submitted');
   });
 
-  test('fetchLeaderboard (opt-in) guarda a resposta e a falha aparece no estado', async () => {
+  test('submissão bem-sucedida busca o ranking de novo sozinha (ticket 03)', async () => {
+    const backend = makeFakeDailyBackend();
+    const store = createGameStore({ dailyBackend: backend });
+    await store.getState().submitDailyScore(999);
+    expect(store.getState().daily.submitStatus).toBe('submitted');
+    expect(backend.leaderboardFetches).toBe(1);
+  });
+
+  test('submissão que falha NÃO busca o ranking de novo (ticket 03)', async () => {
+    // fetchLeaderboard continua vindo de `backend` (não da cópia abaixo) —
+    // é nele que a contagem de chamadas é rastreada.
+    const backend = makeFakeDailyBackend();
+    const failingBackend: DailyBackend = {
+      ...backend,
+      submitScore: async () => {
+        throw new Error('rede fora');
+      },
+    };
+    const store = createGameStore({ dailyBackend: failingBackend });
+    await store.getState().submitDailyScore(999);
+    expect(store.getState().daily.submitStatus).toBe('failed');
+    expect(backend.leaderboardFetches).toBe(0);
+  });
+
+  test('fetchLeaderboard guarda a resposta e a falha aparece no estado', async () => {
     const store = createGameStore({ dailyBackend: makeFakeDailyBackend() });
     await store.getState().fetchLeaderboard();
     expect(store.getState().daily.leaderboard?.own?.score).toBe(4242);
@@ -549,6 +588,23 @@ describe('Desafio Diário (ticket 13)', () => {
     await failing.getState().fetchLeaderboard();
     expect(failing.getState().daily.leaderboardError).toBe('sem leaderboard');
     expect(failing.getState().daily.leaderboard).toBeNull();
+  });
+
+  test('fetchLeaderboard mostra loading enquanto busca (ticket 03)', async () => {
+    let resolveFetch!: (value: DailyLeaderboard) => void;
+    const backend: DailyBackend = {
+      ...makeFakeDailyBackend(),
+      fetchLeaderboard: () =>
+        new Promise((resolve) => {
+          resolveFetch = resolve;
+        }),
+    };
+    const store = createGameStore({ dailyBackend: backend });
+    const pending = store.getState().fetchLeaderboard();
+    expect(store.getState().daily.leaderboardLoading).toBe(true);
+    resolveFetch({ week: '2026-08-10', own: null, top: [] });
+    await pending;
+    expect(store.getState().daily.leaderboardLoading).toBe(false);
   });
 
   test('setDisplayName (ticket 02) salva, persiste, e sobrevive à recriação do store', async () => {

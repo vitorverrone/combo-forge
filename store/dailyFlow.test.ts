@@ -41,8 +41,8 @@ function makeFakeDailyBackend(seed = 424242): DailyBackend & {
     },
     fetchLeaderboard: async (): Promise<DailyLeaderboard> => ({
       week: '2026-08-10',
-      own: { rank: 1, score: 4242 },
-      top: [{ rank: 1, score: 4242 }],
+      own: { rank: 1, score: 4242, name: 'Fulano' },
+      top: [{ rank: 1, score: 4242, name: 'Fulano' }],
     }),
     setDisplayName: async (deviceId, name) => {
       displayNameCalls.push({ deviceId, name });
