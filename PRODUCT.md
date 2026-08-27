@@ -25,7 +25,7 @@ Combo Forge differentiates through numerical puzzle combos — scoring is about 
 - Runs restart immediately on failure — no punitive defeat screen
 - Between runs: forge upgrades (choose 1 of 3 offers), meta-progression unlocks, daily challenge with async leaderboard
 - Local persistence via SQLite; backend sync for daily challenge seeds and leaderboard via Supabase
-- Monetization: cosmetic shop (deck skins, combo VFX) + optional remove-ads IAP via RevenueCat; rewarded ads for extra daily attempts
+- Monetization: cosmetic shop (deck skins) + optional remove-ads IAP via RevenueCat; rewarded ads for extra daily attempts
 
 ## Capabilities and Constraints
 
@@ -36,7 +36,7 @@ Combo Forge differentiates through numerical puzzle combos — scoring is about 
 - **Dynamic difficulty (DDA):** Adjusts score targets to keep player in flow; disabled in daily challenge
 - **Daily challenge:** Same seed for all players, weekly opt-in leaderboard, 1 free attempt + 1 via rewarded ad
 - **Meta-progression:** Unlock new forgers and forge effects through milestones (runs won, score records) — no currency, no gacha
-- **Cosmetic shop:** Deck skins and combo VFX (100% visual, never affects gameplay) + remove-ads
+- **Cosmetic shop:** Deck skins (100% visual, never affects gameplay) + remove-ads
 - **Break reminder:** Gentle pause suggestion after consecutive runs; never blocks play
 - **3 forgers:** Apprentice (neutral/onboarding), Martelo (pattern-focused), Bigorna (combo multiplier-focused)
 - **Tech:** Expo/React Native, Zustand state, pure engine layer, expo-sqlite persistence, Supabase backend, RevenueCat IAP, Google Mobile Ads

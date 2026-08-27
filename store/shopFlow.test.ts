@@ -51,14 +51,6 @@ describe('loja cosmética (ticket 14) — fluxo', () => {
     expect(state.shop.owned.owned).toContain('deck-obsidian');
     expect(state.shop.owned.equippedDeckSkin).toBe('deck-obsidian'); // aplicada na hora
     expect(storage.load()?.owned).toContain('deck-obsidian');
-    // VFX não interfere na skin.
-    state = await runShopCommand(state, makeDeps(createDevShopProvider(), storage), {
-      type: 'purchaseCosmetic',
-      itemId: 'vfx-golden-combo',
-    });
-    expect(state.shop.owned.owned).toContain('vfx-golden-combo');
-    expect(state.shop.owned.equippedComboVfx).toBe('vfx-golden-combo');
-    expect(state.shop.owned.equippedDeckSkin).toBe('deck-obsidian');
   });
 
   test('equipCosmetic equipa apenas itens comprados e troca a skin atual', async () => {

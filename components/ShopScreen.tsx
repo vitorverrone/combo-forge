@@ -3,7 +3,6 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import {
   COSMETIC_CATALOG,
   DeckSkinItem,
-  isDeckSkinItem,
   isOwned,
   REMOVE_ADS_DEV_PRICE,
   REMOVE_ADS_PRODUCT_ID,
@@ -44,8 +43,8 @@ export function ShopScreen() {
         <Text style={styles.subtitle}>{t('shop.subtitle')}</Text>
 
         {/* Deck Skins */}
-        <SectionHeader label={t('shop.decks')} count={`${COSMETIC_CATALOG.filter(isDeckSkinItem).filter((item) => isOwned(shop.owned, item.id)).length}/${COSMETIC_CATALOG.filter(isDeckSkinItem).length}`} />
-        {COSMETIC_CATALOG.filter(isDeckSkinItem).map((item) => {
+        <SectionHeader label={t('shop.decks')} count={`${COSMETIC_CATALOG.filter((item) => isOwned(shop.owned, item.id)).length}/${COSMETIC_CATALOG.length}`} />
+        {COSMETIC_CATALOG.map((item) => {
           const owned = isOwned(shop.owned, item.id);
           const equipped = shop.owned.equippedDeckSkin === item.id;
           const busy = shop.purchasing === item.id;

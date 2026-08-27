@@ -177,7 +177,7 @@ export interface GameState {
   readonly purchaseCosmetic: (itemId: string) => Promise<void>;
   /** Compra a remoção de anúncios (IAP não-consumível, ticket 02). */
   readonly purchaseRemoveAds: () => Promise<void>;
-  /** Equipa um item comprado (skin de baralho ou VFX de combo). */
+  /** Equipa uma skin de baralho comprada. */
   readonly equipCosmetic: (itemId: string) => void;
   /**
    * Sincroniza a entitlement remove_ads com o provider (launch, ticket 03):

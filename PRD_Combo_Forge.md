@@ -114,7 +114,6 @@ deve ser questionada contra o pilar de retenção do "one more try" (GDD §1–2
 | Obsidian Deck (skin) | Cosmético, IAP consumível único | $0.99 | Não |
 | Emerald Deck (skin) | Cosmético, IAP consumível único | $0.99 | Não |
 | Royal Deck (skin) | Cosmético, IAP consumível único | $1.99 | Não |
-| Golden Combo (VFX) | Cosmético, IAP consumível único | $0.99 | Não |
 | Remove Ads | Conveniência, IAP não-consumível | $2.99 | Não |
 | Tentativa extra do Desafio Diário | Anúncio recompensado opt-in | Grátis (assistir anúncio) | Não |
 

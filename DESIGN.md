@@ -218,7 +218,7 @@ The form language is gently rounded — warm enough to feel approachable, tight 
 ### Chips/Pills
 - **Shape:** 10px border-radius, Surface background, 1px Anvil Border
 - **Layout:** Vertical — label (11px, uppercase, dim text) on top, value (18px, 800 weight) below
-- **Accent variant:** Gold border and gold value text (used for Combo multiplier with custom VFX color)
+- **Accent variant:** Gold border and gold value text (used for Combo multiplier)
 
 ### Navigation Buttons
 - **Shape:** 10px border-radius, Surface background, 1px Anvil Border
