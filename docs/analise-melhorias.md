@@ -15,9 +15,9 @@ erradas de design.
 
 | Severidade | Itens |
 |---|---|
-| ✅ Corrigido | ~~14 testes falhando~~ · ~~`deviceId` nunca persistia~~ · ~~intersticial com ad unit errado~~ · ~~variável do Supabase dessincronizada~~ · ~~binário no `.gitignore`~~ · ~~sem linter/formatter~~ · ~~i18n pela metade~~ (2026-08-26) |
+| ✅ Corrigido | ~~14 testes falhando~~ · ~~`deviceId` nunca persistia~~ · ~~intersticial com ad unit errado~~ · ~~variável do Supabase dessincronizada~~ · ~~binário no `.gitignore`~~ · ~~sem linter/formatter~~ · ~~i18n pela metade~~ · ~~sem escala de espaçamento~~ (2026-08-26) |
 | 🟠 Estrutura | limpeza do histórico do git (`.aab` já saiu do índice, mas o blob de 107 MB segue no histórico) · 4 docs de requisito concorrentes |
-| 🟡 Consistência | sem escala de espaçamento · regra duplicada entre engine e UI |
+| 🟡 Consistência | regra duplicada entre engine e UI |
 
 ---
 
@@ -393,23 +393,69 @@ lendo o resultado, mais leitura cuidadosa de cada arquivo editado.
 
 ---
 
-## 🟡 9. `theme.ts` tem cores, mas não tem escala de espaçamento
+## ✅ 9. `theme.ts` tem cores, mas não tinha escala de espaçamento — corrigido em 2026-08-26
 
-O [components/theme.ts](components/theme.ts) define 17 cores bem nomeadas e
-comentadas. Não define espaçamento, raio de borda nem tamanho de toque. O
-resultado nos componentes:
+**Correção ao próprio levantamento:** a contagem original ("24 valores
+distintos") misturava duas coisas diferentes — `padding`/`margin`/`gap`
+(espaçamento de verdade) e `borderRadius` (uma família de token separada, que
+segue sua própria lógica — ex.: um raio que é metade da largura de um
+elemento para formar um círculo não é uma "escolha de espaçamento", é uma
+relação geométrica com aquele elemento específico). Recontando as duas
+famílias em separado: **327 ocorrências de padding/margin/gap** (19 valores
+distintos) e **~104 de borderRadius** (14 valores distintos).
 
-- **431 valores numéricos crus** de `padding`/`margin`/`gap`/`borderRadius`
-- **24 valores distintos**: `0 1 2 3 4 5 6 7 8 10 11 12 14 16 18 20 22 24 28 40 44 70 80 100`
+**Decisão de desenho, diferente da sugestão original do doc:** em vez de
+forçar os valores numa escala T-shirt nova de 5-8 degraus (o que teria
+mudado pixels em dezenas de telas — cada valor "arredondado" para o degrau
+mais próximo é uma decisão visual, não um refactor), extraí os valores **já
+usados de forma consistente** (frequência ≥3 — uma grade real de 2px,
+confirmada pelos próprios números, não imposta por cima) como constantes
+nomeadas em `theme.ts`. Resultado: **zero mudança de pixel em qualquer
+tela** — é renomear "número mágico" para "constante com nome", não redesenho.
+Os valores raros (1, 3, 5, 7, 11 — usados 1-3 vezes, prováveis ajustes finos
+pontuais) e os bem maiores que a grade (40, 44, 70, 80, 100 — offsets de
+layout específicos, ex.: `marginTop: 100` em
+[components/GameScreen.tsx:380](components/GameScreen.tsx#L380), já citado
+no levantamento original) ficam de fora de propósito — não fazem parte do
+ritmo de espaçamento, são exceções.
 
-Uma escala real não tem `7`, `11`, `22` e `70` — esses números são deriva
-acumulada, não decisão. Um `spacing = { xs: 4, sm: 8, md: 12, lg: 16, xl: 24 }`
-no mesmo arquivo das cores daria à UI a mesma consistência que a paleta já tem.
+```ts
+// components/theme.ts
+export const spacing = { 0:0, 2:2, 3:3, 4:4, 6:6, 8:8, 10:10, 12:12, 14:14,
+  16:16, 18:18, 20:20, 22:22, 24:24, 28:28 } as const;
+export const radius = { 4:4, 5:5, 6:6, 7:7, 8:8, 10:10, 12:12, 14:14, 16:16 } as const;
+```
 
-Caso concreto de deriva: [components/GameScreen.tsx:380](components/GameScreen.tsx#L380)
-tem `marginTop: 100` no bloco de ações — um número grande e arbitrário para
-empurrar os botões para baixo, exatamente o tipo de ajuste que quebra em telas
-de altura diferente.
+**Retrofit aplicado em 16 dos 17 componentes** (401 substituições,
+`padding: 16` → `padding: spacing[16]` etc.) via script — mecânico e
+determinístico, não edição manual arquivo por arquivo, para eliminar risco
+de erro de transcrição em 400+ pontos. Conferido depois, por código: nenhuma
+propriedade fora da lista pretendida foi tocada (só as variantes de
+`padding`/`margin`/`gap`/`borderRadius`), nenhum padrão malformado.
+
+**`components/AdBanner.tsx` ficou de fora do retrofit automático de
+propósito** — já tinha uma mudança pendente não relacionada (o WIP de
+travamento de orientação de tela desta mesma sessão) na árvore de trabalho;
+misturar os dois teria entrelaçado dois commits que devem ficar separados.
+Fica para quando esse WIP for commitado.
+
+**Verificação visual no emulador** (não só typecheck/lint/testes — nenhum
+teste automatizado cobre aparência): rebuild completo, 5 telas conferidas
+(Start, Game + modal de abandono, Loja, Coleção com grid de relíquias,
+Onboarding com 2 passos) via screenshot real. Todas com espaçamento/raio
+preservados pixel a pixel, como esperado de um refactor 1:1.
+
+**Bug real achado durante a verificação visual, sem relação com espaçamento:**
+o botão "Equipar" do baralho Classic na Loja mostrava literalmente
+`SHOP.EQUIP` na tela — [components/ShopScreen.tsx](components/ShopScreen.tsx)
+chamava `t('shop.equip')`/`t('shop.equipped')`, chaves que **nunca
+existiram** em `pt.json`/`en.json` (as reais são `common.equip`/
+`common.equipped`, já usadas em outras telas). `git log -S` confirma que isso
+é anterior a esta sessão inteira — do commit original que introduziu i18n no
+projeto (`760f96e`), não uma regressão de nada feito aqui. Corrigido (2
+linhas) e confirmado com rebuild + screenshot.
+
+`tsc --noEmit` limpo, `eslint .` sem problemas, 329/329 testes passando.
 
 ---
 
@@ -501,4 +547,5 @@ ainda que o número em si tenha ficado desatualizado.
 4. ~~Variável do Supabase~~ (item 4) — ✅ feito em 2026-08-26 (revertida uma regressão de um dia atrás).
 5. ~~`.gitignore` com `*.aab` + ESLint/Prettier~~ (itens 5 e 6) — ✅ feito em 2026-08-26. Falta, como decisão separada e explícita: limpar o `.aab` do *histórico* do git (`filter-repo`/BFG + force-push coordenado nos dois remotes) e rodar `prettier --write .` pela primeira vez (123 arquivos, diff grande e não relacionado a bug nenhum).
 6. ~~i18n pela metade~~ (item 8) — ✅ feito em 2026-08-26 (42 accessibilityLabel, `<Trans>` do RunLostScreen, e mais 5 strings hardcoded achadas na varredura).
-7. **Consolidar os docs** (item 7) e **escala de espaçamento** (item 9) — dívida real, mas nenhuma delas sangra hoje.
+7. ~~Escala de espaçamento~~ (item 9) — ✅ feito em 2026-08-26 (401 substituições em 16 componentes, verificado visualmente no emulador; achado e corrigido de quebra um bug real de i18n na Loja — `shop.equip` era uma chave que nunca existiu).
+8. **Consolidar os docs** (item 7) — dívida real, mas não sangra hoje. Único item que sobra da lista original.

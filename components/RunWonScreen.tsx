@@ -6,7 +6,7 @@ import { activeRelics, getForger, ROUNDS_PER_RUN, RunState } from '../engine';
 import { useTranslation } from '../i18n';
 import { DailySubmitStatus } from './DailySubmitStatus';
 import { RelicRow } from './RelicRow';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 
@@ -123,7 +123,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: spacing[20],
     paddingBottom: 80,
     backgroundColor: colors.background,
   },
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
+    marginBottom: spacing[14],
     shadowColor: colors.gold,
     shadowOpacity: 0.14,
     shadowRadius: 9,
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: colors.text,
     textAlign: 'center',
-    marginTop: 6,
+    marginTop: spacing[6],
   },
   subtitle: {
     fontFamily: fonts.body,
@@ -173,21 +173,21 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     textAlign: 'center',
     lineHeight: 21,
-    marginTop: 8,
+    marginTop: spacing[8],
   },
   /* ── Unlock banner ── */
   unlockBanner: {
     alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: spacing[10],
     backgroundColor: 'rgba(224,165,62,0.1)',
     borderWidth: 1,
     borderColor: colors.gold,
-    borderRadius: 12,
-    padding: 12,
-    paddingHorizontal: 14,
-    marginTop: 18,
+    borderRadius: radius[12],
+    padding: spacing[12],
+    paddingHorizontal: spacing[14],
+    marginTop: spacing[18],
   },
   unlockGem: {
     width: 12,
@@ -216,10 +216,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 16,
-    padding: 22,
-    paddingHorizontal: 16,
-    marginTop: 20,
+    borderRadius: radius[16],
+    padding: spacing[22],
+    paddingHorizontal: spacing[16],
+    marginTop: spacing[20],
     alignItems: 'center',
   },
   finalLabel: {
@@ -234,11 +234,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.gold,
     lineHeight: 54,
-    marginTop: 6,
+    marginTop: spacing[6],
   },
   /* ── Relics ── */
   relicsBlock: {
-    marginTop: 20,
+    marginTop: spacing[20],
     alignItems: 'center',
   },
   relicsLabel: {
@@ -247,17 +247,17 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: colors.textDim,
     textTransform: 'uppercase',
-    marginBottom: 10,
+    marginBottom: spacing[10],
   },
   /* ── Actions ── */
   actions: {
     alignSelf: 'stretch',
-    paddingTop: 14,
+    paddingTop: spacing[14],
   },
   btnPrimary: {
     width: '100%',
     height: 48,
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.gold,
     alignItems: 'center',
     justifyContent: 'center',
@@ -272,10 +272,10 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   btnSecondary: {
-    marginTop: 10,
+    marginTop: spacing[10],
     width: '100%',
     height: 48,
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,

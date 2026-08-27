@@ -8,7 +8,7 @@ import { PlayingCard } from './PlayingCard';
 import { patternName } from './format';
 import { PhaseScreen } from './PhaseScreen';
 import { RelicRow } from './RelicRow';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { selectionPreview, useGameStore } from '../store/gameStore';
 
@@ -191,8 +191,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 0,
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[0],
     minHeight: 48,
     flexWrap: 'wrap',
     position: 'relative'
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
   navBtn: {
     width: 40,
     height: 40,
-    borderRadius: 10,
+    borderRadius: radius[10],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
@@ -219,9 +219,9 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingLeft: 0,
-    paddingBottom: 24,
+    gap: spacing[6],
+    paddingLeft: spacing[0],
+    paddingBottom: spacing[24],
     position: 'absolute',
     left: 0,
     right: 0,
@@ -246,9 +246,9 @@ const styles = StyleSheet.create({
     color: colors.gold,
     borderWidth: 1,
     borderColor: colors.gold,
-    borderRadius: 6,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
+    borderRadius: radius[6],
+    paddingHorizontal: spacing[6],
+    paddingVertical: spacing[2],
   },
   scoreBlock: {
     flexDirection: 'row',
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 2,
     color: colors.textDim,
-    marginHorizontal: 4,
+    marginHorizontal: spacing[4],
     lineHeight: 30,
   },
   scoreTarget: {
@@ -282,40 +282,40 @@ const styles = StyleSheet.create({
   /* ── Progress ── */
   progressTrack: {
     height: 10,
-    borderRadius: 5,
+    borderRadius: radius[5],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    marginTop: 14,
+    marginTop: spacing[14],
     overflow: 'hidden',
     width: '100%'
   },
   progressFill: {
     height: '100%',
-    borderRadius: 5,
+    borderRadius: radius[5],
     backgroundColor: colors.gold,
   },
   /* ── Scroll content ── */
   scroll: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
+    paddingHorizontal: spacing[16],
+    paddingBottom: spacing[8],
     flex: 1,
     justifyContent: 'space-between'
   },
   /* ── HUD ── */
   hudRow: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 16,
+    gap: spacing[10],
+    marginTop: spacing[16],
   },
   hudBox: {
     flex: 1,
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
+    borderRadius: radius[10],
+    paddingVertical: spacing[10],
+    paddingHorizontal: spacing[10],
     alignItems: 'center',
   },
   hudLabel: {
@@ -331,14 +331,14 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '700',
     color: colors.gold,
-    marginTop: 4,
+    marginTop: spacing[4],
   },
   /* ── Pattern preview ── */
   patternPreview: {
     minHeight: 64,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: spacing[16],
   },
   patternHint: {
     fontFamily: fonts.body,
@@ -358,7 +358,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '400',
     color: colors.textDim,
-    marginTop: 4,
+    marginTop: spacing[4],
   },
   patternPointsBold: {
     color: colors.text,
@@ -370,26 +370,26 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     alignContent: 'center',
     justifyContent: 'center',
-    gap: 6,
-    paddingTop: 20,
-    paddingBottom: 4,
+    gap: spacing[6],
+    paddingTop: spacing[20],
+    paddingBottom: spacing[4],
   },
   /* ── Actions ── */
   actions: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing[16],
     marginTop: 100,
-    paddingTop: 10,
-    paddingBottom: 0,
+    paddingTop: spacing[10],
+    paddingBottom: spacing[0],
   },
   actionsSecondary: {
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing[10],
   },
   btn: {
-    borderRadius: 12,
+    borderRadius: radius[12],
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
+    paddingVertical: spacing[14],
   },
   btnFlex: {
     flex: 1,
@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   },
   btnPrimary: {
     backgroundColor: colors.gold,
-    marginTop: 10,
+    marginTop: spacing[10],
   },
   btnPrimaryPressed: {
     backgroundColor: colors.goldDark,
@@ -450,7 +450,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backdrop,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: spacing[24],
     zIndex: 10,
   },
   overlayCard: {
@@ -459,9 +459,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 14,
-    padding: 28,
-    paddingHorizontal: 24,
+    borderRadius: radius[14],
+    padding: spacing[28],
+    paddingHorizontal: spacing[24],
     alignItems: 'center',
     shadowColor: '#000',
     shadowOpacity: 0.4,
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     color: colors.text,
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: spacing[8],
   },
   overlaySub: {
     fontFamily: fonts.body,
@@ -484,19 +484,19 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 22,
+    marginBottom: spacing[22],
   },
   overlayActions: {
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing[10],
     width: '100%',
   },
   overlayBtn: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: radius[12],
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 14,
+    paddingVertical: spacing[14],
   },
   overlayBtnPrimary: {
     backgroundColor: colors.gold,

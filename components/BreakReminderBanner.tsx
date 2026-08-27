@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTranslation } from '../i18n';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 import { useGameStore } from '../store/gameStore';
 
 /**
@@ -42,15 +42,15 @@ const styles = StyleSheet.create({
     top: 0,
     right: 0,
     left: 0,
-    padding: 16,
+    padding: spacing[16],
     zIndex: 20,
   },
   banner: {
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.gold,
-    padding: 14,
+    padding: spacing[14],
     shadowColor: '#000',
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -65,16 +65,16 @@ const styles = StyleSheet.create({
   body: {
     color: colors.textDim,
     fontSize: 12,
-    marginTop: 4,
+    marginTop: spacing[4],
     lineHeight: 17,
   },
   button: {
     alignSelf: 'flex-end',
-    borderRadius: 8,
+    borderRadius: radius[8],
     backgroundColor: colors.gold,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    marginTop: 10,
+    paddingHorizontal: spacing[12],
+    paddingVertical: spacing[8],
+    marginTop: spacing[10],
   },
   buttonPressed: {
     opacity: 0.85,

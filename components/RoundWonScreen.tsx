@@ -4,7 +4,7 @@ import { activeRelics, getForger, RunState } from '../engine';
 
 import { useTranslation } from '../i18n';
 import { RelicRow } from './RelicRow';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: spacing[20],
     paddingBottom: 80,
     backgroundColor: colors.background,
   },
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.gold,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 14,
+    marginBottom: spacing[14],
     shadowColor: colors.gold,
     shadowOpacity: 0.14,
     shadowRadius: 9,
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: colors.text,
     textAlign: 'center',
-    marginTop: 6,
+    marginTop: spacing[6],
   },
   /* ── Stats card ── */
   statsCard: {
@@ -125,24 +125,24 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 16,
-    padding: 18,
-    paddingHorizontal: 12,
-    marginTop: 22,
+    borderRadius: radius[16],
+    padding: spacing[18],
+    paddingHorizontal: spacing[12],
+    marginTop: spacing[22],
   },
   statsGrid: {
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing[10],
   },
   stat: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    paddingVertical: spacing[12],
+    paddingHorizontal: spacing[4],
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 12,
+    borderRadius: radius[12],
   },
   statValue: {
     fontFamily: fonts.heading,
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colors.textDim,
     textAlign: 'center',
-    marginTop: 16,
+    marginTop: spacing[16],
   },
   forgerNoteBold: {
     color: colors.text,
@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   },
   /* ── Relics ── */
   relicsBlock: {
-    marginTop: 20,
+    marginTop: spacing[20],
     alignItems: 'center',
   },
   relicsLabel: {
@@ -191,18 +191,18 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: colors.textDim,
     textTransform: 'uppercase',
-    marginBottom: 10,
+    marginBottom: spacing[10],
   },
   /* ── Actions ── */
   actions: {
     alignSelf: 'stretch',
-    paddingHorizontal: 0,
-    paddingTop: 14,
+    paddingHorizontal: spacing[0],
+    paddingTop: spacing[14],
   },
   btnPrimary: {
     width: '100%',
     height: 48,
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.gold,
     alignItems: 'center',
     justifyContent: 'center',

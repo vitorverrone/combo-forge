@@ -7,7 +7,7 @@ import { activeRelics, getForger, RunState } from '../engine';
 import { useTranslation } from '../i18n';
 import { DailySubmitStatus } from './DailySubmitStatus';
 import { RelicRow } from './RelicRow';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: spacing[24],
     paddingBottom: 80,
   },
   eyebrow: {
@@ -170,13 +170,13 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 30,
     fontWeight: '900',
-    marginTop: 6,
+    marginTop: spacing[6],
   },
   missingText: {
     fontFamily: fonts.body,
     color: colors.textDim,
     fontSize: 14,
-    marginTop: 10,
+    marginTop: spacing[10],
     textAlign: 'center',
     lineHeight: 20,
   },
@@ -186,14 +186,14 @@ const styles = StyleSheet.create({
   },
   unlockBanner: {
     alignSelf: 'stretch',
-    borderRadius: 10,
+    borderRadius: radius[10],
     backgroundColor: 'rgba(224,165,62,0.15)',
     borderWidth: 1,
     borderColor: colors.gold,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    paddingVertical: spacing[10],
+    paddingHorizontal: spacing[12],
     alignItems: 'center',
-    marginTop: 16,
+    marginTop: spacing[16],
   },
   unlockBannerText: {
     fontFamily: fonts.heading,
@@ -205,14 +205,14 @@ const styles = StyleSheet.create({
   progressTrack: {
     alignSelf: 'stretch',
     height: 14,
-    borderRadius: 7,
+    borderRadius: radius[7],
     backgroundColor: colors.surface,
-    marginTop: 24,
+    marginTop: spacing[24],
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    borderRadius: 7,
+    borderRadius: radius[7],
     backgroundColor: colors.gold,
   },
   progressFillClose: {
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 6,
+    marginTop: spacing[6],
   },
   progressLabel: {
     color: colors.textDim,
@@ -232,14 +232,14 @@ const styles = StyleSheet.create({
   runTotal: {
     color: colors.textDim,
     fontSize: 13,
-    marginTop: 20,
+    marginTop: spacing[20],
   },
   primaryButton: {
-    marginTop: 28,
+    marginTop: spacing[28],
     alignSelf: 'stretch',
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.gold,
-    paddingVertical: 16,
+    paddingVertical: spacing[16],
     alignItems: 'center',
   },
   primaryButtonText: {
@@ -249,13 +249,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   secondaryButton: {
-    marginTop: 10,
+    marginTop: spacing[10],
     alignSelf: 'stretch',
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    paddingVertical: 14,
+    paddingVertical: spacing[14],
     alignItems: 'center',
   },
   secondaryButtonText: {

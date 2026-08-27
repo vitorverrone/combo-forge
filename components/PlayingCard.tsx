@@ -5,7 +5,7 @@ import { cardKey, Card, DeckSkinPalette, ForgedCard } from '../engine';
 import { useTranslation } from '../i18n';
 import { forgeEffectLabel, isRedSuit, suitName } from './format';
 import { SuitSymbol } from './SuitSymbol';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 
 interface PlayingCardProps {
@@ -106,9 +106,9 @@ const styles = StyleSheet.create({
   card: {
     width: 62,
     height: 88,
-    borderRadius: 8,
+    borderRadius: radius[8],
     borderWidth: 1,
-    padding: 6,
+    padding: spacing[6],
     justifyContent: 'space-between',
     alignItems: 'center',
     shadowColor: '#000',
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
     left: 4,
     right: 4,
     bottom: 4,
-    borderRadius: 4,
+    borderRadius: radius[4],
     backgroundColor: colors.gold,
     paddingVertical: 1,
     alignItems: 'center',

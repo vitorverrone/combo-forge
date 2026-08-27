@@ -1,7 +1,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTranslation } from '../i18n';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 
 /** Status da submissão da pontuação do Desafio Diário (com retry). */
 export function DailySubmitStatus({
@@ -48,12 +48,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderRadius: 10,
+    borderRadius: radius[10],
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    marginTop: 16,
+    paddingHorizontal: spacing[14],
+    paddingVertical: spacing[10],
+    marginTop: spacing[16],
   },
   submitRowOk: {
     borderColor: colors.success,
@@ -79,11 +79,11 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   retryButton: {
-    borderRadius: 8,
+    borderRadius: radius[8],
     borderWidth: 1,
     borderColor: colors.danger,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: spacing[12],
+    paddingVertical: spacing[6],
   },
   retryButtonText: {
     color: colors.danger,

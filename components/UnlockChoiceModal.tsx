@@ -4,7 +4,7 @@ import { bonusForgeEffectById, MilestoneOption } from '../engine';
 
 import { useTranslation } from '../i18n';
 import { forgeEffectDescription } from './format';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 
@@ -104,9 +104,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 16,
-    padding: 22,
-    paddingHorizontal: 18,
+    borderRadius: radius[16],
+    padding: spacing[22],
+    paddingHorizontal: spacing[18],
     shadowColor: '#000',
     shadowOpacity: 0.5,
     shadowRadius: 20,
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     color: colors.text,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: spacing[4],
   },
   subtitle: {
     fontFamily: fonts.body,
@@ -137,7 +137,7 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     textAlign: 'center',
     lineHeight: 21,
-    marginTop: 8,
+    marginTop: spacing[8],
   },
   prompt: {
     fontFamily: fonts.body,
@@ -146,22 +146,22 @@ const styles = StyleSheet.create({
     color: colors.text,
     textAlign: 'center',
     lineHeight: 18,
-    marginTop: 14,
+    marginTop: spacing[14],
   },
   /* ── Options ── */
   optionList: {
-    marginTop: 16,
-    gap: 10,
+    marginTop: spacing[16],
+    gap: spacing[10],
   },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing[12],
     backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: colors.surfaceBorder,
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: radius[12],
+    padding: spacing[12],
   },
   btnPressed: {
     borderColor: colors.gold,
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   optionIcon: {
     width: 40,
     height: 40,
-    borderRadius: 10,
+    borderRadius: radius[10],
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   optionTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: spacing[6],
   },
   optionTitle: {
     fontFamily: fonts.heading,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(224,165,62,0.12)',
     borderWidth: 1,
     borderColor: colors.gold,
-    borderRadius: 5,
+    borderRadius: radius[5],
     paddingHorizontal: 5,
     paddingVertical: 1,
   },
@@ -217,14 +217,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '400',
     color: colors.textDim,
-    marginTop: 3,
+    marginTop: spacing[3],
     lineHeight: 16,
   },
   /* ── Later button ── */
   laterBtn: {
-    marginTop: 16,
+    marginTop: spacing[16],
     height: 46,
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: colors.surfaceBorder,

@@ -21,7 +21,7 @@ import {
   suitName,
 } from './format';
 import { SuitSymbol } from './SuitSymbol';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 
@@ -274,19 +274,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'flex-end',
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing[16],
     paddingTop: 44,
   },
   relicCounter: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: spacing[6],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 10,
+    borderRadius: radius[10],
     paddingVertical: 7,
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing[12],
   },
   relicCounterLabel: {
     fontFamily: fonts.body,
@@ -304,7 +304,7 @@ const styles = StyleSheet.create({
   },
   /* ── Scroll ── */
   scroll: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing[16],
     paddingBottom: 70,
   },
   /* ── Header ── */
@@ -316,7 +316,7 @@ const styles = StyleSheet.create({
     color: colors.gold,
     textTransform: 'uppercase',
     textAlign: 'center',
-    marginTop: 16,
+    marginTop: spacing[16],
   },
   title: {
     fontFamily: fonts.heading,
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: colors.gold,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: spacing[4],
   },
   subtitle: {
     fontFamily: fonts.body,
@@ -334,24 +334,24 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     textAlign: 'center',
     lineHeight: 21,
-    marginTop: 8,
+    marginTop: spacing[8],
     maxWidth: 290,
     alignSelf: 'center',
   },
   /* ── Offers ── */
   offerList: {
-    marginTop: 20,
-    gap: 10,
+    marginTop: spacing[20],
+    gap: spacing[10],
   },
   offer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 14,
+    gap: spacing[14],
     backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: colors.surfaceBorder,
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: radius[12],
+    padding: spacing[14],
   },
   offerSelected: {
     borderColor: colors.gold,
@@ -370,11 +370,11 @@ const styles = StyleSheet.create({
   miniCard: {
     width: 48,
     height: 66,
-    borderRadius: 6,
+    borderRadius: radius[6],
     backgroundColor: colors.cardFace,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 3,
+    gap: spacing[3],
     shadowColor: '#000',
     shadowOpacity: 0.35,
     shadowRadius: 4,
@@ -401,9 +401,9 @@ const styles = StyleSheet.create({
     bottom: -3,
     right: -3,
     backgroundColor: colors.gold,
-    borderRadius: 6,
-    paddingVertical: 3,
-    paddingHorizontal: 6,
+    borderRadius: radius[6],
+    paddingVertical: spacing[3],
+    paddingHorizontal: spacing[6],
     borderWidth: 1,
     borderColor: colors.goldDark,
   },
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   relicGem: {
     width: 22,
     height: 22,
-    borderRadius: 5,
+    borderRadius: radius[5],
     backgroundColor: colors.gold,
     transform: [{ rotate: '45deg' }],
     shadowColor: colors.gold,
@@ -442,26 +442,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.text,
-    marginTop: 3,
+    marginTop: spacing[3],
   },
   offerDesc: {
     fontFamily: fonts.body,
     fontSize: 12,
     fontWeight: '400',
     color: colors.textDim,
-    marginTop: 3,
+    marginTop: spacing[3],
     lineHeight: 17,
   },
   /* ── Actions ── */
   actions: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: spacing[16],
+    paddingBottom: spacing[16],
   },
   btnPrimary: {
     width: '100%',
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.gold,
-    paddingVertical: 16,
+    paddingVertical: spacing[16],
     alignItems: 'center',
   },
   btnDisabled: {
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.backdrop,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 20,
+    padding: spacing[20],
     zIndex: 10,
   },
   pickerPanel: {
@@ -498,8 +498,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 14,
-    padding: 20,
+    borderRadius: radius[14],
+    padding: spacing[20],
     shadowColor: '#000',
     shadowOpacity: 0.4,
     shadowRadius: 8,
@@ -520,20 +520,20 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     textAlign: 'center',
     lineHeight: 18,
-    marginTop: 6,
-    marginBottom: 14,
+    marginTop: spacing[6],
+    marginBottom: spacing[14],
   },
   pickerGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: spacing[6],
   },
   pickCard: {
     width: '18%',
     // aspectRatio: 5 / 9,
     paddingTop: '5%',
     paddingBottom: '5%',
-    borderRadius: 6,
+    borderRadius: radius[6],
     backgroundColor: colors.cardFace,
     alignItems: 'center',
     gap: 1,
@@ -567,17 +567,17 @@ const styles = StyleSheet.create({
   },
   pickerActions: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 24,
+    gap: spacing[10],
+    marginTop: spacing[24],
     width: '100%'
   },
   btnDanger: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.danger,
-    paddingVertical: 14,
+    paddingVertical: spacing[14],
     alignItems: 'center',
   },
   btnDangerText: {
@@ -590,11 +590,11 @@ const styles = StyleSheet.create({
   },
   btnPrimarySmall: {
     flex: 1,
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.gold,
     borderWidth: 1,
     borderColor: colors.gold,
-    paddingVertical: 14,
+    paddingVertical: spacing[14],
     alignItems: 'center',
   },
   btnDisabledSmall: {
