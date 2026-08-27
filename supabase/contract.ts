@@ -41,6 +41,8 @@ export function isoWeekStart(dateIso: string): string {
 export interface LeaderboardEntry {
   readonly rank: number;
   readonly score: number;
+  /** Nome de Exibição do dispositivo; null se ainda não cadastrou (ADR 0005). */
+  readonly name: string | null;
 }
 
 /** Resposta de `get_weekly_leaderboard` (JSONB da função SQL). */
@@ -51,4 +53,55 @@ export interface WeeklyLeaderboard {
   readonly own: LeaderboardEntry | null;
   /** Top 10 da semana, ordenado por rank. */
   readonly top: readonly LeaderboardEntry[];
+}
+
+/** Tamanho mínimo/máximo do Nome de Exibição (ADR 0005) — igual à constraint SQL `players_display_name_length`. */
+export const DISPLAY_NAME_MIN_LENGTH = 3;
+export const DISPLAY_NAME_MAX_LENGTH = 16;
+
+/**
+ * Caracteres aceitos no Nome de Exibição: letras (incluindo acentuação
+ * pt-br), números e espaço — sem emoji nem símbolo. Mesmo regex da
+ * constraint SQL `players_display_name_charset` e da função `set_display_name`.
+ */
+const DISPLAY_NAME_CHARSET_REGEX =
+  /^[a-zA-Z0-9 ÁÀÂÃÄáàâãäÉÈÊËéèêëÍÌÎÏíìîïÓÒÔÕÖóòôõöÚÙÛÜúùûüÇçÑñ]+$/;
+
+/**
+ * Termos proibidos no Nome de Exibição (pt-br + en) — lista própria, curada
+ * pelo time (ADR 0005: libs prontas de profanity filter têm cobertura fraca
+ * de pt-br). Fonte da verdade é a mesma lista embutida na função SQL
+ * `set_display_name` (supabase/migrations); mantida sincronizada manualmente
+ * e conferida contra o Postgres real por `npm run verify:backend`.
+ */
+export const PROHIBITED_DISPLAY_NAME_TERMS: readonly string[] = [
+  'porra', 'caralho', 'merda', 'buceta', 'cacete', 'piroca', 'cuzao',
+  'arrombado', 'arrombada', 'punheta', 'xoxota', 'putinha', 'corno',
+  'fdp', 'desgracado', 'desgracada', 'viadinho', 'bosta',
+  'fuck', 'shit', 'bitch', 'asshole', 'bastard', 'cunt', 'whore',
+  'faggot', 'nigger', 'nigga', 'motherfucker', 'dickhead', 'slut',
+  'retard', 'pussy',
+];
+
+/** Resultado da validação do Nome de Exibição, com o motivo da rejeição. */
+export type DisplayNameValidation =
+  | { readonly valid: true }
+  | { readonly valid: false; readonly reason: 'tooShort' | 'tooLong' | 'invalidChars' | 'profanity' };
+
+/**
+ * Espelho TS da validação SQL de `set_display_name` — mesma ordem de
+ * checagem (tamanho → caracteres → termos proibidos), mesmo trim. Fonte da
+ * verdade é o SQL; este espelho é conferido contra ele por
+ * `npm run verify:backend`.
+ */
+export function validateDisplayName(rawName: string): DisplayNameValidation {
+  const name = rawName.trim();
+  if (name.length < DISPLAY_NAME_MIN_LENGTH) return { valid: false, reason: 'tooShort' };
+  if (name.length > DISPLAY_NAME_MAX_LENGTH) return { valid: false, reason: 'tooLong' };
+  if (!DISPLAY_NAME_CHARSET_REGEX.test(name)) return { valid: false, reason: 'invalidChars' };
+  const lower = name.toLowerCase();
+  if (PROHIBITED_DISPLAY_NAME_TERMS.some((term) => lower.includes(term))) {
+    return { valid: false, reason: 'profanity' };
+  }
+  return { valid: true };
 }
