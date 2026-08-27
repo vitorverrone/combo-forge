@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Relic } from '../engine';
@@ -5,6 +6,7 @@ import { Relic } from '../engine';
 import { useTranslation } from '../i18n';
 import { relicDescription } from './format';
 import { colors, spacing, radius } from './theme';
+import { RelicIcon } from './RelicIcon';
 
 interface RelicRowProps {
   readonly relics: readonly Relic[];
@@ -13,11 +15,14 @@ interface RelicRowProps {
 
 /**
  * Relíquias ativas da Run (incluindo a de largada).
- * Em modo normal (game screen), exibe como overlay legível acima da mão.
+ * Em modo normal (game screen), exibe como ícones tocáveis (tooltip com a
+ * descrição, some sozinha) acima da mão.
  * Em modo compact (forge, round summary), exibe como chips menores.
  */
 export function RelicRow({ relics, compact = false }: RelicRowProps) {
   const { t } = useTranslation();
+  const [openRelicId, setOpenRelicId] = useState<string | null>(null);
+
   if (relics.length === 0) return null;
 
   if (compact) {
@@ -39,10 +44,13 @@ export function RelicRow({ relics, compact = false }: RelicRowProps) {
       <Text style={styles.overlayLabel}>{t('runWon.activeRelics').toUpperCase()}</Text>
       <View style={styles.overlayList}>
         {relics.map((relic) => (
-          <View key={relic.id} style={styles.overlayItem} accessibilityLabel={t('a11y.relicSummary', { name: relic.name, description: relicDescription(relic) })} accessibilityRole="text">
-            <Text style={styles.overlayName}>{relic.name}</Text>
-            <Text style={styles.overlayDesc}>{relicDescription(relic)}</Text>
-          </View>
+          <RelicIcon
+            key={relic.id}
+            relic={relic}
+            open={openRelicId === relic.id}
+            onPress={() => setOpenRelicId((current) => (current === relic.id ? null : relic.id))}
+            onDismiss={() => setOpenRelicId((current) => (current === relic.id ? null : current))}
+          />
         ))}
       </View>
     </View>
@@ -52,7 +60,8 @@ export function RelicRow({ relics, compact = false }: RelicRowProps) {
 const styles = StyleSheet.create({
   /* Full display — used on game screen above the hand */
   overlay: {
-    marginTop: spacing[10],
+    marginTop: spacing[8],
+    width: '100%'
   },
   overlayLabel: {
     color: colors.textDim,
@@ -64,28 +73,10 @@ const styles = StyleSheet.create({
   },
   overlayList: {
     flexDirection: 'row',
-    gap: spacing[6],
+    justifyContent: 'flex-start',
+    gap: spacing[8],
     flexWrap: 'wrap',
-  },
-  overlayItem: {
-    borderRadius: radius[8],
-    backgroundColor: colors.surfaceElevated,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    paddingHorizontal: spacing[10],
-    paddingVertical: spacing[6],
-    flex: 1,
-    minWidth: 100,
-  },
-  overlayName: {
-    color: colors.gold,
-    fontSize: 12,
-    fontWeight: '800',
-  },
-  overlayDesc: {
-    color: colors.textDim,
-    fontSize: 11,
-    marginTop: spacing[2],
+    marginTop: spacing[8]
   },
   /* Compact display — used on forge, round summary screens */
   compactRow: {

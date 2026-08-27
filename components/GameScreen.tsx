@@ -77,10 +77,10 @@ export function GameScreen() {
             <Text style={styles.hudLabel}>{t('game.combo')}</Text>
             <Text style={[styles.hudValue, { color: comboAccent }]}>×{multiplier}</Text>
           </View>
-        </View>
 
-        {/* Relics */}
-        <RelicRow relics={relics} />
+          {/* Relics */}
+          <RelicRow relics={relics} />
+        </View>
 
         {/* Pattern preview — inline, no container */}
         <View style={styles.patternPreview}>
@@ -306,7 +306,9 @@ const styles = StyleSheet.create({
   hudRow: {
     flexDirection: 'row',
     gap: spacing[10],
-    marginTop: spacing[16],
+    marginTop: spacing[8],
+    flexWrap: 'wrap',
+    zIndex: 10,
   },
   hudBox: {
     flex: 1,
