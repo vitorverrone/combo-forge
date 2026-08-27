@@ -11,7 +11,7 @@ import {
   utcDateIso,
 } from '../engine';
 
-import i18n, { useTranslation } from '../i18n';
+import { useTranslation } from '../i18n';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -21,15 +21,17 @@ import TopButton from './TopButton';
 /**
  * Tela do Desafio Diário (ticket 13): mesma Run para todos (seed do dia,
  * DDA desligado, Forjador fixo), 1 tentativa gratuita + 1 via anúncio
- * recompensado, e leaderboard semanal opt-in com a posição própria + top 10
- * (nunca expõe derrotas ou identidades de ninguém).
+ * recompensado, e leaderboard semanal com a posição própria + top 10 (nunca
+ * expõe derrotas de ninguém). O ranking carrega sozinho ao entrar na tela e
+ * de novo após cada submissão bem-sucedida — sem botão de "ver ranking"
+ * (ticket 03). O Nome de Exibição de cada dispositivo é obrigatório
+ * (ticket 02) — o modal bloqueante cobre o resto da tela até ser salvo.
  */
 export function DailyChallengeScreen() {
   const { t } = useTranslation();
   const daily = useGameStore((state) => state.daily);
   const startDailyChallenge = useGameStore((state) => state.startDailyChallenge);
   const watchAdForExtraAttempt = useGameStore((state) => state.watchAdForExtraAttempt);
-  const fetchLeaderboard = useGameStore((state) => state.fetchLeaderboard);
   const setDisplayName = useGameStore((state) => state.setDisplayName);
   const backToStart = useGameStore((state) => state.backToStart);
 
@@ -145,21 +147,12 @@ export function DailyChallengeScreen() {
           <Text style={styles.sectionTitle}>{t('daily.thisWeekLeaderboard')}</Text>
         </View>
 
-        {daily.leaderboard === null ? (
-          <Pressable
-            accessibilityLabel={t('a11y.viewWeeklyLeaderboard')}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: daily.leaderboardLoading }}
-            disabled={daily.leaderboardLoading}
-            onPress={() => void fetchLeaderboard()}
-            style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnPressed]}
-          >
-            <Text style={styles.btnSecondaryText}>
-              {daily.leaderboardLoading ? t('daily.viewLeaderboardLoading') : t('daily.viewLeaderboard')}
-            </Text>
-          </Pressable>
+        {daily.leaderboardLoading ? (
+          <View style={styles.leaderboardLoadingBox}>
+            <Text style={styles.leaderboardLoadingText}>{t('daily.leaderboardLoading')}</Text>
+          </View>
         ) : (
-          <LeaderboardList leaderboard={daily.leaderboard} />
+          daily.leaderboard !== null && <LeaderboardList leaderboard={daily.leaderboard} />
         )}
 
         {daily.leaderboardError !== null && (
@@ -187,6 +180,7 @@ export function DailyChallengeScreen() {
 
 function LeaderboardList({ leaderboard }: { leaderboard: DailyLeaderboard }) {
   const { t } = useTranslation();
+  const ownName = leaderboard.own?.name ?? t('daily.anonymousName');
   return (
     <View style={styles.leaderboard}>
       <View style={styles.yourBest}>
@@ -194,7 +188,7 @@ function LeaderboardList({ leaderboard }: { leaderboard: DailyLeaderboard }) {
         <Text style={styles.yourBestValue}>
           {leaderboard.own === null
             ? t('daily.noScoreYet')
-            : `#${leaderboard.own.rank} · ${leaderboard.own.score.toLocaleString('en-US')}`}
+            : `${ownName} · #${leaderboard.own.rank} · ${leaderboard.own.score.toLocaleString('en-US')}`}
         </Text>
       </View>
       {leaderboard.top.length === 0 ? (
@@ -215,6 +209,9 @@ function LeaderboardList({ leaderboard }: { leaderboard: DailyLeaderboard }) {
                 {entry.rank}
               </Text>
               {isFirst && <Text style={styles.lbCrown}>♦</Text>}
+              <Text style={[styles.lbName, isFirst && styles.lbNameFirst]} numberOfLines={1}>
+                {entry.name ?? t('daily.anonymousName')}
+              </Text>
               <Text style={[styles.lbScore, isFirst && styles.lbScoreFirst]}>
                 {entry.score.toLocaleString('en-US')}
               </Text>
@@ -337,17 +334,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 1,
-  },
-  btnSecondary: {
-    alignSelf: 'stretch',
-    borderRadius: radius[12],
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: spacing[10],
   },
   btnPressedSecondary: {
     flexDirection: 'row',
@@ -481,8 +467,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
-  lbScore: {
+  lbName: {
     flex: 1,
+    fontFamily: fonts.body,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  lbNameFirst: {
+    color: colors.gold,
+  },
+  lbScore: {
     textAlign: 'right',
     fontFamily: fonts.heading,
     fontSize: 14,
@@ -491,6 +486,21 @@ const styles = StyleSheet.create({
   },
   lbScoreFirst: {
     color: colors.gold,
+  },
+  leaderboardLoadingBox: {
+    alignSelf: 'stretch',
+    borderRadius: radius[14],
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    paddingVertical: spacing[20],
+    alignItems: 'center',
+  },
+  leaderboardLoadingText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textDim,
   },
   emptyTop: {
     fontFamily: fonts.body,

@@ -122,6 +122,8 @@ export function utcDateIso(date: Date = new Date()): string {
 export interface DailyLeaderboardEntry {
   readonly rank: number;
   readonly score: number;
+  /** Nome de Exibição do dispositivo; null se ainda não cadastrou (ticket 02). */
+  readonly name: string | null;
 }
 
 /** Resposta do leaderboard semanal do Desafio Diário. */
@@ -130,7 +132,7 @@ export interface DailyLeaderboard {
   readonly week: string;
   /** Posição própria na semana (null se o dispositivo não pontuou). */
   readonly own: DailyLeaderboardEntry | null;
-  /** Top 10 da semana (rank + score apenas; identidades nunca expostas). */
+  /** Top 10 da semana, com o Nome de Exibição de cada posição. */
   readonly top: readonly DailyLeaderboardEntry[];
 }
 
