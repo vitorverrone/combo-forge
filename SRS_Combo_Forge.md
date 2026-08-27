@@ -148,7 +148,7 @@ sistema deve prover.
 
 | ID | Requisito |
 |---|---|
-| RF-31 | O sistema deve listar um catálogo de itens cosméticos (skins de baralho, VFX de combo) com preço vindo do provider de compras configurado. |
+| RF-31 | O sistema deve listar um catálogo de itens cosméticos (skins de baralho) com preço vindo do provider de compras configurado. |
 | RF-32 | O sistema deve processar a compra de um item cosmético via IAP, equipá-lo automaticamente ao concluir e persistir o estado comprado/equipado localmente. |
 | RF-33 | O sistema deve processar a compra não-consumível "Remove Ads", ocultando o banner de anúncio em todas as telas imediatamente após a confirmação. |
 | RF-34 | O sistema deve sincronizar a entitlement de remoção de anúncios com o provider de compras no lançamento do app, sem exigir interação do jogador, e nunca regredir uma remoção já ativa. |
@@ -371,7 +371,7 @@ sistema deve prover.
 | `combo-forge:progression` | `PersistedProgression` — `ProfileStats` + ids de opções de desbloqueio reivindicadas |
 | `combo-forge:daily-attempts` | `DailyAttempts` — data, tentativas usadas, extra liberada, melhor pontuação submetida |
 | `combo-forge:daily-device-id` | UUID v4 opaco do dispositivo |
-| `combo-forge:shop` | `PersistedShop` — itens comprados, skin/VFX equipados, remoção de anúncios |
+| `combo-forge:shop` | `PersistedShop` — itens comprados, skin equipada, remoção de anúncios |
 | `combo-forge:break-history` | `BreakHistory` — timestamps dos últimos fins de Run + último lembrete exibido |
 | `combo-forge:onboarding-seen` | flag booleana (tutorial concluído/pulado) |
 

@@ -26,9 +26,6 @@ export function GameScreen() {
   const shopOwned = useGameStore((state) => state.shop.owned);
   const deckSkin =
     shopOwned.equippedDeckSkin === null ? undefined : cosmeticItemById(shopOwned.equippedDeckSkin);
-  const comboVfx =
-    shopOwned.equippedComboVfx === null ? undefined : cosmeticItemById(shopOwned.equippedComboVfx);
-  const comboAccent = comboVfx?.kind === 'comboVfx' ? comboVfx.accent : colors.gold;
 
   if (run === null) return null;
   if (run.phase !== 'playing') return <PhaseScreen run={run} />;
@@ -75,7 +72,7 @@ export function GameScreen() {
           </View>
           <View style={styles.hudBox}>
             <Text style={styles.hudLabel}>{t('game.combo')}</Text>
-            <Text style={[styles.hudValue, { color: comboAccent }]}>×{multiplier}</Text>
+            <Text style={[styles.hudValue, { color: colors.gold }]}>×{multiplier}</Text>
           </View>
 
           {/* Relics */}
@@ -104,7 +101,7 @@ export function GameScreen() {
               forgedCards={run.forgedCards}
               selected={selectedKeys.includes(cardKey(card))}
               onPress={() => toggleCard(cardKey(card))}
-              skin={deckSkin?.kind === 'deckSkin' ? deckSkin.palette : undefined}
+              skin={deckSkin?.palette}
             />
           ))}
         </View>

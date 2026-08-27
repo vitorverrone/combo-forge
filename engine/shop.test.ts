@@ -15,9 +15,8 @@ import {
 } from './shop';
 
 describe('catálogo cosmético (ticket 14)', () => {
-  test('tem 4 skins de baralho e 1 VFX de combo', () => {
+  test('tem 4 skins de baralho', () => {
     expect(COSMETIC_CATALOG.filter((item) => item.kind === 'deckSkin')).toHaveLength(4);
-    expect(COSMETIC_CATALOG.filter((item) => item.kind === 'comboVfx')).toHaveLength(1);
   });
 
   test('garantia explícita: itens só carregam dados visuais, nunca poder', () => {
@@ -25,11 +24,7 @@ describe('catálogo cosmético (ticket 14)', () => {
       // Keys do item: identidade + rótulo + loja + visual. Qualquer chave de
       // regra de jogo (score, multiplier, target, forge...) quebraria aqui.
       const keys = [...Object.keys(item)].sort();
-      const expected = [...
-        item.kind === 'deckSkin'
-          ? ['description', 'devPrice', 'free', 'id', 'kind', 'name', 'palette', 'productId']
-          : ['accent', 'description', 'devPrice', 'id', 'kind', 'name', 'productId'],
-      ].sort();
+      const expected = ['description', 'devPrice', 'free', 'id', 'kind', 'name', 'palette', 'productId'].sort();
       expect(keys).toEqual(expected);
     }
   });
@@ -63,13 +58,6 @@ describe('estado da loja', () => {
     expect(state.owned).not.toContain('deck-classic'); // nunca entra no owned persistido
     expect(isOwned(state, 'deck-classic')).toBe(true); // mas isOwned já reconhece
     expect(equipItem(state, 'deck-classic').equippedDeckSkin).toBe('deck-classic');
-  });
-
-  test('VFX de combo equipa separadamente da skin', () => {
-    let state = purchaseItem(createInitialShopState(), 'vfx-golden-combo');
-    state = equipItem(state, 'vfx-golden-combo');
-    expect(state.equippedComboVfx).toBe('vfx-golden-combo');
-    expect(state.equippedDeckSkin).toBeNull();
   });
 
   test('mergeOwned junta ids do servidor (restore) sem duplicar', () => {
@@ -126,7 +114,6 @@ describe('remoção de anúncios (ticket 02)', () => {
     const oldSave = {
       owned: ['deck-obsidian'],
       equippedDeckSkin: 'deck-obsidian',
-      equippedComboVfx: null,
     } as unknown as PersistedShop;
     const normalized = normalizeShopState(oldSave);
     expect(normalized.adsRemoved).toBe(false);

@@ -95,9 +95,9 @@ export async function runShopCommand(
 }
 
 /**
- * Equipa um item cosmético comprado (skin de baralho ou VFX de combo).
- * Síncrono e puro (sem IO de provider): devolve a fatia nova, persistindo via
- * port quando houve mudança. Ignora item não comprado ou inexistente.
+ * Equipa uma skin de baralho comprada. Síncrono e puro (sem IO de provider):
+ * devolve a fatia nova, persistindo via port quando houve mudança. Ignora
+ * item não comprado ou inexistente.
  */
 export function equipCosmetic(
   state: ShopFlowState,
@@ -135,7 +135,7 @@ async function purchaseCosmetic(
     const purchased = await deps.provider.purchase(productId);
     if (purchased) {
       // A skin comprada é equipada na hora (aplicada ao Baralho nas próximas
-      // Runs — ticket 14); VFX de combo idem.
+      // Runs — ticket 14).
       let owned = enginePurchaseItem(state.shop.owned, itemId);
       owned = engineEquipItem(owned, itemId);
       deps.storage.save(owned);

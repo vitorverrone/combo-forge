@@ -1,16 +1,16 @@
 /**
  * Loja cosmética (ticket 14).
  *
- * A única forma de monetização é cosmética: skins de baralho e efeitos
- * visuais de combo vendidos como IAP (via RevenueCat no app; provider dev nos
- * testes). A garantia explícita do produto: NENHUM item aqui afeta poder de
- * jogo — o catálogo só carrega dados visuais (paleta da skin, cor de acento
- * do VFX), nunca regras de pontuação, Forja ou estrutura de Run.
+ * A única forma de monetização é cosmética: skins de baralho vendidas como
+ * IAP (via RevenueCat no app; provider dev nos testes). A garantia explícita
+ * do produto: NENHUM item aqui afeta poder de jogo — o catálogo só carrega
+ * dados visuais (paleta da skin), nunca regras de pontuação, Forja ou
+ * estrutura de Run.
  *
- * Estado puro: itens comprados (owned) e o que está equipado (uma skin de
- * baralho + um VFX de combo por vez). Persistido entre sessões via port
- * ShopStorage (SQLite no app; memória nos testes). A compra em si é IO e
- * acontece no port ShopProvider (RevenueCat no app; dev simulado nos testes).
+ * Estado puro: itens comprados (owned) e a skin de baralho equipada.
+ * Persistido entre sessões via port ShopStorage (SQLite no app; memória nos
+ * testes). A compra em si é IO e acontece no port ShopProvider (RevenueCat no
+ * app; dev simulado nos testes).
  */
 
 /** Paleta de cores de uma skin de baralho (aplica na face das cartas). */
@@ -43,21 +43,7 @@ export interface DeckSkinItem {
   readonly free: boolean;
 }
 
-export interface ComboVfxItem {
-  readonly kind: 'comboVfx';
-  readonly id: string;
-  readonly name: string;
-  readonly description: string;
-  readonly productId: string;
-  readonly devPrice: string;
-  /** Cor de acento do efeito visual de combo. */
-  readonly accent: string;
-}
-
-export type CosmeticItem = DeckSkinItem | ComboVfxItem;
-
-/** Tipo de item cosmético. */
-export type CosmeticKind = CosmeticItem['kind'];
+export type CosmeticItem = DeckSkinItem;
 
 /** Catálogo da loja — SOMENTE cosméticos (nunca tocam poder de jogo). */
 export const COSMETIC_CATALOG: readonly CosmeticItem[] = [
@@ -101,15 +87,6 @@ export const COSMETIC_CATALOG: readonly CosmeticItem[] = [
     palette: { cardFace: '#3a1442', cardInk: '#eccd6e', red: '#c1352c', border: '#caa15a' },
     free: false,
   },
-  {
-    kind: 'comboVfx',
-    id: 'vfx-golden-combo',
-    name: 'Golden Combo',
-    description: 'Combo meter and accents burn in molten gold.',
-    productId: 'combo_forge_vfx_golden_combo',
-    devPrice: '$0.99',
-    accent: '#ffd166',
-  },
 ];
 
 /**
@@ -130,8 +107,6 @@ export interface PersistedShop {
   readonly owned: readonly string[];
   /** Skin de baralho equipada (id) ou null (clássica). */
   readonly equippedDeckSkin: string | null;
-  /** VFX de combo equipado (id) ou null (clássico). */
-  readonly equippedComboVfx: string | null;
   /**
    * Remoção de anúncios comprada (entitlement ativa). Não é um item do
    * catálogo, mas persiste com o resto do estado da loja (mesmo port
@@ -144,7 +119,6 @@ export function createInitialShopState(): PersistedShop {
   return {
     owned: [],
     equippedDeckSkin: null,
-    equippedComboVfx: null,
     adsRemoved: false,
   };
 }
@@ -164,15 +138,10 @@ export function cosmeticItemById(id: string): CosmeticItem | undefined {
   return COSMETIC_CATALOG.find((item) => item.id === id);
 }
 
-/** Item é uma skin de baralho? */
-export function isDeckSkinItem(item: CosmeticItem): item is DeckSkinItem {
-  return item.kind === 'deckSkin';
-}
-
 /** Já comprado — ou grátis por padrão (ex.: o baralho Classic)? */
 export function isOwned(state: PersistedShop, itemId: string): boolean {
   const item = cosmeticItemById(itemId);
-  if (item !== undefined && isDeckSkinItem(item) && item.free) return true;
+  if (item !== undefined && item.free) return true;
   return state.owned.includes(itemId);
 }
 
@@ -182,18 +151,11 @@ export function purchaseItem(state: PersistedShop, itemId: string): PersistedSho
   return { ...state, owned: [...state.owned, itemId] };
 }
 
-/**
- * Equipa um item cosmético comprado. Skins de baralho trocam a skin atual;
- * VFX de combo trocam o VFX atual. Ignora item não comprado ou inexistente.
- */
+/** Equipa uma skin de baralho comprada. Ignora item não comprado ou inexistente. */
 export function equipItem(state: PersistedShop, itemId: string): PersistedShop {
   if (!isOwned(state, itemId)) return state;
-  const item = cosmeticItemById(itemId);
-  if (item === undefined) return state;
-  if (item.kind === 'deckSkin') {
-    return { ...state, equippedDeckSkin: itemId };
-  }
-  return { ...state, equippedComboVfx: itemId };
+  if (cosmeticItemById(itemId) === undefined) return state;
+  return { ...state, equippedDeckSkin: itemId };
 }
 
 /** Junta os ids comprados no servidor (restore) aos locais. */

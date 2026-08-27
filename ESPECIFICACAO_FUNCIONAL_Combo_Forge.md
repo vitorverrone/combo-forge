@@ -119,8 +119,7 @@ Perfil/Coleção/Loja/Desafio Diário.
   Forjador + pontuação total da Run; bloco de pontuação "`score` / `target`".
 - Barra de progresso (score/target, 0–100%).
 - 3 pílulas: **Plays** (Jogadas restantes), **Discards** (Descartes
-  restantes), **COMBO** (Multiplicador da próxima Jogada, com cor do VFX de
-  combo equipado).
+  restantes), **COMBO** (Multiplicador da próxima Jogada).
 - Fileira de Relíquias ativas (largada do Forjador + adquiridas).
 - Painel de prévia: com seleção válida, mostra o nome do Padrão + "Base
   `X` · `X×mult` pts with ×`mult`"; sem seleção, mostra a dica "Select 2–5
@@ -458,12 +457,11 @@ monetização direta do produto.
 
 **Elementos:**
 - "SHOP" / "Cosmetic Only" + garantia "✓ Never affects gameplay power —
-  deck skins and combo effects are purely visual."
+  deck skins are purely visual."
 - Seção **Remove Ads**: linha com nome, descrição, e botão de preço (ou selo
   "PURCHASED" se já comprado).
 - Seção **Deck Skins**: uma linha por skin do catálogo (Obsidian, Emerald,
   Royal).
-- Seção **Combo Effects**: uma linha por efeito (Golden Combo).
 - Mensagem "Loading prices…" durante carga; mensagem de erro em falha de
   carga.
 - Botão **RESTORE PURCHASES** + dica "Bought on another device? Restore to
@@ -474,14 +472,13 @@ monetização direta do produto.
 - **Não comprado**: mostra botão de preço (preço real do provider se
   carregado; senão o `devPrice` do catálogo como placeholder). Tocar inicia
   a compra — botão mostra "…" enquanto `purchasing === item.id`. Sucesso:
-  item passa a "owned" e é **equipado automaticamente** (skin de baralho ou
-  VFX de combo aplicados nas próximas Jogadas/Runs); persistido localmente.
+  item passa a "owned" e é **equipado automaticamente** (skin de baralho
+  aplicada nas próximas Jogadas/Runs); persistido localmente.
   Cancelamento pelo jogador (fechou o diálogo nativo de compra): nenhuma
   mudança, sem mensagem de erro. Falha real de compra/rede: mensagem de erro
   exibida na tela.
-- **Comprado, não equipado**: mostra botão **EQUIP**. Tocar troca o item
-  equipado da mesma categoria (uma skin de baralho + um VFX de combo por vez)
-  — sem IO, efeito imediato e persistido.
+- **Comprado, não equipado**: mostra botão **EQUIP**. Tocar troca a skin de
+  baralho equipada — sem IO, efeito imediato e persistido.
 - **Comprado e equipado**: mostra selo **EQUIPPED** (sem ação disponível —
   já é o estado atual).
 - **Remove Ads**: mesmo padrão de preço/compra das linhas acima, mas sem
