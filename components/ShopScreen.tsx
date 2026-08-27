@@ -46,7 +46,7 @@ export function ShopScreen() {
         {/* Deck Skins */}
         <SectionHeader label={t('shop.decks')} count={`${COSMETIC_CATALOG.filter(isDeckSkinItem).filter((item) => isOwned(shop.owned, item.id)).length}/${COSMETIC_CATALOG.filter(isDeckSkinItem).length}`} />
         {COSMETIC_CATALOG.filter(isDeckSkinItem).map((item) => {
-          const owned = item.id === 'deck-classic' ? true : isOwned(shop.owned, item.id);
+          const owned = isOwned(shop.owned, item.id);
           const equipped = shop.owned.equippedDeckSkin === item.id;
           const busy = shop.purchasing === item.id;
           return (
