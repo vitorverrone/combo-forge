@@ -27,7 +27,7 @@ describe('catálogo cosmético (ticket 14)', () => {
       const keys = [...Object.keys(item)].sort();
       const expected = [...
         item.kind === 'deckSkin'
-          ? ['description', 'devPrice', 'id', 'kind', 'name', 'palette', 'productId']
+          ? ['description', 'devPrice', 'free', 'id', 'kind', 'name', 'palette', 'productId']
           : ['accent', 'description', 'devPrice', 'id', 'kind', 'name', 'productId'],
       ].sort();
       expect(keys).toEqual(expected);
@@ -56,6 +56,13 @@ describe('estado da loja', () => {
     const state = createInitialShopState();
     expect(equipItem(state, 'deck-obsidian').equippedDeckSkin).toBeNull();
     expect(equipItem(state, 'nao-existe').equippedDeckSkin).toBeNull();
+  });
+
+  test('deck-classic (free: true) conta como possuído e equipável sem compra', () => {
+    const state = createInitialShopState();
+    expect(state.owned).not.toContain('deck-classic'); // nunca entra no owned persistido
+    expect(isOwned(state, 'deck-classic')).toBe(true); // mas isOwned já reconhece
+    expect(equipItem(state, 'deck-classic').equippedDeckSkin).toBe('deck-classic');
   });
 
   test('VFX de combo equipa separadamente da skin', () => {

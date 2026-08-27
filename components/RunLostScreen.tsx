@@ -10,6 +10,7 @@ import { RelicRow } from './RelicRow';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
+import { useInterstitialOnRunEnd } from './useInterstitialOnRunEnd';
 
 interface RunLostScreenProps {
   readonly run: RunState;
@@ -25,18 +26,9 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
   const daily = useGameStore((state) => state.daily);
   const openDaily = useGameStore((state) => state.openDaily);
   const submitDailyScore = useGameStore((state) => state.submitDailyScore);
-  const showInterstitial = useGameStore((state) => state.showInterstitial);
-  const dismissInterstitial = useGameStore((state) => state.dismissInterstitial);
-  const adProvider = useGameStore((state) => state.adProvider);
 
   const dailyEnd = runMode === 'daily';
-
-  // Intersticial entre Runs: exibe ao montar a tela de fim quando marcado.
-  useEffect(() => {
-    if (!showInterstitial || dailyEnd) return;
-    dismissInterstitial();
-    void adProvider.requestInterstitialAd();
-  }, [showInterstitial, dailyEnd, dismissInterstitial, adProvider]);
+  useInterstitialOnRunEnd(dailyEnd);
   const missing = Math.max(run.target - run.score, 0);
   // Barra "quase cheia" quando a margem é pequena (Efeito Zeigarnik).
   const progress = Math.min(run.score / run.target, 1);

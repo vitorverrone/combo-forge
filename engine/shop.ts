@@ -34,6 +34,13 @@ export interface DeckSkinItem {
   /** Preço exibido quando o provider real não está configurado (dev). */
   readonly devPrice: string;
   readonly palette: DeckSkinPalette;
+  /**
+   * Grátis por padrão (ex.: o baralho Classic) — `isOwned` trata como
+   * possuído mesmo sem estar em `PersistedShop.owned`. Único jeito de
+   * "possuído sem compra" no catálogo, então fica explícito aqui em vez de
+   * um id comparado por literal espalhado pelas camadas.
+   */
+  readonly free: boolean;
 }
 
 export interface ComboVfxItem {
@@ -62,6 +69,7 @@ export const COSMETIC_CATALOG: readonly CosmeticItem[] = [
     productId: 'combo_forge_skin_classic',
     devPrice: '$0',
     palette: { cardFace: '#f2e9d8', cardInk: '#221a2e', red: '#c1352c', border: 'transparent' },
+    free: true,
   },
   {
     kind: 'deckSkin',
@@ -71,6 +79,7 @@ export const COSMETIC_CATALOG: readonly CosmeticItem[] = [
     productId: 'combo_forge_skin_obsidian',
     devPrice: '$0.99',
     palette: { cardFace: '#1a1724', cardInk: '#f1eef7', red: '#e05c4e', border: '#4a4560' },
+    free: false,
   },
   {
     kind: 'deckSkin',
@@ -80,6 +89,7 @@ export const COSMETIC_CATALOG: readonly CosmeticItem[] = [
     productId: 'combo_forge_skin_emerald',
     devPrice: '$0.99',
     palette: { cardFace: '#0f3a2c', cardInk: '#f4ecd2', red: '#d98c3a', border: '#2f6b52' },
+    free: false,
   },
   {
     kind: 'deckSkin',
@@ -89,6 +99,7 @@ export const COSMETIC_CATALOG: readonly CosmeticItem[] = [
     productId: 'combo_forge_skin_royal',
     devPrice: '$0.99',
     palette: { cardFace: '#3a1442', cardInk: '#eccd6e', red: '#c1352c', border: '#caa15a' },
+    free: false,
   },
   {
     kind: 'comboVfx',
@@ -158,8 +169,10 @@ export function isDeckSkinItem(item: CosmeticItem): item is DeckSkinItem {
   return item.kind === 'deckSkin';
 }
 
-/** Já comprado? */
+/** Já comprado — ou grátis por padrão (ex.: o baralho Classic)? */
 export function isOwned(state: PersistedShop, itemId: string): boolean {
+  const item = cosmeticItemById(itemId);
+  if (item !== undefined && isDeckSkinItem(item) && item.free) return true;
   return state.owned.includes(itemId);
 }
 
@@ -174,7 +187,7 @@ export function purchaseItem(state: PersistedShop, itemId: string): PersistedSho
  * VFX de combo trocam o VFX atual. Ignora item não comprado ou inexistente.
  */
 export function equipItem(state: PersistedShop, itemId: string): PersistedShop {
-  if (itemId !== 'deck-classic' && !isOwned(state, itemId)) return state;
+  if (!isOwned(state, itemId)) return state;
   const item = cosmeticItemById(itemId);
   if (item === undefined) return state;
   if (item.kind === 'deckSkin') {

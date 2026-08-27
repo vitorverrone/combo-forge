@@ -15,9 +15,8 @@ erradas de design.
 
 | Severidade | Itens |
 |---|---|
-| ✅ Corrigido | ~~14 testes falhando~~ · ~~`deviceId` nunca persistia~~ · ~~intersticial com ad unit errado~~ · ~~variável do Supabase dessincronizada~~ · ~~binário no `.gitignore`~~ · ~~sem linter/formatter~~ · ~~i18n pela metade~~ · ~~sem escala de espaçamento~~ (2026-08-26) |
+| ✅ Corrigido | ~~14 testes falhando~~ · ~~`deviceId` nunca persistia~~ · ~~intersticial com ad unit errado~~ · ~~variável do Supabase dessincronizada~~ · ~~binário no `.gitignore`~~ · ~~sem linter/formatter~~ · ~~i18n pela metade~~ · ~~sem escala de espaçamento~~ · ~~duplicações (intersticial + "deck grátis")~~ (2026-08-26) |
 | 🟠 Estrutura | limpeza do histórico do git (`.aab` já saiu do índice, mas o blob de 107 MB segue no histórico) · 4 docs de requisito concorrentes |
-| 🟡 Consistência | regra duplicada entre engine e UI |
 
 ---
 
@@ -459,40 +458,55 @@ linhas) e confirmado com rebuild + screenshot.
 
 ---
 
-## 🟡 10. Duplicações que valem uma extração
+## ✅ 10. Duplicações que valiam uma extração — corrigido em 2026-08-26
 
-**O efeito do intersticial é idêntico nas duas telas de fim.**
-[RunWonScreen.tsx:26-37](components/RunWonScreen.tsx#L26-L37) e
-[RunLostScreen.tsx:27-38](components/RunLostScreen.tsx#L27-L38) têm o mesmo
-bloco — 3 assinaturas do store + o mesmo `useEffect`, linha por linha. Um
-`useInterstitialOnRunEnd(dailyEnd)` eliminaria a cópia e garantiria que uma
-correção futura pegue as duas telas.
+**O efeito do intersticial era idêntico nas duas telas de fim.**
+`RunWonScreen.tsx` e `RunLostScreen.tsx` tinham o mesmo bloco — 3 assinaturas
+do store + o mesmo `useEffect`, linha por linha. Extraído para
+[components/useInterstitialOnRunEnd.ts](components/useInterstitialOnRunEnd.ts),
+um hook de ~15 linhas; as duas telas agora chamam só
+`useInterstitialOnRunEnd(dailyEnd)`. Uma correção futura nessa lógica pega as
+duas telas de uma vez.
 
-**A regra "o baralho clássico é grátis" está escrita duas vezes, de formas
-diferentes:**
+**A regra "o baralho clássico é grátis" estava escrita duas vezes, de formas
+diferentes** — e essa duplicação já tinha produzido uma inconsistência
+visível confirmada ao vivo: o contador de decks na Loja mostrava **"0/4"**
+para um jogador novo, mesmo já tendo um baralho jogável e equipado (o
+contador usava `isOwned`, que devolvia `false` para o clássico; a lógica de
+"possuído" da linha ao lado tratava o clássico como possuído via um `if
+(item.id === 'deck-classic')` à parte — as duas nunca concordavam).
+
+**Correção:** o conceito "grátis por padrão" virou um campo real do domínio
+— `readonly free: boolean` em `DeckSkinItem`
+([engine/shop.ts](engine/shop.ts)), `true` só no `deck-classic`. `isOwned`
+(a função que já existia e já era chamada em todos os lugares relevantes,
+incluindo o contador) passou a consultar esse campo:
 
 ```ts
-// engine/shop.ts:177
-if (itemId !== 'deck-classic' && !isOwned(state, itemId)) return state;
-
-// components/ShopScreen.tsx:48
-const owned = item.id == 'deck-classic' ? true : isOwned(shop.owned, item.id);
+export function isOwned(state: PersistedShop, itemId: string): boolean {
+  const item = cosmeticItemById(itemId);
+  if (item !== undefined && isDeckSkinItem(item) && item.free) return true;
+  return state.owned.includes(itemId);
+}
 ```
 
-O conceito "item grátis / padrão" não está modelado — é um literal de string
-comparado em duas camadas. Um campo `free: true` no `DeckSkinItem` (ou um
-`isFreeItem(item)` exportado pelo engine) daria uma fonte só.
+Isso substitui o `if` espalhado em duas camadas por uma fonte só — e
+`equipItem` e o `owned` do `ShopScreen.tsx` simplificaram para chamar
+`isOwned` diretamente, sem o caso especial. Teste de regressão adicionado
+(`engine/shop.test.ts`) cobrindo `isOwned`/`equipItem` para o item grátis.
+**Confirmado ao vivo no emulador:** o contador agora mostra corretamente
+**"1/4"**.
 
-**E essa duplicação já produziu uma inconsistência visível:**
-[ShopScreen.tsx:46](components/ShopScreen.tsx#L46) monta o contador
-`{comprados}/{total}` usando `isOwned` — que devolve `false` para o clássico —
-enquanto a linha 48 trata o clássico como possuído. Jogador novo abre a loja e vê
-**"0/4"** mesmo tendo um baralho jogável e equipado.
+**Não mexido, por ser fora de escopo (o próprio levantamento já chamava de
+"detalhe menor"):** `deck-classic` continua carregando um `productId`
+(`combo_forge_skin_classic`) que nunca será comprado e não existe no
+`docs/release-checklist.md`. Tornar `productId` opcional só para itens
+grátis ondularia por `requireCatalogProductId` (`store/shopFlow.ts`) e outros
+pontos que hoje assumem todo item do catálogo com um productId — troca maior
+do que o valor que traz.
 
-Detalhe menor no mesmo tema: `deck-classic` carrega um `productId`
-(`combo_forge_skin_classic`) que nunca será comprado, e que não existe no
-[docs/release-checklist.md](docs/release-checklist.md) — os outros 5 estão lá.
-Configuração morta.
+`tsc --noEmit` limpo, `eslint .` sem problemas, 330/330 testes passando (+1
+teste de regressão).
 
 ---
 
@@ -548,4 +562,5 @@ ainda que o número em si tenha ficado desatualizado.
 5. ~~`.gitignore` com `*.aab` + ESLint/Prettier~~ (itens 5 e 6) — ✅ feito em 2026-08-26. Falta, como decisão separada e explícita: limpar o `.aab` do *histórico* do git (`filter-repo`/BFG + force-push coordenado nos dois remotes) e rodar `prettier --write .` pela primeira vez (123 arquivos, diff grande e não relacionado a bug nenhum).
 6. ~~i18n pela metade~~ (item 8) — ✅ feito em 2026-08-26 (42 accessibilityLabel, `<Trans>` do RunLostScreen, e mais 5 strings hardcoded achadas na varredura).
 7. ~~Escala de espaçamento~~ (item 9) — ✅ feito em 2026-08-26 (401 substituições em 16 componentes, verificado visualmente no emulador; achado e corrigido de quebra um bug real de i18n na Loja — `shop.equip` era uma chave que nunca existiu).
-8. **Consolidar os docs** (item 7) — dívida real, mas não sangra hoje. Único item que sobra da lista original.
+8. ~~Duplicações~~ (item 10) — ✅ feito em 2026-08-26 (`useInterstitialOnRunEnd` extraído; `free: boolean` no `DeckSkinItem` substitui o `if` espalhado — confirmado ao vivo que o contador "0/4" virou "1/4").
+9. **Consolidar os docs** (item 7) — dívida real, mas não sangra hoje. Único item que sobra da lista original.
