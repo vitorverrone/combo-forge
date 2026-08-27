@@ -34,11 +34,36 @@ function isoWeekStart(dateIso) {
   return date.toISOString().slice(0, 10);
 }
 
+// Espelho da validação de set_display_name, duplicado aqui pela mesma razão
+// das fórmulas acima — fonte canônica é supabase/contract.ts.
+const DISPLAY_NAME_CHARSET_REGEX =
+  /^[a-zA-Z0-9 ÁÀÂÃÄáàâãäÉÈÊËéèêëÍÌÎÏíìîïÓÒÔÕÖóòôõöÚÙÛÜúùûüÇçÑñ]+$/;
+const PROHIBITED_DISPLAY_NAME_TERMS = [
+  'porra', 'caralho', 'merda', 'buceta', 'cacete', 'piroca', 'cuzao',
+  'arrombado', 'arrombada', 'punheta', 'xoxota', 'putinha', 'corno',
+  'fdp', 'desgracado', 'desgracada', 'viadinho', 'bosta',
+  'fuck', 'shit', 'bitch', 'asshole', 'bastard', 'cunt', 'whore',
+  'faggot', 'nigger', 'nigga', 'motherfucker', 'dickhead', 'slut',
+  'retard', 'pussy',
+];
+function validateDisplayName(rawName) {
+  const name = rawName.trim();
+  if (name.length < 3) return { valid: false, reason: 'tooShort' };
+  if (name.length > 16) return { valid: false, reason: 'tooLong' };
+  if (!DISPLAY_NAME_CHARSET_REGEX.test(name)) return { valid: false, reason: 'invalidChars' };
+  const lower = name.toLowerCase();
+  if (PROHIBITED_DISPLAY_NAME_TERMS.some((term) => lower.includes(term))) {
+    return { valid: false, reason: 'profanity' };
+  }
+  return { valid: true };
+}
+
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..');
 const migrations = [
   join(root, 'supabase', 'migrations', '0001_daily_challenge.sql'),
   join(root, 'supabase', 'migrations', '0002_daily_challenge_access.sql'),
+  join(root, 'supabase', 'migrations', '0003_display_name.sql'),
 ];
 const IMAGE = 'postgres:16-alpine';
 const CONTAINER = 'combo-forge-pg-verify';
@@ -131,7 +156,45 @@ try {
     console.log(`   dailySeed('${date}') === ${seed}`);
   }
 
-  console.log('\n2. Submissão (submit_daily_score)');
+  console.log('\n2. Nome de Exibição (set_display_name + players)');
+  // Compara a lista de termos proibidos inteira (não só o resultado de
+  // alguns nomes de amostra) — pega drift entre o SQL e o espelho TS que os
+  // testes de aceitar/rejeitar abaixo, sozinhos, não pegariam.
+  const sqlTerms = JSON.parse(psql(`select to_jsonb(public._display_name_prohibited_terms())`));
+  check(
+    JSON.stringify([...sqlTerms].sort()) === JSON.stringify([...PROHIBITED_DISPLAY_NAME_TERMS].sort()),
+    `lista de termos proibidos SQL === espelho TS, sem drift (${sqlTerms.length} termos)`,
+  );
+  check(psql(`select public.set_display_name('dev-name-1', 'Fulano')`) === 'Fulano', 'nome válido é salvo e devolvido');
+  check(psql(`select display_name from public.players where device_id = 'dev-name-1'`) === 'Fulano', 'persistido na tabela players');
+  check(psql(`select public.set_display_name('dev-name-1', 'Beltrano')`) === 'Beltrano', 'upsert troca o nome do mesmo dispositivo');
+  check(psql(`select count(*) from public.players where device_id = 'dev-name-1'`) === '1', 'upsert não duplica linha');
+  check(psql(`select public.set_display_name('dev-name-2', 'Fulano')`) === 'Fulano', 'nome duplicado entre dispositivos é permitido (sem checagem de unicidade)');
+  check(psql(`select public.set_display_name('dev-name-3', '  Espacado  ')`) === 'Espacado', 'espaços nas pontas são cortados (trim) antes de validar e salvar');
+  check(psql(`select public.set_display_name('dev-accent', 'José Ção')`) === 'José Ção', 'acentuação pt-br é aceita');
+
+  const rejectionCases = [
+    ['ab', 'tooShort'],
+    ['a'.repeat(17), 'tooLong'],
+    ['Nome😀', 'invalidChars'],
+    ['Nome!', 'invalidChars'],
+    ['seu merda', 'profanity'],
+    ['fuck you', 'profanity'],
+  ];
+  for (const [name, expectedReason] of rejectionCases) {
+    const mirror = validateDisplayName(name);
+    check(mirror.valid === false && mirror.reason === expectedReason, `espelho TS rejeita "${name}" por ${expectedReason}`);
+    let rejected = false;
+    try {
+      psql(`select public.set_display_name('dev-bad', '${name.replace(/'/g, "''")}')`);
+    } catch {
+      rejected = true;
+    }
+    check(rejected, `SQL rejeita "${name}" (${expectedReason})`);
+  }
+  check(psql(`select count(*) from public.players where device_id = 'dev-bad'`) === '0', 'nenhuma das tentativas rejeitadas foi persistida');
+
+  console.log('\n3. Submissão (submit_daily_score)');
   check(psql(`select public.submit_daily_score('dev-a', 1200)`) === '1200', 'primeira submissão registra 1200');
   check(psql(`select public.submit_daily_score('dev-a', 300)`) === '1200', 're-submissão menor no mesmo dia mantém 1200');
   check(psql(`select public.submit_daily_score('dev-a', 1800)`) === '1800', 're-submissão maior no mesmo dia sobe para 1800');
@@ -146,13 +209,17 @@ try {
   }
   check(negativeRejected, 'score negativo é rejeitado pelo check constraint');
 
-  console.log('\n3. Leaderboard semanal (get_weekly_leaderboard)');
+  console.log('\n4. Leaderboard semanal (get_weekly_leaderboard)');
   // Limpa o que a seção de submissão gravou no dia atual (cenário controlado).
   psql('truncate table public.daily_submissions');
   // Cenário fixo: semana ISO de 2026-08-10 (segunda) a 2026-08-16 (domingo).
   // dev-a: 1200 (seg) + 1800 (ter) → entra pelo melhor = 1800
   // dev-b: 900 (qua) | dev-c: 2000 (qui) | dev-d: 1500 (qui)
   // dev-old: 9999 na semana ANTERIOR (não pode aparecer)
+  // dev-a e dev-c têm Nome de Exibição cadastrado; dev-b e dev-d não — o
+  // leaderboard precisa devolver name: null pra quem ainda não cadastrou.
+  psql(`select public.set_display_name('dev-a', 'Ana')`);
+  psql(`select public.set_display_name('dev-c', 'Carlos')`);
   psql(`
     insert into public.daily_submissions (day, device_id, score) values
       ('2026-08-10', 'dev-a', 1200),
@@ -165,14 +232,23 @@ try {
   `);
   const lb = JSON.parse(psql(`select public.get_weekly_leaderboard('dev-a', '2026-08-13 12:00:00+00')`));
   check(lb.week === '2026-08-10', `semana começa na segunda ISO (${lb.week})`);
-  check(lb.own.rank === 2 && lb.own.score === 1800, `posição própria: rank 2 com a melhor Run da semana (${JSON.stringify(lb.own)})`);
+  check(lb.own.rank === 2 && lb.own.score === 1800 && lb.own.name === 'Ana', `posição própria: rank 2, nome "Ana" (${JSON.stringify(lb.own)})`);
   check(lb.top.length === 4, 'top com 4 entradas na semana (sem dev-old e sem dev-new fora dela)');
-  check(JSON.stringify(lb.top) === JSON.stringify([
-    { rank: 1, score: 2000 },
-    { rank: 2, score: 1800 },
-    { rank: 3, score: 1500 },
-    { rank: 4, score: 900 },
-  ]), 'top ordenado por rank; dev-a entra uma vez, pelo melhor score');
+  // Checagem campo a campo (não JSON.stringify posicional): jsonb não
+  // garante a ordem das chaves de cada objeto na saída — só a ordem dos
+  // elementos do array (essa sim preservada por jsonb_agg).
+  const expectedTop = [
+    { rank: 1, score: 2000, name: 'Carlos' },
+    { rank: 2, score: 1800, name: 'Ana' },
+    { rank: 3, score: 1500, name: null },
+    { rank: 4, score: 900, name: null },
+  ];
+  check(
+    expectedTop.every((expected, i) =>
+      lb.top[i]?.rank === expected.rank && lb.top[i]?.score === expected.score && lb.top[i]?.name === expected.name,
+    ),
+    `top ordenado por rank, com nome (null pra quem não cadastrou) (${JSON.stringify(lb.top)})`,
+  );
   const noOwn = JSON.parse(psql(`select public.get_weekly_leaderboard('sem-pontos', '2026-08-13 12:00:00+00')`));
   check(noOwn.own === null, 'dispositivo sem pontuação na semana → own null');
   const sundayLb = JSON.parse(psql(`select public.get_weekly_leaderboard('dev-a', '2026-08-16 23:59:00+00')`));
@@ -185,17 +261,25 @@ try {
   check(isoWeekStart('2026-08-11') === '2026-08-10', 'janela semanal do espelho TS bate com a SQL');
   check(isoWeekStart('2026-08-16') === '2026-08-10', 'espelho TS: domingo na mesma semana');
 
-  console.log('\n4. Acesso anônimo (RLS + grants da migration 0002)');
+  console.log('\n5. Acesso anônimo (RLS + grants das migrations 0002/0003)');
   check(psqlCommand(`set role anon; select public.get_daily_seed('2026-08-11')`) === String(sqlSeeds['2026-08-11']), 'anon consegue chamar get_daily_seed via RPC');
   check(psqlCommand(`set role anon; select public.submit_daily_score('anon-dev', 700)`) === '700', 'anon consegue submeter pontuação (security definer)');
   check(psqlCommand(`set role anon; select public.get_weekly_leaderboard('anon-dev', now())`).startsWith('{'), 'anon consegue consultar o leaderboard');
+  check(psqlCommand(`set role anon; select public.set_display_name('anon-dev', 'Anonimo')`) === 'Anonimo', 'anon consegue definir o Nome de Exibição (security definer)');
   let directDenied = false;
   try {
     psqlCommand(`set role anon; select * from public.daily_submissions`);
   } catch {
     directDenied = true;
   }
-  check(directDenied, 'anon NÃO acessa a tabela diretamente (RLS sem políticas)');
+  check(directDenied, 'anon NÃO acessa daily_submissions diretamente (RLS sem políticas)');
+  let playersDirectDenied = false;
+  try {
+    psqlCommand(`set role anon; select * from public.players`);
+  } catch {
+    playersDirectDenied = true;
+  }
+  check(playersDirectDenied, 'anon NÃO acessa players diretamente (RLS sem políticas)');
 
   if (failures === 0) {
     console.log('\n✔ Contrato do Desafio Diário verificado contra Postgres real.');
