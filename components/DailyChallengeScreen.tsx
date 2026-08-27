@@ -5,6 +5,7 @@ import {
   canPlayDaily,
   canWatchExtraAd,
   dailyAttemptsForDay,
+  DAILY_FREE_ATTEMPTS,
   DAILY_MAX_ATTEMPTS,
   DailyLeaderboard,
   utcDateIso,
@@ -38,6 +39,11 @@ export function DailyChallengeScreen() {
 
   // Cálculo de tentativas restantes
   const rem = (attempts.attemptsUsed === 0 ? 1 : 0) + (attempts.extraUnlocked && attempts.attemptsUsed < 2 ? 1 : 0);
+  // Denominador do "X/Y": o que está DESBLOQUEADO agora, não o máximo teórico
+  // do dia. Sem isso, um jogador que nunca jogou via "1/2" — lido como "já
+  // usei 1 das 2" — quando na verdade é "1 de 1 disponível agora" (a 2ª só
+  // existe depois de assistir o anúncio).
+  const availableNow = attempts.extraUnlocked ? DAILY_MAX_ATTEMPTS : DAILY_FREE_ATTEMPTS;
 
   let hintText = '';
   let hintDim = false;
@@ -81,7 +87,7 @@ export function DailyChallengeScreen() {
           <Text style={styles.attemptsHead}>{t('daily.attemptsLeft')}</Text>
           <Text style={styles.attemptsValue}>
             {rem}
-            <Text style={styles.attemptsValueSlash}>/{DAILY_MAX_ATTEMPTS}</Text>
+            <Text style={styles.attemptsValueSlash}>/{availableNow}</Text>
           </Text>
           <Text style={[styles.attemptsHint, hintDim && styles.attemptsHintDim]}>
             {hintText}
