@@ -72,7 +72,8 @@
     "plays": "plays",
     "milestones": "Milestones",
     "forgersUnlocked": "Forgers unlocked: {{count}}/3",
-    "language": "Language"
+    "language": "Language",
+    "displayName": "Display Name"
   },
   "forge": {
     "relics": "Relics",
@@ -122,7 +123,11 @@
     "playBold": "Play",
     "bottomHintEnd": "appears only after the free attempt is used; {{playBold}} loads today's shared seed. Leaderboard shows your best plus the weekly Top 10.",
     "weekOf": "Week of {{start}} – {{end}}",
-    "seedLoadError": "Couldn't load today's seed. Please try again."
+    "seedLoadError": "Couldn't load today's seed. Please try again.",
+    "displayNameTitle": "Choose your name",
+    "displayNameDesc": "This name shows up on the weekly leaderboard. You can change it later in your Profile.",
+    "displayNamePlaceholder": "Your name",
+    "saveDisplayName": "Save"
   },
   "runWon": {
     "dailyCleared": "DAILY CHALLENGE · CLEARED",
@@ -229,6 +234,12 @@
       "hearts": "Hearts",
       "diamonds": "Diamonds",
       "clubs": "Clubs"
+    },
+    "displayNameError": {
+      "tooShort": "At least 3 characters.",
+      "tooLong": "At most 16 characters.",
+      "invalidChars": "Only letters, numbers and spaces.",
+      "profanity": "That name isn't allowed."
     }
   },
   "ad": {
@@ -266,6 +277,8 @@
     "buyItem": "Buy {{name}}",
     "forgerOption": "{{name}} forger",
     "forgerOptionLocked": "{{name}} forger (locked)",
-    "relicSummary": "Relic: {{name}} — {{description}}"
+    "relicSummary": "Relic: {{name}} — {{description}}",
+    "displayNameInput": "Display name input",
+    "saveDisplayName": "Save display name"
   }
 }

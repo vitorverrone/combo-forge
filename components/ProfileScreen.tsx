@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { computeUnlocks, MILESTONES, Suit } from '../engine';
 
@@ -6,13 +6,24 @@ import i18n, { useTranslation } from '../i18n';
 import { SuitSymbol } from './SuitSymbol';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
+import { useDisplayNameForm } from './useDisplayNameForm';
 import { useGameStore } from '../store/gameStore';
 import TopButton from './TopButton';
 
 export function ProfileScreen() {
   const { t } = useTranslation();
   const progression = useGameStore((state) => state.progression);
+  const daily = useGameStore((state) => state.daily);
+  const setDisplayName = useGameStore((state) => state.setDisplayName);
   const backToStart = useGameStore((state) => state.backToStart);
+  const displayNameSaving = daily.displayNameStatus === 'saving';
+  const displayNameForm = useDisplayNameForm({
+    initialValue: daily.displayName ?? '',
+    saving: displayNameSaving,
+    onSave: (name) => void setDisplayName(name),
+  });
+  const displayNameServerError = daily.displayNameStatus === 'error' ? daily.displayNameError : null;
+  const displayNameError = displayNameForm.clientError ?? displayNameServerError;
 
   const { stats } = progression;
   const unlocks = computeUnlocks(progression);
@@ -112,6 +123,41 @@ export function ProfileScreen() {
             );
           })}
         </View>
+
+        {/* Display Name (ticket 02) — editable anytime, same validation as the mandatory modal */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{t('profile.displayName')}</Text>
+        </View>
+        <View style={styles.displayNameRow}>
+          <TextInput
+            value={displayNameForm.value}
+            onChangeText={displayNameForm.setValue}
+            placeholder={t('daily.displayNamePlaceholder')}
+            placeholderTextColor={colors.textDim}
+            style={styles.displayNameInput}
+            autoCapitalize="words"
+            autoCorrect={false}
+            editable={!displayNameSaving}
+            accessibilityLabel={t('a11y.displayNameInput')}
+          />
+          <Pressable
+            accessibilityLabel={t('a11y.saveDisplayName')}
+            accessibilityRole="button"
+            accessibilityState={{ disabled: !displayNameForm.canSave }}
+            disabled={!displayNameForm.canSave}
+            onPress={displayNameForm.submit}
+            style={({ pressed }) => [
+              styles.displayNameSaveBtn,
+              !displayNameForm.canSave && styles.btnDisabled,
+              pressed && displayNameForm.canSave && styles.btnPressed,
+            ]}
+          >
+            <Text style={styles.displayNameSaveBtnText}>
+              {displayNameSaving ? t('common.loading') : t('daily.saveDisplayName')}
+            </Text>
+          </Pressable>
+        </View>
+        {displayNameError !== null && <Text style={styles.displayNameErrorText}>{displayNameError}</Text>}
 
         {/* Language switcher */}
         <View style={styles.sectionHeader}>
@@ -461,5 +507,46 @@ const styles = StyleSheet.create({
   },
   btnPressed: {
     opacity: 0.8,
+  },
+  /* ── Display Name (ticket 02) ── */
+  displayNameRow: {
+    flexDirection: 'row',
+    gap: spacing[8],
+  },
+  displayNameInput: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: radius[10],
+    paddingHorizontal: spacing[14],
+    paddingVertical: spacing[12],
+    fontFamily: fonts.body,
+    fontSize: 14,
+    color: colors.text,
+  },
+  displayNameSaveBtn: {
+    borderRadius: radius[10],
+    backgroundColor: colors.gold,
+    paddingHorizontal: spacing[16],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  displayNameSaveBtnText: {
+    fontFamily: fonts.heading,
+    color: colors.textOnPrimary,
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  btnDisabled: {
+    opacity: 0.45,
+  },
+  displayNameErrorText: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.danger,
+    marginTop: spacing[6],
   },
 });

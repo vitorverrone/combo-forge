@@ -72,7 +72,8 @@
     "plays": "jogadas",
     "milestones": "Marcos",
     "forgersUnlocked": "Forjadores desbloqueados: {{count}}/3",
-    "language": "Idioma"
+    "language": "Idioma",
+    "displayName": "Nome de Exibição"
   },
   "forge": {
     "relics": "Relíquias",
@@ -120,9 +121,13 @@
     "bottomHint": "Tentativas resetam à meia-noite UTC e ficam salvas neste dispositivo.",
     "watchAdBold": "Assistir anúncio",
     "playBold": "Jogar",
-    "bottomHintEnd": "aparece só depois que a tentativa gratuita é usada; {{playBold}} carrega a seed compartilhada de hoje. O ranking mostra sua melhor pontuação e o Top 10 semanal.",
+    "bottomHintEnd": "O ranking mostra sua melhor pontuação e o Top 10 semanal.",
     "weekOf": "Semana de {{start}} – {{end}}",
-    "seedLoadError": "Não foi possível carregar a seed de hoje. Tente novamente."
+    "seedLoadError": "Não foi possível carregar a seed de hoje. Tente novamente.",
+    "displayNameTitle": "Escolha seu nome",
+    "displayNameDesc": "Esse nome aparece no ranking semanal. Você pode trocá-lo depois no Perfil.",
+    "displayNamePlaceholder": "Seu nome",
+    "saveDisplayName": "Salvar"
   },
   "runWon": {
     "dailyCleared": "DESAFIO DIÁRIO · CONCLUÍDO",
@@ -229,6 +234,12 @@
       "hearts": "Copas",
       "diamonds": "Ouros",
       "clubs": "Paus"
+    },
+    "displayNameError": {
+      "tooShort": "Pelo menos 3 caracteres.",
+      "tooLong": "No máximo 16 caracteres.",
+      "invalidChars": "Só letras, números e espaço.",
+      "profanity": "Esse nome não é permitido."
     }
   },
   "ad": {
@@ -266,6 +277,8 @@
     "buyItem": "Comprar {{name}}",
     "forgerOption": "Forjador {{name}}",
     "forgerOptionLocked": "Forjador {{name}} (trancado)",
-    "relicSummary": "Relíquia: {{name}} — {{description}}"
+    "relicSummary": "Relíquia: {{name}} — {{description}}",
+    "displayNameInput": "Campo de nome de exibição",
+    "saveDisplayName": "Salvar nome de exibição"
   }
 }

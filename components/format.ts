@@ -4,7 +4,7 @@
  */
 
 import i18n from '../i18n';
-import { Card, ForgeEffect, PatternKind, Relic, Suit } from '../engine';
+import { Card, DisplayNameValidation, ForgeEffect, PatternKind, Relic, Suit } from '../engine';
 
 export const SUIT_SYMBOL: Readonly<Record<Suit, string>> = {
   spades: '♠',
@@ -86,6 +86,19 @@ export function forgeEffectDescription(effect: ForgeEffect): string {
 /** Translated suit name for display. */
 export function suitName(suit: Suit): string {
   return i18n.t(`format.suit.${suit}`);
+}
+
+/** Mensagem traduzida do motivo de rejeição do Nome de Exibição (ticket 02). */
+const DISPLAY_NAME_ERROR_I18N_KEY: Readonly<Record<Exclude<DisplayNameValidation, { valid: true }>['reason'], string>> = {
+  tooShort: 'format.displayNameError.tooShort',
+  tooLong: 'format.displayNameError.tooLong',
+  invalidChars: 'format.displayNameError.invalidChars',
+  profanity: 'format.displayNameError.profanity',
+};
+
+/** Mensagem traduzida (para exibição) do motivo de rejeição. */
+export function displayNameErrorMessage(reason: Exclude<DisplayNameValidation, { valid: true }>['reason']): string {
+  return i18n.t(DISPLAY_NAME_ERROR_I18N_KEY[reason]);
 }
 
 export function relicDescription(relic: Relic | undefined): string {

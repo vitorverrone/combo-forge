@@ -33,6 +33,7 @@ import {
   startRun as engineStartRun,
   unlockExtraAttempt,
   utcDateIso,
+  validateDisplayName,
   withBestSubmitted,
 } from '../engine';
 
@@ -57,6 +58,13 @@ export interface DailyState {
   readonly leaderboard: DailyLeaderboard | null;
   readonly leaderboardLoading: boolean;
   readonly leaderboardError: string | null;
+  /**
+   * Nome de Exibição do dispositivo (ticket 02): null até a primeira vez
+   * ser salvo — a UI usa isso para decidir se mostra o modal obrigatório.
+   */
+  readonly displayName: string | null;
+  readonly displayNameStatus: 'idle' | 'saving' | 'error';
+  readonly displayNameError: string | null;
 }
 
 /** Ports que o fluxo precisa (injetados pelo store; memória nos testes). */
@@ -76,7 +84,8 @@ export type DailyCommand =
   | { type: 'start' }
   | { type: 'watchAd' }
   | { type: 'submit'; score: number }
-  | { type: 'fetchLeaderboard' };
+  | { type: 'fetchLeaderboard' }
+  | { type: 'setDisplayName'; name: string };
 
 /** Resultado do comando: estado novo + sinal de Run iniciada (navegação). */
 export interface DailyFlowResult {
@@ -108,6 +117,8 @@ export async function runDailyCommand(
       return submitDailyScore(state, deps, command.score);
     case 'fetchLeaderboard':
       return fetchLeaderboard(state, deps);
+    case 'setDisplayName':
+      return setDisplayName(state, deps, command.name);
   }
 }
 
@@ -231,6 +242,48 @@ async function fetchLeaderboard(
   } catch (error) {
     return {
       daily: { ...loading, leaderboardLoading: false, leaderboardError: messageOf(error) },
+      run: null,
+      rng: null,
+    };
+  }
+}
+
+/**
+ * Grava o Nome de Exibição (ticket 02). Valida no cliente primeiro (falha
+ * sem round-trip de rede quando dá pra saber sem o servidor); só então
+ * chama o backend, que é a fonte da verdade final (moderação/formato) —
+ * rejeição do servidor ou falha de rede caem no mesmo estado de erro.
+ */
+async function setDisplayName(
+  state: DailyState,
+  deps: DailyFlowDeps,
+  name: string,
+): Promise<DailyFlowResult> {
+  const clientValidation = validateDisplayName(name);
+  if (!clientValidation.valid) {
+    // Este módulo não conhece i18n (fica na camada UI/format.ts) — guarda o
+    // reason bruto ('tooShort' etc.), não uma mensagem traduzida. Na prática
+    // a UI já faz a mesma validação ao vivo antes de habilitar o botão de
+    // salvar, então este branch é uma rede de segurança, não o caminho
+    // principal de erro visto pelo jogador.
+    return {
+      daily: { ...state, displayNameStatus: 'error', displayNameError: clientValidation.reason },
+      run: null,
+      rng: null,
+    };
+  }
+  const saving = { ...state, displayNameStatus: 'saving' as const, displayNameError: null };
+  try {
+    const savedName = await deps.backend.setDisplayName(state.deviceId, name);
+    deps.storage.saveDisplayName(savedName);
+    return {
+      daily: { ...saving, displayName: savedName, displayNameStatus: 'idle' },
+      run: null,
+      rng: null,
+    };
+  } catch (error) {
+    return {
+      daily: { ...saving, displayNameStatus: 'error', displayNameError: messageOf(error) },
       run: null,
       rng: null,
     };

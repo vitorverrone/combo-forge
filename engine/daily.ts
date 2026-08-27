@@ -135,7 +135,9 @@ export interface DailyLeaderboard {
 }
 
 /**
- * Port de persistência do Desafio Diário: tentativas do dia + deviceId.
+ * Port de persistência do Desafio Diário: tentativas do dia + deviceId +
+ * Nome de Exibição (ticket 02 — nome é propriedade do dispositivo, mesma
+ * chave/lugar do deviceId, independente do dia).
  * Implementação SQLite no app (store/sqlite.ts); memória nos testes.
  */
 export interface DailyChallengeStorage {
@@ -143,15 +145,19 @@ export interface DailyChallengeStorage {
   saveAttempts(state: DailyAttempts): void;
   loadDeviceId(): string | null;
   saveDeviceId(id: string): void;
+  loadDisplayName(): string | null;
+  saveDisplayName(name: string): void;
 }
 
 /** Implementação em memória do port, para testes. */
 export function createMemoryDailyChallengeStorage(
   initial?: DailyAttempts | null,
   deviceId?: string | null,
+  displayName?: string | null,
 ): DailyChallengeStorage {
   let attempts = initial ?? null;
   let storedDeviceId = deviceId ?? null;
+  let storedDisplayName = displayName ?? null;
   return {
     loadAttempts: () => attempts,
     saveAttempts: (state) => {
@@ -160,6 +166,10 @@ export function createMemoryDailyChallengeStorage(
     loadDeviceId: () => storedDeviceId,
     saveDeviceId: (id) => {
       storedDeviceId = id;
+    },
+    loadDisplayName: () => storedDisplayName,
+    saveDisplayName: (name) => {
+      storedDisplayName = name;
     },
   };
 }
@@ -176,6 +186,13 @@ export interface DailyBackend {
   submitScore(deviceId: string, score: number): Promise<number>;
   /** Leaderboard semanal (posição própria + top 10, sem identidades). */
   fetchLeaderboard(deviceId: string): Promise<DailyLeaderboard>;
+  /**
+   * Grava o Nome de Exibição do dispositivo (ticket 02). Rejeita a Promise
+   * quando o servidor recusa (moderação/formato — fonte da verdade final,
+   * além da validação do cliente) ou em falha de rede; devolve o nome
+   * canônico salvo (trim aplicado) quando aceito.
+   */
+  setDisplayName(deviceId: string, name: string): Promise<string>;
 }
 
 /** Backend indisponível (env não configurado): erros claros para a UI. */
@@ -186,5 +203,6 @@ export function createUnavailableDailyBackend(): DailyBackend {
     fetchSeed: unavailable,
     submitScore: unavailable,
     fetchLeaderboard: unavailable,
+    setDisplayName: unavailable,
   };
 }

@@ -67,6 +67,15 @@ export function createSupabaseDailyBackend(): DailyBackend | null {
       if (error) throw new Error(error.message);
       return data as DailyLeaderboard;
     },
+
+    setDisplayName: async (deviceId: string, name: string): Promise<string> => {
+      const { data, error } = await client.rpc('set_display_name', {
+        p_device_id: deviceId,
+        p_name: name,
+      });
+      if (error) throw new Error(error.message);
+      return data as string;
+    },
   };
 }
 

@@ -30,6 +30,7 @@ const DDA_KEY = 'combo-forge:dda';
 const PROGRESSION_KEY = 'combo-forge:progression';
 const DAILY_ATTEMPTS_KEY = 'combo-forge:daily-attempts';
 const DAILY_DEVICE_ID_KEY = 'combo-forge:daily-device-id';
+const DAILY_DISPLAY_NAME_KEY = 'combo-forge:daily-display-name';
 const SHOP_KEY = 'combo-forge:shop';
 const BREAK_KEY = 'combo-forge:break-history';
 
@@ -82,13 +83,15 @@ export function createSqliteBreakStorage(): BreakStorage {
   };
 }
 
-/** Port de storage do Desafio Diário sobre SQLite (tentativas + deviceId). */
+/** Port de storage do Desafio Diário sobre SQLite (tentativas + deviceId + Nome de Exibição). */
 export function createSqliteDailyChallengeStorage(): DailyChallengeStorage {
   return {
     loadAttempts: () => readJson<DailyAttempts>(DAILY_ATTEMPTS_KEY),
     saveAttempts: (state) => writeJson(DAILY_ATTEMPTS_KEY, state),
     loadDeviceId: () => readJson<string>(DAILY_DEVICE_ID_KEY),
     saveDeviceId: (id) => writeJson(DAILY_DEVICE_ID_KEY, id),
+    loadDisplayName: () => readJson<string>(DAILY_DISPLAY_NAME_KEY),
+    saveDisplayName: (name) => writeJson(DAILY_DISPLAY_NAME_KEY, name),
   };
 }
 
