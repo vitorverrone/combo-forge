@@ -1,15 +1,18 @@
 /**
- * Provider de anúncios recompensados real (ticket 16): implementa o port
+ * Provider de anúncios real (tickets 16 + banner-01): implementa o port
  * AdProvider (engine/adProvider.ts) com o SDK react-native-google-mobile-ads
- * (AdMob), consumido pelo Desafio Diário (tentativa extra via anúncio).
+ * (AdMob) — recompensado (Desafio Diário, tentativa extra) e intersticial
+ * (entre Runs).
  *
- * Config via EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID / _IOS (ver
- * .env.example). Ad unit IDs são por plataforma e o EAS injeta env por
- * ambiente (não por plataforma), então cada plataforma tem a sua variável,
- * selecionada em runtime via Platform.OS. Sem o env da plataforma atual,
- * devolve o provider dev (anúncio sempre concluído) — o jogo funciona
- * integralmente sem anúncios (nunca são obrigatórios). Em desenvolvimento o
- * SDK usa o TestId oficial de rewarded (não gasta impressões reais).
+ * Config via EXPO_PUBLIC_ADMOB_{REWARDED,INTERSTITIAL,BANNER}_AD_UNIT_ID_{ANDROID,IOS}
+ * (ver .env.example). Ad units do AdMob são específicos por formato — um id de
+ * rewarded não serve anúncio como intersticial — então cada formato tem a sua
+ * própria variável, e cada plataforma a sua (o EAS injeta env por ambiente,
+ * não por plataforma), selecionada em runtime via Platform.OS. Sem o env do
+ * formato/plataforma atual, devolve o provider dev (anúncio sempre concluído)
+ * — o jogo funciona integralmente sem anúncios (nunca são obrigatórios). Em
+ * desenvolvimento o SDK usa o TestId oficial de cada formato (não gasta
+ * impressões reais).
  *
  * O módulo nativo não existe no Expo Go/web/testes: o import é dinâmico e
  * qualquer falha resolve false — o anúncio nunca bloqueia nem quebra o
@@ -20,20 +23,28 @@ import { Platform } from 'react-native';
 
 import { AdProvider } from '../engine';
 
-const AD_UNIT_ANDROID = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID;
-const AD_UNIT_IOS = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS;
+const REWARDED_UNIT_ANDROID = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID;
+const REWARDED_UNIT_IOS = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS;
+
+const INTERSTITIAL_UNIT_ANDROID = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID;
+const INTERSTITIAL_UNIT_IOS = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_IOS;
 
 const BANNER_UNIT_ANDROID = process.env.EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID;
 const BANNER_UNIT_IOS = process.env.EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_IOS;
 
-/** Ad unit ID da plataforma atual (Android é o padrão; iOS exige variável própria). */
-function adUnitIdForPlatform(): string | undefined {
-  return Platform.OS === 'ios' ? AD_UNIT_IOS : AD_UNIT_ANDROID;
+/** Ad unit de recompensado da plataforma atual (Android é o padrão; iOS exige variável própria). */
+function rewardedAdUnitId(): string | undefined {
+  return Platform.OS === 'ios' ? REWARDED_UNIT_IOS : REWARDED_UNIT_ANDROID;
+}
+
+/** Ad unit de intersticial da plataforma atual — SEPARADO do de recompensado (formato diferente no AdMob). */
+function interstitialAdUnitId(): string | undefined {
+  return Platform.OS === 'ios' ? INTERSTITIAL_UNIT_IOS : INTERSTITIAL_UNIT_ANDROID;
 }
 
 /** Env do anúncio recompensado configurado para esta plataforma? */
 export function isAdMobConfigured(): boolean {
-  return Boolean(adUnitIdForPlatform());
+  return Boolean(rewardedAdUnitId());
 }
 
 /**
@@ -50,12 +61,12 @@ export function bannerAdUnitId(): string | undefined {
  * Mesmo padrão dos demais serviços do app (Supabase, RevenueCat).
  */
 export function createAppAdProvider(): AdProvider {
-  const adUnitId = adUnitIdForPlatform();
   // Em dev usa TestIds oficiais do SDK (banner já faz o mesmo);
-  // em produção só usa ad unit real se configurado via env.
+  // em produção só usa ad unit real se configurado via env — e cada formato
+  // usa o seu próprio (rewarded e intersticial não compartilham ad unit).
   return {
-    requestRewardedAd: () => requestAdMobRewarded(adUnitId),
-    requestInterstitialAd: () => requestAdMobInterstitial(adUnitId),
+    requestRewardedAd: () => requestAdMobRewarded(rewardedAdUnitId()),
+    requestInterstitialAd: () => requestAdMobInterstitial(interstitialAdUnitId()),
   };
 }
 
