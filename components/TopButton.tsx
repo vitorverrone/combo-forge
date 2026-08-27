@@ -2,6 +2,7 @@ import { Pressable, View, Text, StyleSheet } from "react-native";
 import { colors } from "./theme";
 import Svg, { Circle, Path } from "react-native-svg";
 import { fonts } from "./typography";
+import { useTranslation } from "../i18n";
 
 interface TopButtonProps {
     readonly isBackButton?: boolean
@@ -9,9 +10,10 @@ interface TopButtonProps {
 }
 
 export default function TopButton({ isBackButton = true, onPress }: TopButtonProps) {
+    const { t } = useTranslation();
     return (
         <Pressable
-            accessibilityLabel={isBackButton ? "Back" : "Open profile"}
+            accessibilityLabel={isBackButton ? t('a11y.back') : t('a11y.openProfile')}
             accessibilityRole="button"
             onPress={onPress}
             style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}

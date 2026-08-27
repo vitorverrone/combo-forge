@@ -24,7 +24,7 @@ export function RelicRow({ relics, compact = false }: RelicRowProps) {
     return (
       <View style={styles.compactRow}>
         {relics.map((relic) => (
-          <View key={relic.id} style={styles.compactChip} accessibilityLabel={`Relic: ${relic.name} — ${relicDescription(relic)}`} accessibilityRole="text">
+          <View key={relic.id} style={styles.compactChip} accessibilityLabel={t('a11y.relicSummary', { name: relic.name, description: relicDescription(relic) })} accessibilityRole="text">
             <Text style={styles.compactText} numberOfLines={1}>
               {relic.name} · {relicDescription(relic)}
             </Text>
@@ -39,7 +39,7 @@ export function RelicRow({ relics, compact = false }: RelicRowProps) {
       <Text style={styles.overlayLabel}>{t('runWon.activeRelics').toUpperCase()}</Text>
       <View style={styles.overlayList}>
         {relics.map((relic) => (
-          <View key={relic.id} style={styles.overlayItem} accessibilityLabel={`Relic: ${relic.name} — ${relicDescription(relic)}`} accessibilityRole="text">
+          <View key={relic.id} style={styles.overlayItem} accessibilityLabel={t('a11y.relicSummary', { name: relic.name, description: relicDescription(relic) })} accessibilityRole="text">
             <Text style={styles.overlayName}>{relic.name}</Text>
             <Text style={styles.overlayDesc}>{relicDescription(relic)}</Text>
           </View>

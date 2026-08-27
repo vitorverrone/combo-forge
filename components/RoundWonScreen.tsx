@@ -46,7 +46,8 @@ export function RoundWonScreen({ run }: RoundWonScreenProps) {
         </View>
       </View>
 
-      {/* Forger note */}        <Text style={styles.forgerNote}>
+      {/* Forger note */}
+      <Text style={styles.forgerNote}>
         {t('roundWon.runTotal', { forger: getForger(run.forger).name, pts: run.runScore })}
       </Text>
 
@@ -59,7 +60,7 @@ export function RoundWonScreen({ run }: RoundWonScreenProps) {
       {/* Action */}
       <View style={styles.actions}>
         <Pressable
-          accessibilityLabel="Start next round"
+          accessibilityLabel={t('a11y.startNextRound')}
           onPress={nextRound}
           style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
         >

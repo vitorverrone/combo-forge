@@ -78,7 +78,7 @@ export function StartScreen() {
         <View style={styles.topbar}>
           <TopButton onPress={openProfile} isBackButton={false} />
           <Pressable
-            accessibilityLabel="Open shop"
+            accessibilityLabel={t('a11y.openShop')}
             accessibilityRole="button"
             onPress={openShop}
             style={({ pressed }) => [styles.shopBtn, pressed && styles.navBtnPressed]}
@@ -120,7 +120,11 @@ export function StartScreen() {
               return (
                 <Pressable
                   key={candidate.id}
-                  accessibilityLabel={`${candidate.name} forger${unlocked ? '' : ' (locked)'}`}
+                  accessibilityLabel={
+                    unlocked
+                      ? t('a11y.forgerOption', { name: candidate.name })
+                      : t('a11y.forgerOptionLocked', { name: candidate.name })
+                  }
                   accessibilityRole="button"
                   accessibilityState={{ disabled: !unlocked, selected }}
                   disabled={!unlocked}
@@ -151,7 +155,7 @@ export function StartScreen() {
           {/* CTA stack */}
           <View style={styles.ctaStack}>
             <Pressable
-              accessibilityLabel="Start run"
+              accessibilityLabel={t('start.startRun')}
               accessibilityRole="button"
               onPress={startRun}
               style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
@@ -160,7 +164,7 @@ export function StartScreen() {
             </Pressable>
 
             <Pressable
-              accessibilityLabel="Daily challenge"
+              accessibilityLabel={t('start.dailyChallenge')}
               accessibilityRole="button"
               onPress={openDaily}
               style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnSecondaryPressed]}
@@ -173,7 +177,7 @@ export function StartScreen() {
 
             <View style={styles.bottomNav}>
               <Pressable
-                accessibilityLabel="Open collection"
+                accessibilityLabel={t('a11y.openCollection')}
                 accessibilityRole="button"
                 onPress={openCollection}
                 style={({ pressed }) => [styles.bottomNavBtn, pressed && styles.navBtnPressed]}

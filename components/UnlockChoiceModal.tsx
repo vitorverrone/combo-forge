@@ -52,7 +52,7 @@ export function UnlockChoiceModal() {
             {unclaimedOptions.map((option) => (
               <Pressable
                 key={option.id}
-                accessibilityLabel={`Unlock ${option.title}`}
+                accessibilityLabel={t('a11y.unlockItem', { name: option.title })}
                 accessibilityRole="button"
                 onPress={() => claimUnlock(option.id)}
                 style={({ pressed }) => [styles.option, pressed && styles.btnPressed]}
@@ -77,7 +77,7 @@ export function UnlockChoiceModal() {
 
           {/* Later button */}
           <Pressable
-            accessibilityLabel="Decide later"
+            accessibilityLabel={t('common.decideLater')}
             accessibilityRole="button"
             onPress={dismiss}
             style={({ pressed }) => [styles.laterBtn, pressed && styles.btnPressed]}

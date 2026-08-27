@@ -37,6 +37,7 @@
     "patternHint": "Selecione cartas para formar uma jogada",
     "base": "Base",
     "pts": "pts",
+    "previewSuffix": "com ×{{multiplier}}",
     "clear": "Limpar",
     "discard": "Descartar",
     "play": "JOGAR",
@@ -120,7 +121,8 @@
     "watchAdBold": "Assistir anúncio",
     "playBold": "Jogar",
     "bottomHintEnd": "aparece só depois que a tentativa gratuita é usada; {{playBold}} carrega a seed compartilhada de hoje. O ranking mostra sua melhor pontuação e o Top 10 semanal.",
-    "weekOf": "Semana de {{start}} – {{end}}"
+    "weekOf": "Semana de {{start}} – {{end}}",
+    "seedLoadError": "Não foi possível carregar a seed de hoje. Tente novamente."
   },
   "runWon": {
     "dailyCleared": "DESAFIO DIÁRIO · CONCLUÍDO",
@@ -144,7 +146,9 @@
     "runTotal": "Total da run: {{pts}} pts",
     "tryAgain": "TENTAR NOVAMENTE",
     "dailyChallenge": "DESAFIO DIÁRIO",
-    "changeForger": "TROCAR FORJADOR"
+    "changeForger": "TROCAR FORJADOR",
+    "eyebrowRound": "RODADA {{number}} · {{forger}}",
+    "progressTarget": "alvo {{target}}"
   },
   "roundWon": {
     "roundCleared": "Rodada {{number}} concluída",
@@ -177,7 +181,8 @@
       "body": "Alcance o alvo da rodada antes que suas jogadas acabem. Ganhar rodadas 1–5 abre a Forja.",
       "tip": "Dica: passe todas as 6 rodadas para ganhar a run."
     },
-    "letsForge": "Vamos Forjar"
+    "letsForge": "Vamos Forjar",
+    "patternExampleBase": "10 + valor das cartas"
   },
   "unlockChoice": {
     "milestoneReached": "Marco alcançado",
@@ -228,5 +233,39 @@
   },
   "ad": {
     "testAd": "Anúncio de teste"
+  },
+  "a11y": {
+    "back": "Voltar",
+    "openProfile": "Abrir perfil",
+    "openShop": "Abrir loja",
+    "openCollection": "Abrir coleção",
+    "dismissBreakReminder": "Dispensar lembrete de pausa",
+    "abandonRun": "Abandonar run",
+    "clearSelection": "Limpar seleção",
+    "discardSelectedCards": "Descartar cartas selecionadas",
+    "playSelectedCards": "Jogar cartas selecionadas",
+    "backToHome": "Voltar ao início",
+    "skipTutorial": "Pular tutorial",
+    "startPlaying": "Começar a jogar",
+    "nextStep": "Próximo passo",
+    "confirmForge": "Confirmar forja",
+    "cardOfSuit": "{{value}} de {{suit}}",
+    "applyEffect": "Aplicar {{effect}}",
+    "takeRelic": "Pegar relíquia {{name}}",
+    "forgeEffect": "Efeito de forja {{effect}}",
+    "unlockItem": "Desbloquear {{name}}",
+    "watchAdExtraAttempt": "Assistir anúncio para tentativa extra",
+    "playDailyChallenge": "Jogar desafio diário",
+    "viewWeeklyLeaderboard": "Ver ranking semanal",
+    "backToDailyChallenge": "Voltar ao desafio diário",
+    "playAnotherRun": "Jogar outra run",
+    "backToStart": "Voltar ao início",
+    "tryAgainImmediately": "Tentar de novo imediatamente",
+    "startNextRound": "Iniciar próxima rodada",
+    "equipItem": "Equipar {{name}}",
+    "buyItem": "Comprar {{name}}",
+    "forgerOption": "Forjador {{name}}",
+    "forgerOptionLocked": "Forjador {{name}} (trancado)",
+    "relicSummary": "Relíquia: {{name}} — {{description}}"
   }
 }

@@ -15,9 +15,9 @@ erradas de design.
 
 | Severidade | Itens |
 |---|---|
-| ✅ Corrigido | ~~14 testes falhando~~ · ~~`deviceId` nunca persistia~~ · ~~intersticial com ad unit errado~~ · ~~variável do Supabase dessincronizada~~ · ~~binário no `.gitignore`~~ · ~~sem linter/formatter~~ (2026-08-26) |
+| ✅ Corrigido | ~~14 testes falhando~~ · ~~`deviceId` nunca persistia~~ · ~~intersticial com ad unit errado~~ · ~~variável do Supabase dessincronizada~~ · ~~binário no `.gitignore`~~ · ~~sem linter/formatter~~ · ~~i18n pela metade~~ (2026-08-26) |
 | 🟠 Estrutura | limpeza do histórico do git (`.aab` já saiu do índice, mas o blob de 107 MB segue no histórico) · 4 docs de requisito concorrentes |
-| 🟡 Consistência | Lacunas de i18n · sem escala de espaçamento · regra duplicada entre engine e UI |
+| 🟡 Consistência | sem escala de espaçamento · regra duplicada entre engine e UI |
 
 ---
 
@@ -299,36 +299,97 @@ conferi token a token.
 
 ---
 
-## 🟡 8. i18n aplicado pela metade
+## ✅ 8. i18n aplicado pela metade — corrigido em 2026-08-26
 
-O [i18n/index.ts](i18n/index.ts) é bem construído: tipos inferidos do `pt.json`,
-resolução por SQLite → locale do device → fallback. Mas a adoção nas telas ficou
-incompleta.
+O escopo real era maior do que a análise original media. Uma varredura completa
+(não só o grep que gerou a lista original) achou **42 `accessibilityLabel` em
+inglês fixo, espalhados por 15 componentes** — não 28 em 13. A diferença: o
+grep original só pegava `accessibilityLabel="..."` (string literal); os
+`accessibilityLabel={\`...\`}` (template string, com nome de item/carta/naipe
+interpolado) não entravam no padrão e ficaram de fora da contagem. Todos os 42
+foram traduzidos — `pt.json`/`en.json` ganharam um namespace `a11y` novo,
+reaproveitando chaves já existentes onde o texto já era idêntico a um rótulo
+visível (`common.decideLater`, `common.cancel`, `game.keepPlaying`,
+`shop.restorePurchases`, `start.startRun`, `start.dailyChallenge`).
 
-**28 `accessibilityLabel` em inglês fixo**, em 13 componentes — de
-`"Abandon run"` a `"Restore purchases"`. Num app que já detecta locale pt-BR,
-todo leitor de tela em português vai ouvir rótulos em inglês. Como acessibilidade,
-é a parte da i18n que mais importa e a única 100% não traduzida.
+**Um bug de verdade apareceu no meio da varredura, fora da lista original:**
+[i18n/pt.json](i18n/pt.json) e [i18n/en.json](i18n/en.json) já tinham
+`runLost.shortOfTarget` com tags `<1>...</1>` — sintaxe do `<Trans>` do
+react-i18next para embutir um componente estilizado no meio da frase. Só que
+[components/RunLostScreen.tsx](components/RunLostScreen.tsx) nunca usou
+`<Trans>` — chamava `t('runLost.shortOfTarget', {...})` puro e jogava o
+resultado direto num `<Text>`. Efeito: **todo jogador que perdia uma run via
+literalmente `<1>46 pontos (18%)</1>` na tela**, tags incluídas. Reforça a
+suspeita: o estilo `missingValue` (cor de destaque) já existia no
+`StyleSheet.create` do arquivo, **também nunca referenciado em lugar nenhum**
+— o autor original claramente pretendia usar `<Trans>` com esse estilo e
+nunca terminou de plugar. Corrigido usando a API `components` do `<Trans>`
+(`components={{ 1: <Text style={styles.missingValue} /> }}`), que evita a
+sintaxe `{{pts}}` como filho de JSX — essa sintaxe colide com a tipagem de
+`children` do `<Text>` do React Native (`Object literal may only specify
+known properties`), um atrito conhecido de `Trans` + RN + TypeScript.
 
-**Texto visível fora do `t()`:**
+**Duas chaves de tradução já existiam, prontas, e nunca eram chamadas** —
+sinal de que a UI foi escrita antes das chaves, ou as chaves foram criadas e a
+integração ficou pra depois e não foi finalizada:
+- `game.base` ("Base") e `game.pts` ("pts") — [components/GameScreen.tsx](components/GameScreen.tsx)
+  montava a linha de preview do padrão hardcoded em inglês
+  (`Base {n} · {n} pts with ×{n}`) ao lado dessas duas chaves. Agora usa
+  `t('game.base')`/`t('game.pts')` + uma chave nova `game.previewSuffix`
+  ("with ×{{multiplier}}"/"com ×{{multiplier}}"). De quebra, a própria tela
+  usava `PATTERN_NAME` (o mapa **não traduzido**, com o comentário explícito
+  "for internal use (tests, etc.)" em [components/format.ts](components/format.ts))
+  em vez de `patternName()` (a versão traduzida, já usada em todo o resto do
+  app) — trocado.
+- `daily.weekOf` ("Week of {{start}} – {{end}}"/"Semana de {{start}} – {{end}}")
+  — [components/DailyChallengeScreen.tsx](components/DailyChallengeScreen.tsx)
+  construía o rótulo da semana na mão, com um array `MONTHS` hardcoded em
+  inglês (`['Jan', 'Feb', ...]`) que nem essa chave usava. Trocado por
+  `Intl.DateTimeFormat(i18n.language, { month: 'short', day: 'numeric' })` +
+  `t('daily.weekOf', {...})` — a abreviação do mês agora segue o idioma atual
+  automaticamente, em vez de sempre inglês.
 
-| Local | Texto |
-|---|---|
-| [components/GameScreen.tsx:91](components/GameScreen.tsx#L91) | `Base {n} · {n} pts with ×{n}` |
-| [components/RunLostScreen.tsx:69](components/RunLostScreen.tsx#L69) | `'DAILY CHALLENGE · '` + `ROUND {n} · {forjador}` |
-| [components/RunLostScreen.tsx:108](components/RunLostScreen.tsx#L108) | `target {run.target}` |
-| [components/CollectionScreen.tsx:141](components/CollectionScreen.tsx#L141) | `All 40 base cards are always available — forge effects shape them.` |
-| [components/OnboardingOverlay.tsx:130-131](components/OnboardingOverlay.tsx#L130-L131) | `Pair` / `10 + card values` |
+**Mais três strings hardcoded achadas na varredura, fora da lista original:**
+- `components/DailyChallengeScreen.tsx` — fallback `daily.error ?? "Couldn't load
+  today's seed. Please try again."`. Nova chave `daily.seedLoadError`.
+- `components/CollectionScreen.tsx` — fallback `status?.milestone.description ??
+  'Locked'`. Reaproveitada `common.locked` (já existia).
+- `components/OnboardingOverlay.tsx` — `"Pair"` no visual de exemplo do passo
+  "Score the Pattern" reaproveita `format.pattern.pair` (a mesma chave que
+  `patternName()` já usa em todo o resto do app, via `PatternKind.Pair`);
+  `"10 + card values"` ganhou a chave nova `onboarding.patternExampleBase`.
 
-*(Conferi o "40 base cards": 4 naipes × valores 1–10 = 40. O texto está correto,
-só não está traduzido.)*
+**Os 3 `as any` do projeto** (`components/OnboardingOverlay.tsx:47-49`, chave
+de i18n montada por template string) — removidos. `tsc --noEmit` confirma que
+nunca foram necessários: `STEP_KEYS[step]` (tupla `as const`) já devolve a
+união literal certa de nomes de passo, e o TypeScript infere sozinho o tipo
+do template `` `onboarding.${stepKey}.title` `` como união de chaves válidas.
 
-**Chaves dinâmicas anulam a tipagem:**
-[components/OnboardingOverlay.tsx:47-49](components/OnboardingOverlay.tsx#L47-L49)
-usa `t(\`onboarding.${stepKey}.title\` as any)`. São exatamente os 3 `as any` do
-projeto. O `as any` derrota o sistema de tipos que o `i18n/index.ts` foi feito
-para oferecer — uma chave removida do `pt.json` não daria erro de compilação
-aqui. Um mapa explícito `STEP_KEYS → chave` resolveria sem cast.
+**Intencionalmente não mexido:**
+- O texto "All 40 base cards..." em `CollectionScreen.tsx` — vive inteiro
+  dentro do bloco JSX comentado (feature desligada) já discutido no item 6.
+  Traduzir texto de um bloco morto não muda nada pro jogador; a decisão sobre
+  reativar essa visão do baralho continua em aberto, fora do escopo de i18n.
+- `common.back` (a seta "←") — outra chave órfã, nunca chamada (cada tela
+  hardcoda o glifo `←` direto no `<Text>`). Diferente dos outros órfãos desta
+  seção, não é um bug: o glifo não precisa de tradução por idioma. Não fiz
+  nada aqui — mencionado só por transparência, já que apareceu na mesma
+  varredura.
+
+**Correção a uma afirmação do item 6:** a tabela daquele item dizia que a
+formatação quebrada (`<          Text`, `) ? (          <Text`) em
+`RunLostScreen.tsx`/`ShopScreen.tsx` tinha sido "corrigida automaticamente
+pelo `eslint --fix`". Isso estava errado — reconferi agora e as duas ainda
+estavam quebradas; `eslint --fix` corrige violações de regras de lint, não
+espaçamento arbitrário dentro de JSX (isso é trabalho do Prettier, que não
+rodou no repo inteiro — item 6 mesmo, "decisão consciente"). Corrigidas à mão
+agora, como efeito colateral de mexer nos dois arquivos por causa do i18n.
+
+`tsc --noEmit` limpo, `eslint .` sem nenhum problema, 329/329 testes passando.
+Sem teste automatizado cobrindo o texto renderizado das telas (não há
+`@testing-library/react-native` no projeto) — verificação foi simular
+`i18next.t()`/interpolação de cada chave nova em pt e en via script Node,
+lendo o resultado, mais leitura cuidadosa de cada arquivo editado.
 
 ---
 
@@ -439,4 +500,5 @@ ainda que o número em si tenha ficado desatualizado.
 3. ~~Ad unit do intersticial~~ (item 3) — ✅ código corrigido em 2026-08-26; falta só criar a unidade real no dashboard AdMob (checklist atualizado).
 4. ~~Variável do Supabase~~ (item 4) — ✅ feito em 2026-08-26 (revertida uma regressão de um dia atrás).
 5. ~~`.gitignore` com `*.aab` + ESLint/Prettier~~ (itens 5 e 6) — ✅ feito em 2026-08-26. Falta, como decisão separada e explícita: limpar o `.aab` do *histórico* do git (`filter-repo`/BFG + force-push coordenado nos dois remotes) e rodar `prettier --write .` pela primeira vez (123 arquivos, diff grande e não relacionado a bug nenhum).
-6. **Consolidar os docs** (item 7) e **escala de espaçamento** (item 9) — dívida real, mas nenhuma delas sangra hoje.
+6. ~~i18n pela metade~~ (item 8) — ✅ feito em 2026-08-26 (42 accessibilityLabel, `<Trans>` do RunLostScreen, e mais 5 strings hardcoded achadas na varredura).
+7. **Consolidar os docs** (item 7) e **escala de espaçamento** (item 9) — dívida real, mas nenhuma delas sangra hoje.

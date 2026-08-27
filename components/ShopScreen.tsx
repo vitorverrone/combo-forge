@@ -57,10 +57,11 @@ export function ShopScreen() {
                 <Text style={styles.shopSub}>{item.description}</Text>
               </View>
               <View style={styles.shopAction}>
-                {owned && equipped ? (                    <Text style={styles.shopEquippedLabel}>{t('shop.equipped')}</Text>
+                {owned && equipped ? (
+                  <Text style={styles.shopEquippedLabel}>{t('shop.equipped')}</Text>
                 ) : owned && !equipped ? (
                   <Pressable
-                    accessibilityLabel={`Equip ${item.name}`}
+                    accessibilityLabel={t('a11y.equipItem', { name: item.name })}
                     onPress={() => equipCosmetic(item.id)}
                     style={({ pressed }) => [styles.equipBtn, pressed && styles.btnPressed]}
                   >
@@ -68,7 +69,7 @@ export function ShopScreen() {
                   </Pressable>
                 ) : (
                   <Pressable
-                    accessibilityLabel={`Buy ${item.name}`}
+                    accessibilityLabel={t('a11y.buyItem', { name: item.name })}
                     disabled={busy}
                     onPress={() => void purchaseCosmetic(item.id)}
                     style={({ pressed }) => [styles.priceBtn, pressed && styles.btnPressed]}
@@ -90,7 +91,7 @@ export function ShopScreen() {
           </Text>
           {!adsRemoved ? (
             <Pressable
-              accessibilityLabel="Buy Remove Ads"
+              accessibilityLabel={t('a11y.buyItem', { name: t('shop.removeAds') })}
               accessibilityRole="button"
               accessibilityState={{ disabled: removeAdsBusy }}
               disabled={removeAdsBusy}
@@ -106,7 +107,7 @@ export function ShopScreen() {
 
         {/* Restore Purchases */}
         <Pressable
-          accessibilityLabel="Restore purchases"
+          accessibilityLabel={t('shop.restorePurchases')}
           accessibilityRole="button"
           accessibilityState={{ disabled: shop.restoring }}
           disabled={shop.restoring}

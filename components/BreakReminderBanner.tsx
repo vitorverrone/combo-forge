@@ -25,7 +25,7 @@ export function BreakReminderBanner() {
           {t('breakReminder.body')}
         </Text>
         <Pressable
-          accessibilityLabel="Dismiss break reminder"
+          accessibilityLabel={t('a11y.dismissBreakReminder')}
           onPress={dismiss}
           style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
         >

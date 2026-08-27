@@ -89,7 +89,7 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
       <View style={styles.actions}>
         {dailyEnd ? (
           <Pressable
-            accessibilityLabel="Back to daily challenge"
+            accessibilityLabel={t('a11y.backToDailyChallenge')}
             onPress={openDaily}
             style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
           >
@@ -97,7 +97,7 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
           </Pressable>
         ) : (
           <Pressable
-            accessibilityLabel="Play another run"
+            accessibilityLabel={t('a11y.playAnotherRun')}
             accessibilityRole="button"
             onPress={restartRun}
             style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
@@ -106,7 +106,7 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
           </Pressable>
         )}
         <Pressable
-          accessibilityLabel="Back to start"
+          accessibilityLabel={t('a11y.backToStart')}
           accessibilityRole="button"
           onPress={backToStart}
           style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnPressed]}

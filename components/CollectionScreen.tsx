@@ -45,7 +45,7 @@ export function CollectionScreen() {
       {/* Topbar */}
       <View style={styles.topbar}>
         <Pressable
-          accessibilityLabel="Back to home"
+          accessibilityLabel={t('a11y.backToHome')}
           accessibilityRole="button"
           onPress={backToStart}
           style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
@@ -210,13 +210,13 @@ export function CollectionScreen() {
                   {forgeEffectLabel(option.effect)}
                 </Text>
                 <Text style={styles.fxDesc}>{forgeEffectDescription(option.effect)}</Text>
-                {!unlocked && <Text style={styles.fxLock}>{status?.milestone.description ?? 'Locked'}</Text>}
+                {!unlocked && <Text style={styles.fxLock}>{status?.milestone.description ?? t('common.locked')}</Text>}
               </View>
               {unlocked ? (
                 <StatusBadge unlocked />
               ) : status?.available ? (
                 <Pressable
-                  accessibilityLabel={`Unlock ${forgeEffectLabel(option.effect)}`}
+                  accessibilityLabel={t('a11y.unlockItem', { name: forgeEffectLabel(option.effect) })}
                   accessibilityRole="button"
                   onPress={() => claimUnlock(option.id)}
                   style={({ pressed }) => [styles.unlockBtn, pressed && styles.btnPressed]}
