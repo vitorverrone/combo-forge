@@ -11,7 +11,7 @@ import {
 } from '../engine';
 
 import i18n, { useTranslation } from '../i18n';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 import TopButton from './TopButton';
@@ -106,7 +106,7 @@ export function DailyChallengeScreen() {
               strokeWidth={2}
               strokeLinecap="round"
               strokeLinejoin="round"
-              style={{ marginRight: 8 }}
+              style={{ marginRight: spacing[8] }}
             >
               <Rect x={2} y={3} width={20} height={14} rx={2} />
               <Line x1={8} y1={21} x2={16} y2={21} />
@@ -230,16 +230,16 @@ const styles = StyleSheet.create({
   topbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 0,
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[0],
   },
   scroll: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing[16],
     paddingBottom: 70,
   },
   header: {
     alignItems: 'center',
-    marginTop: 14,
+    marginTop: spacing[14],
   },
   eyebrow: {
     fontFamily: fonts.body,
@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: spacing[4],
   },
   subtitle: {
     fontFamily: fonts.body,
@@ -266,7 +266,7 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     textAlign: 'center',
     lineHeight: 21,
-    marginTop: 8,
+    marginTop: spacing[8],
     maxWidth: 300,
     alignSelf: 'center',
   },
@@ -274,9 +274,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 14,
-    padding: 16,
-    marginTop: 20,
+    borderRadius: radius[14],
+    padding: spacing[16],
+    marginTop: spacing[20],
     alignSelf: 'stretch',
     alignItems: 'center',
   },
@@ -296,7 +296,7 @@ const styles = StyleSheet.create({
     color: colors.gold,
     textAlign: 'center',
     lineHeight: 44,
-    marginTop: 4,
+    marginTop: spacing[4],
   },
   attemptsValueSlash: {
     fontSize: 20,
@@ -309,7 +309,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: colors.text,
     textAlign: 'center',
-    marginTop: 6,
+    marginTop: spacing[6],
     lineHeight: 18,
   },
   attemptsHintDim: {
@@ -317,12 +317,12 @@ const styles = StyleSheet.create({
   },
   btnPrimary: {
     alignSelf: 'stretch',
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.gold,
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 14,
+    marginTop: spacing[14],
   },
   btnPrimaryDisabled: {
     opacity: 0.45,
@@ -336,26 +336,26 @@ const styles = StyleSheet.create({
   },
   btnSecondary: {
     alignSelf: 'stretch',
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
+    marginTop: spacing[10],
   },
   btnPressedSecondary: {
     flexDirection: 'row',
     alignSelf: 'stretch',
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 10,
+    marginTop: spacing[10],
   },
   btnSecondaryText: {
     color: colors.text,
@@ -368,13 +368,13 @@ const styles = StyleSheet.create({
     opacity: 0.85,
   },
   errorCard: {
-    marginTop: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
+    marginTop: spacing[12],
+    paddingVertical: spacing[10],
+    paddingHorizontal: spacing[12],
     backgroundColor: 'rgba(224,92,78,0.12)',
     borderWidth: 1,
     borderColor: colors.danger,
-    borderRadius: 10,
+    borderRadius: radius[10],
     alignSelf: 'stretch',
   },
   errorText: {
@@ -389,14 +389,14 @@ const styles = StyleSheet.create({
     alignSelf: 'stretch',
     height: 1,
     backgroundColor: colors.surfaceBorder,
-    marginTop: 24,
-    marginBottom: 20,
+    marginTop: spacing[24],
+    marginBottom: spacing[20],
   },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
-    marginBottom: 10,
+    marginBottom: spacing[10],
   },
   sectionTitle: {
     fontFamily: fonts.heading,
@@ -416,7 +416,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 14,
+    borderRadius: radius[14],
     overflow: 'hidden',
     alignSelf: 'stretch',
   },
@@ -424,8 +424,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    paddingHorizontal: 14,
+    paddingVertical: spacing[12],
+    paddingHorizontal: spacing[14],
     backgroundColor: colors.surfaceElevated,
     borderBottomWidth: 1,
     borderBottomColor: colors.surfaceBorder,
@@ -447,9 +447,9 @@ const styles = StyleSheet.create({
   lbRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    gap: spacing[12],
+    paddingVertical: spacing[10],
+    paddingHorizontal: spacing[14],
   },
   lbRowFirst: {
     backgroundColor: 'rgba(224,165,62,0.07)',
@@ -492,11 +492,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     color: colors.textDim,
     fontSize: 13,
-    paddingVertical: 14,
+    paddingVertical: spacing[14],
     textAlign: 'center',
   },
   bottomHint: {
-    marginTop: 28,
+    marginTop: spacing[28],
     fontFamily: fonts.body,
     fontSize: 12,
     fontWeight: '400',

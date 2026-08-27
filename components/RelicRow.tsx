@@ -4,7 +4,7 @@ import { Relic } from '../engine';
 
 import { useTranslation } from '../i18n';
 import { relicDescription } from './format';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 
 interface RelicRowProps {
   readonly relics: readonly Relic[];
@@ -52,7 +52,7 @@ export function RelicRow({ relics, compact = false }: RelicRowProps) {
 const styles = StyleSheet.create({
   /* Full display — used on game screen above the hand */
   overlay: {
-    marginTop: 10,
+    marginTop: spacing[10],
   },
   overlayLabel: {
     color: colors.textDim,
@@ -60,20 +60,20 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    marginBottom: 4,
+    marginBottom: spacing[4],
   },
   overlayList: {
     flexDirection: 'row',
-    gap: 6,
+    gap: spacing[6],
     flexWrap: 'wrap',
   },
   overlayItem: {
-    borderRadius: 8,
+    borderRadius: radius[8],
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: spacing[10],
+    paddingVertical: spacing[6],
     flex: 1,
     minWidth: 100,
   },
@@ -85,20 +85,20 @@ const styles = StyleSheet.create({
   overlayDesc: {
     color: colors.textDim,
     fontSize: 11,
-    marginTop: 2,
+    marginTop: spacing[2],
   },
   /* Compact display — used on forge, round summary screens */
   compactRow: {
-    marginTop: 10,
-    gap: 6,
+    marginTop: spacing[10],
+    gap: spacing[6],
   },
   compactChip: {
-    borderRadius: 8,
+    borderRadius: radius[8],
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: spacing[10],
+    paddingVertical: spacing[6],
   },
   compactText: {
     color: colors.textDim,

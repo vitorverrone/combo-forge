@@ -4,7 +4,7 @@ import { computeUnlocks, MILESTONES, Suit } from '../engine';
 
 import i18n, { useTranslation } from '../i18n';
 import { SuitSymbol } from './SuitSymbol';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 import TopButton from './TopButton';
@@ -156,13 +156,13 @@ const styles = StyleSheet.create({
   topbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 0,
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[0],
   },
   navBtn: {
     width: 44,
     height: 44,
-    borderRadius: 10,
+    borderRadius: radius[10],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
@@ -179,7 +179,7 @@ const styles = StyleSheet.create({
   },
   /* ── Scroll ── */
   scroll: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing[16],
     paddingBottom: 70,
   },
   /* ── Header ── */
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
     color: colors.gold,
     textTransform: 'uppercase',
     textAlign: 'center',
-    marginTop: 14,
+    marginTop: spacing[14],
   },
   title: {
     fontFamily: fonts.heading,
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: colors.gold,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: spacing[4],
   },
   screenDesc: {
     fontFamily: fonts.body,
@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     textAlign: 'center',
     lineHeight: 21,
-    marginTop: 8,
+    marginTop: spacing[8],
     maxWidth: 290,
     alignSelf: 'center',
   },
@@ -218,25 +218,25 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 14,
-    padding: 14,
-    marginTop: 18,
+    borderRadius: radius[14],
+    padding: spacing[14],
+    marginTop: spacing[18],
   },
   statsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: spacing[10],
   },
   statBox: {
     width: '48%' as unknown as number,
     flexGrow: 1,
     alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 8,
+    paddingVertical: spacing[14],
+    paddingHorizontal: spacing[8],
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 12,
+    borderRadius: radius[12],
   },
   statValue: {
     fontFamily: fonts.heading,
@@ -259,8 +259,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
-    marginTop: 24,
-    marginBottom: 10,
+    marginTop: spacing[24],
+    marginBottom: spacing[10],
   },
   sectionTitle: {
     fontFamily: fonts.heading,
@@ -274,24 +274,24 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     color: colors.textDim,
     fontSize: 13,
-    marginTop: 10,
+    marginTop: spacing[10],
   },
   /* ── Favorite cards (mini playing cards) ── */
   favCards: {
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing[10],
   },
   favCardWrap: {
     flex: 1,
     alignItems: 'center',
-    gap: 6,
+    gap: spacing[6],
   },
   favCard: {
     width: '100%' as unknown as number,
     aspectRatio: 0.72,
     backgroundColor: colors.cardFace,
-    borderRadius: 8,
-    padding: 8,
+    borderRadius: radius[8],
+    padding: spacing[8],
     justifyContent: 'space-between',
     shadowColor: '#000',
     shadowOpacity: 0.35,
@@ -320,12 +320,12 @@ const styles = StyleSheet.create({
   },
   /* ── Milestones ── */
   milestoneList: {
-    gap: 0,
+    gap: spacing[0],
   },
   milestoneRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: spacing[10],
     paddingVertical: 11,
   },
   milestoneRowBorder: {
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
   milestoneDot: {
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: radius[10],
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     backgroundColor: colors.surface,
@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '400',
     color: colors.textDim,
-    marginTop: 2,
+    marginTop: spacing[2],
     lineHeight: 15,
   },
   milestoneBadge: {
@@ -388,9 +388,9 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     letterSpacing: 1,
     textTransform: 'uppercase',
-    borderRadius: 6,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
+    borderRadius: radius[6],
+    paddingVertical: spacing[4],
+    paddingHorizontal: spacing[8],
   },
   milestoneBadgeDone: {
     backgroundColor: 'rgba(127,201,138,0.15)',
@@ -408,14 +408,14 @@ const styles = StyleSheet.create({
   forgersNote: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: spacing[8],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 12,
-    padding: 12,
-    paddingLeft: 14,
-    marginTop: 18,
+    borderRadius: radius[12],
+    padding: spacing[12],
+    paddingLeft: spacing[14],
+    marginTop: spacing[18],
   },
   forgersIcon: {
     fontFamily: fonts.heading,
@@ -435,15 +435,15 @@ const styles = StyleSheet.create({
   /* ── Language switcher ── */
   langRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing[8],
   },
   langBtn: {
     flex: 1,
-    borderRadius: 10,
+    borderRadius: radius[10],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    paddingVertical: 12,
+    paddingVertical: spacing[12],
     alignItems: 'center',
   },
   langBtnSelected: {

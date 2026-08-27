@@ -16,7 +16,7 @@ import {
 
 import { useTranslation } from '../i18n';
 import { forgeEffectDescription, forgeEffectLabel, relicDescription } from './format';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 
@@ -276,13 +276,13 @@ const styles = StyleSheet.create({
   topbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 0,
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[0],
   },
   navBtn: {
     width: 44,
     height: 44,
-    borderRadius: 10,
+    borderRadius: radius[10],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
@@ -299,8 +299,8 @@ const styles = StyleSheet.create({
   },
   /* ── Scroll ── */
   scroll: {
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: spacing[16],
+    paddingBottom: spacing[16],
   },
   /* ── Header ── */
   eyebrow: {
@@ -311,7 +311,7 @@ const styles = StyleSheet.create({
     color: colors.gold,
     textTransform: 'uppercase',
     textAlign: 'center',
-    marginTop: 14,
+    marginTop: spacing[14],
   },
   title: {
     fontFamily: fonts.heading,
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: colors.gold,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: spacing[4],
   },
   subtitle: {
     fontFamily: fonts.body,
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     textAlign: 'center',
     lineHeight: 21,
-    marginTop: 8,
+    marginTop: spacing[8],
     maxWidth: 290,
     alignSelf: 'center',
   },
@@ -338,23 +338,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 12,
-    padding: 14,
-    marginTop: 18,
+    borderRadius: radius[12],
+    padding: spacing[14],
+    marginTop: spacing[18],
   },
   statsGrid: {
     flexDirection: 'row',
-    gap: 10,
+    gap: spacing[10],
   },
   statBox: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    paddingVertical: spacing[12],
+    paddingHorizontal: spacing[4],
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 10,
+    borderRadius: radius[10],
   },
   statValue: {
     fontFamily: fonts.heading,
@@ -370,14 +370,14 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: colors.textDim,
     textTransform: 'uppercase',
-    marginTop: 4,
+    marginTop: spacing[4],
   },
   milestonesLabel: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'baseline',
-    marginTop: 14,
-    marginBottom: 8,
+    marginTop: spacing[14],
+    marginBottom: spacing[8],
   },
   milestonesLabelText: {
     fontFamily: fonts.body,
@@ -393,22 +393,22 @@ const styles = StyleSheet.create({
   },
   milestoneTrack: {
     height: 8,
-    borderRadius: 4,
+    borderRadius: radius[4],
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     overflow: 'hidden',
-    marginBottom: 10,
+    marginBottom: spacing[10],
   },
   milestoneFill: {
     height: '100%',
-    borderRadius: 4,
+    borderRadius: radius[4],
     backgroundColor: colors.gold,
   },
   milestone: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: spacing[10],
     paddingVertical: 7,
   },
   milestoneDone: {
@@ -417,7 +417,7 @@ const styles = StyleSheet.create({
   milestoneDot: {
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: radius[10],
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     backgroundColor: colors.surface,
@@ -456,7 +456,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     color: colors.gold,
     textTransform: 'uppercase',
-    marginTop: 2,
+    marginTop: spacing[2],
   },
   milestoneRewardDone: {
     color: colors.textDim,
@@ -466,8 +466,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
-    marginTop: 24,
-    marginBottom: 10,
+    marginTop: spacing[24],
+    marginBottom: spacing[10],
   },
   sectionTitle: {
     fontFamily: fonts.heading,
@@ -487,13 +487,13 @@ const styles = StyleSheet.create({
   forgerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing[12],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 8,
+    borderRadius: radius[12],
+    padding: spacing[12],
+    marginBottom: spacing[8],
   },
   forgerRowLocked: {
     backgroundColor: colors.background,
@@ -534,7 +534,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '400',
     color: colors.textDim,
-    marginTop: 2,
+    marginTop: spacing[2],
     lineHeight: 15,
   },
   forgerUnlock: {
@@ -543,7 +543,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     color: colors.textDim,
-    marginTop: 3,
+    marginTop: spacing[3],
     textTransform: 'uppercase',
   },
   /* ── Deck cards ── */
@@ -553,10 +553,10 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: colors.textDim,
     lineHeight: 15,
-    marginBottom: 12,
+    marginBottom: spacing[12],
   },
   deckSuitGroup: {
-    marginBottom: 12,
+    marginBottom: spacing[12],
   },
   deckSuitLabel: {
     fontFamily: fonts.body,
@@ -565,17 +565,17 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: colors.textDim,
     textTransform: 'uppercase',
-    marginBottom: 6,
+    marginBottom: spacing[6],
   },
   deckCards: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: spacing[6],
   },
   deckCard: {
     width: 34,
     height: 46,
-    borderRadius: 6,
+    borderRadius: radius[6],
     backgroundColor: colors.cardFace,
     alignItems: 'center',
     justifyContent: 'center',
@@ -595,7 +595,7 @@ const styles = StyleSheet.create({
   relicGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: spacing[8],
   },
   relicTile: {
     width: '48%',
@@ -603,8 +603,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: radius[12],
+    padding: spacing[12],
   },
   relicTileLocked: {
     backgroundColor: colors.background,
@@ -640,7 +640,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: colors.text,
-    marginTop: 8,
+    marginTop: spacing[8],
   },
   relicNameLocked: {
     color: colors.textDim,
@@ -650,7 +650,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '400',
     color: colors.textDim,
-    marginTop: 3,
+    marginTop: spacing[3],
     lineHeight: 15,
   },
   relicLock: {
@@ -659,21 +659,21 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     color: colors.textDim,
-    marginTop: 4,
+    marginTop: spacing[4],
     textTransform: 'uppercase',
   },
   /* ── Forge effects ── */
   fxRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing[12],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 8,
+    borderRadius: radius[10],
+    paddingVertical: spacing[10],
+    paddingHorizontal: spacing[12],
+    marginBottom: spacing[8],
   },
   fxRowLocked: {
     backgroundColor: colors.background,
@@ -682,7 +682,7 @@ const styles = StyleSheet.create({
   fxIcon: {
     width: 38,
     height: 38,
-    borderRadius: 10,
+    borderRadius: radius[10],
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
@@ -716,7 +716,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '400',
     color: colors.textDim,
-    marginTop: 2,
+    marginTop: spacing[2],
     lineHeight: 15,
   },
   fxLock: {
@@ -725,17 +725,17 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     color: colors.textDim,
-    marginTop: 3,
+    marginTop: spacing[3],
     textTransform: 'uppercase',
   },
   /* ── Badges ── */
   badgeUnlocked: {
-    borderRadius: 6,
+    borderRadius: radius[6],
     backgroundColor: 'rgba(127,201,138,0.15)',
     borderWidth: 1,
     borderColor: colors.success,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: spacing[8],
+    paddingVertical: spacing[4],
   },
   badgeUnlockedText: {
     fontFamily: fonts.body,
@@ -747,12 +747,12 @@ const styles = StyleSheet.create({
   },
   badgeLocked: {
     maxWidth: 130,
-    borderRadius: 6,
+    borderRadius: radius[6],
     backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: spacing[8],
+    paddingVertical: spacing[4],
   },
   badgeLockedText: {
     fontFamily: fonts.body,
@@ -763,9 +763,9 @@ const styles = StyleSheet.create({
   },
   unlockBtn: {
     height: 44,
-    paddingHorizontal: 14,
+    paddingHorizontal: spacing[14],
     backgroundColor: colors.gold,
-    borderRadius: 8,
+    borderRadius: radius[8],
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -785,7 +785,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '400',
     color: colors.textDim,
-    marginTop: 18,
+    marginTop: spacing[18],
     textAlign: 'center',
   },
 });

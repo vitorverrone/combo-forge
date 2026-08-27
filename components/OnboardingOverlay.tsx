@@ -6,7 +6,7 @@ import { PatternKind } from '../engine';
 
 import { useTranslation } from '../i18n';
 import { patternName } from './format';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 
 const STORAGE_KEY = 'combo-forge:onboarding-seen';
 const kv = new SQLiteStorage('combo-forge.db');
@@ -171,9 +171,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 16,
-    padding: 22,
-    paddingHorizontal: 20,
+    borderRadius: radius[16],
+    padding: spacing[22],
+    paddingHorizontal: spacing[20],
     shadowColor: '#000',
     shadowOpacity: 0.5,
     shadowRadius: 20,
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
   },
   dots: {
     flexDirection: 'row',
-    gap: 6,
+    gap: spacing[6],
   },
   dot: {
     width: 7,
@@ -211,29 +211,29 @@ const styles = StyleSheet.create({
   /* ── Visual area ── */
   visual: {
     height: 120,
-    marginTop: 18,
-    marginBottom: 16,
+    marginTop: spacing[18],
+    marginBottom: spacing[16],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 12,
+    borderRadius: radius[12],
     alignItems: 'center',
     justifyContent: 'center',
   },
   /* ── Cards visual ── */
   vCards: {
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing[8],
     alignItems: 'center',
   },
   vCard: {
     width: 52,
     height: 72,
-    borderRadius: 7,
+    borderRadius: radius[7],
     backgroundColor: colors.cardFace,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
+    gap: spacing[2],
     borderWidth: 3,
     borderColor: 'transparent',
   },
@@ -272,17 +272,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '400',
     color: colors.textDim,
-    marginTop: 4,
+    marginTop: spacing[4],
   },
   /* ── Combo visual ── */
   vCombo: {
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing[8],
   },
   vMult: {
     width: 44,
     height: 44,
-    borderRadius: 10,
+    borderRadius: radius[10],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
@@ -308,7 +308,7 @@ const styles = StyleSheet.create({
   },
   vBar: {
     height: 12,
-    borderRadius: 6,
+    borderRadius: radius[6],
     overflow: 'hidden',
     backgroundColor: colors.surface,
     borderWidth: 1,
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
   vFill: {
     height: '100%',
     width: '85%',
-    borderRadius: 6,
+    borderRadius: radius[6],
     backgroundColor: colors.gold,
   },
   vTargetLabel: {
@@ -325,7 +325,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
     textAlign: 'center',
-    marginTop: 10,
+    marginTop: spacing[10],
   },
   vTargetDim: {
     color: colors.textDim,
@@ -345,17 +345,17 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     textAlign: 'center',
     lineHeight: 21,
-    marginTop: 8,
+    marginTop: spacing[8],
   },
   /* ── Tip box ── */
   tipBox: {
-    marginTop: 14,
-    padding: 10,
-    paddingHorizontal: 12,
+    marginTop: spacing[14],
+    padding: spacing[10],
+    paddingHorizontal: spacing[12],
     backgroundColor: 'rgba(224,165,62,0.08)',
     borderWidth: 1,
     borderColor: 'rgba(224,165,62,0.35)',
-    borderRadius: 10,
+    borderRadius: radius[10],
   },
   tipText: {
     fontSize: 12,
@@ -367,13 +367,13 @@ const styles = StyleSheet.create({
   /* ── Actions ── */
   actions: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 20,
+    gap: spacing[10],
+    marginTop: spacing[20],
   },
   skipBtn: {
     flex: 1,
     height: 48,
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
@@ -390,7 +390,7 @@ const styles = StyleSheet.create({
   nextBtn: {
     flex: 1,
     height: 48,
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.gold,
     borderWidth: 1,
     borderColor: 'transparent',

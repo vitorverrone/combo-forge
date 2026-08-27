@@ -19,7 +19,7 @@ import {
 import { useTranslation } from '../i18n';
 import { completeOnboarding, hasSeenOnboarding, OnboardingOverlay } from './OnboardingOverlay';
 import { PlayingCard } from './PlayingCard';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 import TopButton from './TopButton';
@@ -196,8 +196,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingHorizontal: 16,
-    paddingTop: 0,
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[0],
   },
   /* ── Topbar ── */
   topbar: {
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
   navBtn: {
     width: 44,
     height: 44,
-    borderRadius: 10,
+    borderRadius: radius[10],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
@@ -221,15 +221,15 @@ const styles = StyleSheet.create({
   profileAvatar: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: radius[14],
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
   shopBtn: {
     height: 44,
-    paddingHorizontal: 16,
-    borderRadius: 10,
+    paddingHorizontal: spacing[16],
+    borderRadius: radius[10],
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: colors.gold,
@@ -265,15 +265,15 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     fontSize: 13,
     fontWeight: '600',
-    marginTop: 6,
+    marginTop: spacing[6],
     letterSpacing: 0.2,
     textAlign: 'center',
   },
   /* ── Card fan ── */
   cardFan: {
     height: 112,
-    marginTop: 20,
-    marginBottom: 8,
+    marginTop: spacing[20],
+    marginBottom: spacing[8],
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative'
@@ -302,12 +302,12 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: colors.textDim,
     textTransform: 'uppercase',
-    marginTop: 6,
-    marginBottom: 8,
+    marginTop: spacing[6],
+    marginBottom: spacing[8],
   },
   forgerRow: {
     flexDirection: 'row',
-    gap: 8,
+    gap: spacing[8],
   },
   forgerChip: {
     flex: 1,
@@ -315,10 +315,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 2,
     borderColor: colors.surfaceBorder,
-    borderRadius: 12,
-    paddingTop: 10,
-    paddingBottom: 8,
-    paddingHorizontal: 6,
+    borderRadius: radius[12],
+    paddingTop: spacing[10],
+    paddingBottom: spacing[8],
+    paddingHorizontal: spacing[6],
     alignItems: 'center',
   },
   forgerChipSelected: {
@@ -336,7 +336,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginBottom: spacing[6],
   },
   forgerAvatarLocked: {
     backgroundColor: colors.surface,
@@ -369,19 +369,19 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
     color: colors.textDim,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: spacing[4],
     lineHeight: 13,
     maxWidth: 90,
   },
   /* ── CTA stack ── */
   ctaStack: {
-    marginTop: 28,
-    paddingBottom: 10,
+    marginTop: spacing[28],
+    paddingBottom: spacing[10],
   },
   btnPrimary: {
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.gold,
-    paddingVertical: 16,
+    paddingVertical: spacing[16],
     alignItems: 'center',
   },
   btnPrimaryPressed: {
@@ -397,16 +397,16 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   btnSecondary: {
-    marginTop: 10,
-    borderRadius: 12,
+    marginTop: spacing[10],
+    borderRadius: radius[12],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    paddingVertical: 14,
+    paddingVertical: spacing[14],
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 4,
+    gap: spacing[4],
   },
   btnSecondaryPressed: {
     opacity: 0.8,
@@ -429,14 +429,14 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     flexDirection: 'row',
-    gap: 10,
-    marginTop: 10,
-    paddingBottom: 10,
+    gap: spacing[10],
+    marginTop: spacing[10],
+    paddingBottom: spacing[10],
   },
   bottomNavBtn: {
     flex: 1,
     height: 44,
-    borderRadius: 10,
+    borderRadius: radius[10],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,

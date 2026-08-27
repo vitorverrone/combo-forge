@@ -11,7 +11,7 @@ import {
 
 import { useTranslation } from '../i18n';
 import { SuitSymbol } from './SuitSymbol';
-import { colors } from './theme';
+import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 import TopButton from './TopButton';
@@ -58,14 +58,14 @@ export function ShopScreen() {
               </View>
               <View style={styles.shopAction}>
                 {owned && equipped ? (
-                  <Text style={styles.shopEquippedLabel}>{t('shop.equipped')}</Text>
+                  <Text style={styles.shopEquippedLabel}>{t('common.equipped')}</Text>
                 ) : owned && !equipped ? (
                   <Pressable
                     accessibilityLabel={t('a11y.equipItem', { name: item.name })}
                     onPress={() => equipCosmetic(item.id)}
                     style={({ pressed }) => [styles.equipBtn, pressed && styles.btnPressed]}
                   >
-                    <Text style={styles.equipBtnText}>{t('shop.equip')}</Text>
+                    <Text style={styles.equipBtnText}>{t('common.equip')}</Text>
                   </Pressable>
                 ) : (
                   <Pressable
@@ -154,13 +154,13 @@ const styles = StyleSheet.create({
   topbar: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 0,
+    paddingHorizontal: spacing[16],
+    paddingTop: spacing[0],
   },
   navBtn: {
     width: 40,
     height: 40,
-    borderRadius: 10,
+    borderRadius: radius[10],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
@@ -176,8 +176,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   scroll: {
-    paddingHorizontal: 16,
-    paddingBottom: 0,
+    paddingHorizontal: spacing[16],
+    paddingBottom: spacing[0],
   },
   eyebrow: {
     fontFamily: fonts.body,
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     color: colors.gold,
     textTransform: 'uppercase',
     textAlign: 'center',
-    marginTop: 14,
+    marginTop: spacing[14],
   },
   title: {
     fontFamily: fonts.heading,
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     color: colors.gold,
     textAlign: 'center',
-    marginTop: 4,
+    marginTop: spacing[4],
   },
   subtitle: {
     fontFamily: fonts.body,
@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     textAlign: 'center',
     lineHeight: 21,
-    marginTop: 8,
+    marginTop: spacing[8],
     maxWidth: 280,
     alignSelf: 'center',
   },
@@ -213,8 +213,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
-    marginTop: 22,
-    marginBottom: 10,
+    marginTop: spacing[22],
+    marginBottom: spacing[10],
   },
   sectionTitle: {
     fontFamily: fonts.heading,
@@ -234,14 +234,14 @@ const styles = StyleSheet.create({
   shopRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: spacing[12],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 10,
-    paddingVertical: 10,
-    paddingHorizontal: 12,
-    marginBottom: 8,
+    borderRadius: radius[10],
+    paddingVertical: spacing[10],
+    paddingHorizontal: spacing[12],
+    marginBottom: spacing[8],
     minHeight: 64,
   },
   shopRowEquipped: {
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
   deckPreview: {
     width: 40,
     height: 56,
-    borderRadius: 6,
+    borderRadius: radius[6],
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '400',
     color: colors.textDim,
-    marginTop: 2,
+    marginTop: spacing[2],
   },
   shopAction: {
     alignItems: 'flex-end',
@@ -288,9 +288,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    borderRadius: radius[10],
+    paddingVertical: spacing[8],
+    paddingHorizontal: spacing[12],
   },
   priceBtnText: {
     fontFamily: fonts.body,
@@ -299,12 +299,12 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   equipBtn: {
-    borderRadius: 10,
+    borderRadius: radius[10],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.gold,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: spacing[8],
+    paddingHorizontal: spacing[12],
   },
   equipBtnText: {
     fontFamily: fonts.body,
@@ -330,8 +330,8 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    borderRadius: 12,
-    padding: 16,
+    borderRadius: radius[12],
+    padding: spacing[16],
   },
   offerTitle: {
     fontSize: 16,
@@ -344,13 +344,13 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     color: colors.textDim,
     lineHeight: 20,
-    marginTop: 6,
-    marginBottom: 14,
+    marginTop: spacing[6],
+    marginBottom: spacing[14],
   },
   btnPrimary: {
-    borderRadius: 12,
+    borderRadius: radius[12],
     backgroundColor: colors.gold,
-    paddingVertical: 16,
+    paddingVertical: spacing[16],
     alignItems: 'center',
   },
   btnPrimaryPressed: {
@@ -371,13 +371,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   btnSecondary: {
-    marginTop: 22,
-    marginBottom: 8,
-    borderRadius: 12,
+    marginTop: spacing[22],
+    marginBottom: spacing[8],
+    borderRadius: radius[12],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    paddingVertical: 14,
+    paddingVertical: spacing[14],
     alignItems: 'center',
   },
   btnSecondaryText: {
@@ -390,12 +390,12 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     fontSize: 12,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: spacing[8],
   },
   errorText: {
     color: colors.danger,
     fontSize: 12,
     textAlign: 'center',
-    marginTop: 8,
+    marginTop: spacing[8],
   },
 });
