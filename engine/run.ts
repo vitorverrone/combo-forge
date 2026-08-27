@@ -40,7 +40,7 @@ import { activeRelics, comboMultiplier, Relic, RELIC_CAP, scoreModifiers, struct
 export const PLAYS_PER_ROUND = 4;
 export const ROUNDS_PER_RUN = 6;
 export const BASE_TARGET = 50;
-export const TARGET_GROWTH = 1.1;
+export const TARGET_GROWTH = 1.7;
 
 export type RunPhase = 'playing' | 'forging' | 'roundWon' | 'runWon' | 'runLost';
 

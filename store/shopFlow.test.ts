@@ -46,11 +46,11 @@ describe('loja cosmética (ticket 14) — fluxo', () => {
     const storage = createMemoryShopStorage();
     let state = await runShopCommand(makeState(), makeDeps(createDevShopProvider(), storage), {
       type: 'purchaseCosmetic',
-      itemId: 'skin-obsidian',
+      itemId: 'deck-obsidian',
     });
-    expect(state.shop.owned.owned).toContain('skin-obsidian');
-    expect(state.shop.owned.equippedDeckSkin).toBe('skin-obsidian'); // aplicada na hora
-    expect(storage.load()?.owned).toContain('skin-obsidian');
+    expect(state.shop.owned.owned).toContain('deck-obsidian');
+    expect(state.shop.owned.equippedDeckSkin).toBe('deck-obsidian'); // aplicada na hora
+    expect(storage.load()?.owned).toContain('deck-obsidian');
     // VFX não interfere na skin.
     state = await runShopCommand(state, makeDeps(createDevShopProvider(), storage), {
       type: 'purchaseCosmetic',
@@ -58,28 +58,28 @@ describe('loja cosmética (ticket 14) — fluxo', () => {
     });
     expect(state.shop.owned.owned).toContain('vfx-golden-combo');
     expect(state.shop.owned.equippedComboVfx).toBe('vfx-golden-combo');
-    expect(state.shop.owned.equippedDeckSkin).toBe('skin-obsidian');
+    expect(state.shop.owned.equippedDeckSkin).toBe('deck-obsidian');
   });
 
   test('equipCosmetic equipa apenas itens comprados e troca a skin atual', async () => {
     let state = makeState();
     // sem comprar, não equipa
-    state = equipCosmetic(state, makeDeps(), 'skin-obsidian');
+    state = equipCosmetic(state, makeDeps(), 'deck-obsidian');
     expect(state.shop.owned.equippedDeckSkin).toBeNull();
-    state = await runShopCommand(state, makeDeps(), { type: 'purchaseCosmetic', itemId: 'skin-obsidian' });
-    state = await runShopCommand(state, makeDeps(), { type: 'purchaseCosmetic', itemId: 'skin-emerald' });
-    state = equipCosmetic(state, makeDeps(), 'skin-obsidian');
-    expect(state.shop.owned.equippedDeckSkin).toBe('skin-obsidian');
-    state = equipCosmetic(state, makeDeps(), 'skin-emerald');
-    expect(state.shop.owned.equippedDeckSkin).toBe('skin-emerald');
+    state = await runShopCommand(state, makeDeps(), { type: 'purchaseCosmetic', itemId: 'deck-obsidian' });
+    state = await runShopCommand(state, makeDeps(), { type: 'purchaseCosmetic', itemId: 'deck-emerald' });
+    state = equipCosmetic(state, makeDeps(), 'deck-obsidian');
+    expect(state.shop.owned.equippedDeckSkin).toBe('deck-obsidian');
+    state = equipCosmetic(state, makeDeps(), 'deck-emerald');
+    expect(state.shop.owned.equippedDeckSkin).toBe('deck-emerald');
   });
 
   test('purchaseCosmetic ignora item já comprado (sem chamar o provider)', async () => {
     const provider = createDevShopProvider();
     const spy = jest.spyOn(provider, 'purchase');
     let state = makeState();
-    state = await runShopCommand(state, makeDeps(provider), { type: 'purchaseCosmetic', itemId: 'skin-obsidian' });
-    state = await runShopCommand(state, makeDeps(provider), { type: 'purchaseCosmetic', itemId: 'skin-obsidian' });
+    state = await runShopCommand(state, makeDeps(provider), { type: 'purchaseCosmetic', itemId: 'deck-obsidian' });
+    state = await runShopCommand(state, makeDeps(provider), { type: 'purchaseCosmetic', itemId: 'deck-obsidian' });
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
@@ -90,11 +90,11 @@ describe('loja cosmética (ticket 14) — fluxo', () => {
     };
     let state = await runShopCommand(makeState(), makeDeps(provider), {
       type: 'purchaseCosmetic',
-      itemId: 'skin-obsidian',
+      itemId: 'deck-obsidian',
     });
     state = await runShopCommand(state, makeDeps(provider), { type: 'restore' });
-    expect(state.shop.owned.owned).toContain('skin-obsidian');
-    expect(state.shop.owned.owned).toContain('skin-royal');
+    expect(state.shop.owned.owned).toContain('deck-obsidian');
+    expect(state.shop.owned.owned).toContain('deck-royal');
   });
 
   test('falha do provider marca erro e não adiciona o item', async () => {
@@ -106,7 +106,7 @@ describe('loja cosmética (ticket 14) — fluxo', () => {
     };
     const state = await runShopCommand(makeState(), makeDeps(provider), {
       type: 'purchaseCosmetic',
-      itemId: 'skin-obsidian',
+      itemId: 'deck-obsidian',
     });
     expect(state.shop.error).toBe('loja fora do ar');
     expect(state.shop.owned.owned).toHaveLength(0);

@@ -570,18 +570,18 @@ describe('loja (delegação para o shopFlow — refactor)', () => {
   test('purchaseCosmetic compra e auto-equipa através do store', async () => {
     const storage = createMemoryShopStorage();
     const store = createGameStore({ shopStorage: storage, shopProvider: createDevShopProvider() });
-    await store.getState().purchaseCosmetic('skin-obsidian');
+    await store.getState().purchaseCosmetic('deck-obsidian');
     const state = store.getState();
-    expect(state.shop.owned.owned).toContain('skin-obsidian');
-    expect(state.shop.owned.equippedDeckSkin).toBe('skin-obsidian');
-    expect(storage.load()?.owned).toContain('skin-obsidian');
+    expect(state.shop.owned.owned).toContain('deck-obsidian');
+    expect(state.shop.owned.equippedDeckSkin).toBe('deck-obsidian');
+    expect(storage.load()?.owned).toContain('deck-obsidian');
   });
 
   test('equipCosmetic equipa através do store', async () => {
     const store = createGameStore({ shopProvider: createDevShopProvider() });
-    await store.getState().purchaseCosmetic('skin-obsidian');
-    store.getState().equipCosmetic('skin-obsidian');
-    expect(store.getState().shop.owned.equippedDeckSkin).toBe('skin-obsidian');
+    await store.getState().purchaseCosmetic('deck-obsidian');
+    store.getState().equipCosmetic('deck-obsidian');
+    expect(store.getState().shop.owned.equippedDeckSkin).toBe('deck-obsidian');
   });
 
   test('purchaseRemoveAds marca adsRemoved através do store', async () => {
@@ -605,7 +605,7 @@ describe('loja (delegação para o shopFlow — refactor)', () => {
     });
     await store.getState().restorePurchases();
     const state = store.getState();
-    expect(state.shop.owned.owned).toContain('skin-royal');
+    expect(state.shop.owned.owned).toContain('deck-royal');
     expect(state.adsRemoved).toBe(true); // entitlement reentregue pelo restore
     expect(storage.load()?.adsRemoved).toBe(true);
   });

@@ -15,8 +15,8 @@ import {
 } from './shop';
 
 describe('catálogo cosmético (ticket 14)', () => {
-  test('tem 3 skins de baralho e 1 VFX de combo', () => {
-    expect(COSMETIC_CATALOG.filter((item) => item.kind === 'deckSkin')).toHaveLength(3);
+  test('tem 4 skins de baralho e 1 VFX de combo', () => {
+    expect(COSMETIC_CATALOG.filter((item) => item.kind === 'deckSkin')).toHaveLength(4);
     expect(COSMETIC_CATALOG.filter((item) => item.kind === 'comboVfx')).toHaveLength(1);
   });
 
@@ -43,18 +43,18 @@ describe('catálogo cosmético (ticket 14)', () => {
 describe('estado da loja', () => {
   test('compra adiciona ao owned e equipa troca a skin atual', () => {
     let state = createInitialShopState();
-    state = purchaseItem(state, 'skin-obsidian');
-    expect(isOwned(state, 'skin-obsidian')).toBe(true);
-    state = equipItem(state, 'skin-obsidian');
-    expect(state.equippedDeckSkin).toBe('skin-obsidian');
-    state = purchaseItem(state, 'skin-emerald');
-    state = equipItem(state, 'skin-emerald');
-    expect(state.equippedDeckSkin).toBe('skin-emerald');
+    state = purchaseItem(state, 'deck-obsidian');
+    expect(isOwned(state, 'deck-obsidian')).toBe(true);
+    state = equipItem(state, 'deck-obsidian');
+    expect(state.equippedDeckSkin).toBe('deck-obsidian');
+    state = purchaseItem(state, 'deck-emerald');
+    state = equipItem(state, 'deck-emerald');
+    expect(state.equippedDeckSkin).toBe('deck-emerald');
   });
 
   test('não equipa item não comprado nem inexistente', () => {
     const state = createInitialShopState();
-    expect(equipItem(state, 'skin-obsidian').equippedDeckSkin).toBeNull();
+    expect(equipItem(state, 'deck-obsidian').equippedDeckSkin).toBeNull();
     expect(equipItem(state, 'nao-existe').equippedDeckSkin).toBeNull();
   });
 
@@ -66,15 +66,15 @@ describe('estado da loja', () => {
   });
 
   test('mergeOwned junta ids do servidor (restore) sem duplicar', () => {
-    let state = purchaseItem(createInitialShopState(), 'skin-obsidian');
-    state = mergeOwned(state, ['skin-emerald', 'skin-obsidian', 'desconhecido']);
-    expect([...state.owned].sort()).toEqual(['skin-emerald', 'skin-obsidian']);
+    let state = purchaseItem(createInitialShopState(), 'deck-obsidian');
+    state = mergeOwned(state, ['deck-emerald', 'deck-obsidian', 'desconhecido']);
+    expect([...state.owned].sort()).toEqual(['deck-emerald', 'deck-obsidian']);
   });
 
   test('storage em memória persiste o estado', () => {
     const storage = createMemoryShopStorage();
     expect(storage.load()).toBeNull();
-    const state = purchaseItem(createInitialShopState(), 'skin-royal');
+    const state = purchaseItem(createInitialShopState(), 'deck-royal');
     storage.save(state);
     expect(storage.load()).toEqual(state);
   });
@@ -85,10 +85,11 @@ describe('provider dev', () => {
     const provider = createDevShopProvider();
     const offerings = [...(await provider.loadOfferings())];
     expect(offerings).toHaveLength(COSMETIC_CATALOG.length + 1); // + remove_ads
-    expect(offerings[0].price).toBe('$0.99');
+    const obsidian = offerings.find((offering) => offering.productId === 'combo_forge_skin_obsidian');
+    expect(obsidian?.price).toBe('$0.99');
     expect(await provider.purchase('combo_forge_skin_obsidian')).toBe(true);
     expect(await provider.restore()).toEqual([]);
-    expect(cosmeticItemById('skin-obsidian')?.kind).toBe('deckSkin');
+    expect(cosmeticItemById('deck-obsidian')?.kind).toBe('deckSkin');
   });
 });
 
@@ -116,13 +117,13 @@ describe('remoção de anúncios (ticket 02)', () => {
 
   test('normalizeShopState aplica default false a saves antigos sem adsRemoved', () => {
     const oldSave = {
-      owned: ['skin-obsidian'],
-      equippedDeckSkin: 'skin-obsidian',
+      owned: ['deck-obsidian'],
+      equippedDeckSkin: 'deck-obsidian',
       equippedComboVfx: null,
     } as unknown as PersistedShop;
     const normalized = normalizeShopState(oldSave);
     expect(normalized.adsRemoved).toBe(false);
-    expect(normalized.owned).toEqual(['skin-obsidian']);
+    expect(normalized.owned).toEqual(['deck-obsidian']);
     expect(normalizeShopState(null)).toEqual(createInitialShopState());
   });
 });
