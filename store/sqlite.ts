@@ -12,8 +12,6 @@
 import { SQLiteStorage } from 'expo-sqlite/kv-store';
 
 import {
-  BreakHistory,
-  BreakStorage,
   DailyAttempts,
   DailyChallengeStorage,
   DdaState,
@@ -32,7 +30,6 @@ const DAILY_ATTEMPTS_KEY = 'combo-forge:daily-attempts';
 const DAILY_DEVICE_ID_KEY = 'combo-forge:daily-device-id';
 const DAILY_DISPLAY_NAME_KEY = 'combo-forge:daily-display-name';
 const SHOP_KEY = 'combo-forge:shop';
-const BREAK_KEY = 'combo-forge:break-history';
 
 const kv = new SQLiteStorage(DATABASE_NAME);
 
@@ -75,14 +72,6 @@ export function createSqliteShopStorage(): ShopStorage {
   };
 }
 
-/** Port de storage do lembrete de pausa sobre SQLite (fins de Run recentes). */
-export function createSqliteBreakStorage(): BreakStorage {
-  return {
-    load: () => readJson<BreakHistory>(BREAK_KEY),
-    save: (history) => writeJson(BREAK_KEY, history),
-  };
-}
-
 /** Port de storage do Desafio Diário sobre SQLite (tentativas + deviceId + Nome de Exibição). */
 export function createSqliteDailyChallengeStorage(): DailyChallengeStorage {
   return {
@@ -95,19 +84,17 @@ export function createSqliteDailyChallengeStorage(): DailyChallengeStorage {
   };
 }
 
-/** Persistência completa do app (DDA + meta + diário + loja + pausa). */
+/** Persistência completa do app (DDA + meta + diário + loja). */
 export function createSqlitePersistence(): {
   readonly ddaStorage: DdaStorage;
   readonly progressionStorage: ProgressionStorage;
   readonly dailyStorage: DailyChallengeStorage;
   readonly shopStorage: ShopStorage;
-  readonly breakStorage: BreakStorage;
 } {
   return {
     ddaStorage: createSqliteDdaStorage(),
     progressionStorage: createSqliteProgressionStorage(),
     dailyStorage: createSqliteDailyChallengeStorage(),
     shopStorage: createSqliteShopStorage(),
-    breakStorage: createSqliteBreakStorage(),
   };
 }

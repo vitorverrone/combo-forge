@@ -529,7 +529,7 @@ a justiça do Desafio Diário). Esse é o tipo de raciocínio que normalmente se
 perde e vira bug seis meses depois.
 
 **Ports & adapters aplicado com consistência.** `DdaStorage`,
-`ProgressionStorage`, `DailyChallengeStorage`, `ShopStorage`, `BreakStorage`,
+`ProgressionStorage`, `DailyChallengeStorage`, `ShopStorage`,
 `ShopProvider`, `AdProvider`, `DailyBackend` — todos com implementação em
 memória para teste e SQLite/SDK real no app, trocados num único ponto
 ([store/bootstrap.ts](store/bootstrap.ts)). E o bootstrap degrada com elegância:

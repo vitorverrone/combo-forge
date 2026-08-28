@@ -9,5 +9,14 @@
 - [x] Cada Jogada aciona feedback sonoro com pitch ascendente proporcional ao Multiplicador de Combo
 - [x] Vibração háptica curta e proporcional ao tamanho do combo, sem vibração constante
 - [x] Derrota por margem pequena destaca visualmente a barra de progresso "quase cheia"
-- [x] Lembrete gentil de pausa aparece após X Runs consecutivas em intervalo curto, sem bloquear o jogo
+- [x] ~~Lembrete gentil de pausa aparece após X Runs consecutivas em intervalo curto, sem bloquear o jogo~~ (removido depois — ver Comments)
 - [x] O feedback é disparado por eventos emitidos pelo motor; a UI não contém regra de jogo
+
+## Comments
+
+O lembrete gentil de pausa (`engine/breaks.ts`, `BreakReminderBanner`) foi removido depois de
+implementado — decisão de produto revertida em conversa, sem `/grill-with-docs` (remoção
+simples, não uma feature nova). GDD/PRD/SRS/Especificação Funcional atualizados para não
+descrevê-lo mais; o risco de "restart instantâneo virar gatilho compulsivo" que ele mitigava
+(GDD §10) fica sem contramedida ativa no produto atual — risco aceito conscientemente. O resto
+desta ticket (feedback sonoro/háptico, animação "quase lá") continua em produção, intacto.

@@ -21,6 +21,5 @@ export * from './displayName';
 export * from './adProvider';
 export * from './shop';
 export * from './feedback';
-export * from './breaks';
 
 export const engineModuleId = 'combo-forge-engine';

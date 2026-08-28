@@ -37,7 +37,6 @@ Combo Forge differentiates through numerical puzzle combos — scoring is about 
 - **Daily challenge:** Same seed for all players, weekly opt-in leaderboard, 1 free attempt + 1 via rewarded ad
 - **Meta-progression:** Unlock new forgers and forge effects through milestones (runs won, score records) — no currency, no gacha
 - **Cosmetic shop:** Deck skins (100% visual, never affects gameplay) + remove-ads
-- **Break reminder:** Gentle pause suggestion after consecutive runs; never blocks play
 - **3 forgers:** Apprentice (neutral/onboarding), Martelo (pattern-focused), Bigorna (combo multiplier-focused)
 - **Tech:** Expo/React Native, Zustand state, pure engine layer, expo-sqlite persistence, Supabase backend, RevenueCat IAP, Google Mobile Ads
 
@@ -52,7 +51,7 @@ Combo Forge differentiates through numerical puzzle combos — scoring is about 
 
 - **GDD:** `GDD_Combo_Forge.md` — full game design document
 - **Domain glossary:** `CONTEXT.md` — Portuguese-language domain terms for all game concepts
-- **Engine:** `engine/` — pure business logic (cards, patterns, runs, DDA, progression, forge, relics, shop, breaks)
+- **Engine:** `engine/` — pure business logic (cards, patterns, runs, DDA, progression, forge, relics, shop)
 - **Store:** `store/` — Zustand state layer with SQLite persistence
 - **Components:** `components/` — React Native UI screens (Start, Game, Collection, Daily, Profile, Shop, Forge)
 - **Services:** `services/` — Supabase, RevenueCat, ad provider integrations

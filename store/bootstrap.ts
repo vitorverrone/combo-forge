@@ -8,7 +8,6 @@
  */
 import {
   createDeviceId,
-  createInitialBreakHistory,
   createInitialDailyAttempts,
   dailyAttemptsForDay,
   DEFAULT_PROGRESSION,
@@ -25,7 +24,7 @@ import { createSqlitePersistence } from './sqlite';
 
 export function initializeSqlitePersistence(): void {
   try {
-    const { ddaStorage, progressionStorage, dailyStorage, shopStorage, breakStorage } =
+    const { ddaStorage, progressionStorage, dailyStorage, shopStorage } =
       createSqlitePersistence();
     const saved = progressionStorage.load();
     const savedAttempts = dailyStorage.loadAttempts();
@@ -47,8 +46,6 @@ export function initializeSqlitePersistence(): void {
       adProvider: createAppAdProvider(),
       shopStorage,
       shopProvider: createAppShopProvider(),
-      breakStorage,
-      breakHistory: breakStorage.load() ?? createInitialBreakHistory(),
       progression: saved ?? DEFAULT_PROGRESSION,
       daily: {
         ...gameStore.getState().daily,

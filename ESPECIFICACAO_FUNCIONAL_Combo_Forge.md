@@ -153,12 +153,11 @@ Perfil/Coleção/Loja/Desafio Diário.
   6. Uma Jogada inválida (defesa — não deveria ocorrer via UI normal, ex.:
      seleção com carta duplicada) é capturada silenciosamente; o estado
      permanece intacto.
-- Toda ação que encerra uma Run (vitória ou derrota) também: (a) atualiza o
-  histórico do lembrete de pausa e pode disparar o banner de pausa (ver
-  §12); (b) no modo normal, atualiza estatísticas de perfil e pode disparar
-  desbloqueios de meta-progressão (banner "NEW UNLOCK" ou modal de escolha,
-  ver §9); (c) no modo `daily`, dispara a submissão automática da pontuação
-  ao backend (§8) e não toca estatísticas/meta-progressão.
+- Toda ação que encerra uma Run (vitória ou derrota) também: (a) no modo
+  normal, atualiza estatísticas de perfil e pode disparar desbloqueios de
+  meta-progressão (banner "NEW UNLOCK" ou modal de escolha, ver §9); (b) no
+  modo `daily`, dispara a submissão automática da pontuação ao backend (§8)
+  e não toca estatísticas/meta-progressão.
 
 ## 3. Tela Forja (`ForgeScreen`)
 
@@ -431,26 +430,7 @@ semanal opt-in.
 - Falha ao gravar a flag (SQLite indisponível) não impede o fechamento do
   overlay — apenas o tutorial pode reaparecer na próxima sessão.
 
-## 12. Banner de Lembrete de Pausa (`BreakReminderBanner`)
-
-**Propósito:** sugestão gentil e dispensável de pausa.
-
-**Quando aparece:** sobrepõe qualquer tela quando o motor decide que a
-sugestão é devida (3 Runs consecutivas com fim em cadeia de até 10 min entre
-si, e nenhuma sugestão exibida nos últimos 30 min).
-
-**Elementos:** "☕ Time for a break?" + texto explicativo + botão **OK, I'LL
-TAKE A MOMENT**.
-
-**Regras:**
-- **OK, I'LL TAKE A MOMENT**: única ação possível. Registra o momento da
-  sugestão (inicia o cooldown de 30 min) e fecha o banner. **Não pausa nem
-  bloqueia o jogo** — é puramente informativo/dispensável.
-- Não há outra forma de fechar o banner (sem "X" ou toque fora) além deste
-  botão — decisão deliberada para garantir que o jogador reconheça a
-  sugestão (mas nunca há bloqueio de jogo por trás dela).
-
-## 13. Tela Loja (`ShopScreen`)
+## 12. Tela Loja (`ShopScreen`)
 
 **Propósito:** compra de cosméticos e remoção de anúncios; único ponto de
 monetização direta do produto.
@@ -483,7 +463,7 @@ monetização direta do produto.
   já é o estado atual).
 - **Remove Ads**: mesmo padrão de preço/compra das linhas acima, mas sem
   estado "equipável" — ao comprar, mostra selo **PURCHASED** e o banner de
-  anúncio (`AdBanner`, §14) some de todas as telas imediatamente, sem
+  anúncio (`AdBanner`, §13) some de todas as telas imediatamente, sem
   precisar reiniciar o app.
 - **RESTORE PURCHASES**: desabilitado enquanto uma restauração já está em
   andamento (rótulo "RESTORING…"). Ao concluir: reaplica como "owned"
@@ -496,7 +476,7 @@ monetização direta do produto.
   os preços de desenvolvimento do catálogo são usados como fallback
   silencioso (a Loja continua totalmente navegável e testável).
 
-## 14. Banner de Anúncio (`AdBanner`)
+## 13. Banner de Anúncio (`AdBanner`)
 
 **Propósito:** único formato de anúncio não-recompensado do produto — banner
 persistente de 50dp no rodapé.
@@ -517,7 +497,7 @@ fora da navegação entre telas).
   banner não é dispensável individualmente — apenas via compra de Remove
   Ads na Loja).
 
-## 15. Status de Submissão Diária (`DailySubmitStatus`)
+## 14. Status de Submissão Diária (`DailySubmitStatus`)
 
 Componente compartilhado pelas Telas Run Vencida (§5) e Run Perdida (§6) no
 modo diário.

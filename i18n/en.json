@@ -198,11 +198,6 @@
     "submitted": "✓ Score submitted",
     "failed": "Score not submitted"
   },
-  "breakReminder": {
-    "title": "☕ Time for a break?",
-    "body": "You've been forging a lot of runs back to back. A short pause keeps your focus sharp.",
-    "button": "OK, I'LL TAKE A MOMENT"
-  },
   "format": {
     "noRelic": "No starting relic — pure skill.",
     "pattern": {
@@ -249,7 +244,6 @@
     "openProfile": "Open profile",
     "openShop": "Open shop",
     "openCollection": "Open collection",
-    "dismissBreakReminder": "Dismiss break reminder",
     "abandonRun": "Abandon run",
     "clearSelection": "Clear selection",
     "discardSelectedCards": "Discard selected cards",
