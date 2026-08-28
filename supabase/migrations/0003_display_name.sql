@@ -31,13 +31,15 @@ create table if not exists public.players (
 );
 
 -- Lista de termos proibidos (pt-br + en) — fonte da verdade deste contrato,
--- isolada numa função só pra poder ser conferida diretamente por
--- verify-contract.mjs contra o espelho TS (supabase/contract.ts), em vez de
--- só comparar o resultado de alguns nomes de amostra. Não faz parte do
--- contrato do app (não é chamada pelo cliente) — só por set_display_name e
--- pelo script de verificação. Curada pelo time (ADR 0005): libs prontas de
--- profanity filter têm cobertura fraca de pt-br. Mantida pequena de
--- propósito — não é pra ser exaustiva.
+-- isolada numa função só pra poder ser conferida diretamente, em vez de só
+-- comparar o resultado de alguns nomes de amostra: por verify-contract.mjs
+-- (contra Postgres real) e por supabase/contract.test.ts (parseando este
+-- arquivo como texto, sem precisar de Postgres) — as duas conferem contra o
+-- espelho TS em engine/displayName.ts. Não faz parte do contrato do app
+-- (não é chamada pelo cliente) — só por set_display_name e pelas
+-- verificações. Curada pelo time (ADR 0005): libs prontas de profanity
+-- filter têm cobertura fraca de pt-br. Mantida pequena de propósito — não é
+-- pra ser exaustiva.
 create or replace function public._display_name_prohibited_terms()
 returns text[]
 language sql

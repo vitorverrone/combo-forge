@@ -8,10 +8,14 @@
  * final (a anon key do Supabase é pública, então um filtro só no app seria
  * burlável chamando a API direto).
  *
- * Cópia irmã: `supabase/contract.ts` tem o mesmo espelho para os testes de
- * verificação do contrato (`verify-contract.mjs` confere as duas listas
- * contra o SQL real). Mantidas sincronizadas manualmente entre os três
- * lugares — SQL, contract.ts e este módulo.
+ * Este módulo é o único espelho TS (RN-safe, sem depender de `crypto`) —
+ * `supabase/contract.ts` reexporta daqui em vez de manter cópia própria.
+ * `supabase/scripts/verify-contract.mjs` ainda tem uma terceira cópia,
+ * porque roda em Node puro sem type-stripping e não pode importar `.ts`
+ * diretamente; `supabase/contract.test.ts` confere as duas listas restantes
+ * (esta e a do script) contra o texto da migração SQL sem precisar de
+ * Postgres — `npm run verify:backend` confere as três contra o Postgres
+ * real, incluindo o caminho `security definer`/RLS.
  */
 
 /** Tamanho mínimo/máximo do Nome de Exibição — igual à constraint SQL `players_display_name_length`. */

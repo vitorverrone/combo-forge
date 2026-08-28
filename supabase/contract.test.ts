@@ -6,7 +6,11 @@
  * `npm run verify:backend` (que também pega qualquer divergência entre o
  * espelho e a SQL de `supabase/migrations/`).
  */
-import { dailySeed, isoWeekStart, validateDisplayName } from './contract';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+import { validateDisplayName as engineValidateDisplayName } from '../engine/displayName';
+import { dailySeed, isoWeekStart, PROHIBITED_DISPLAY_NAME_TERMS, validateDisplayName } from './contract';
 import type { LeaderboardEntry, WeeklyLeaderboard } from './contract';
 
 describe('seed diário determinístico (get_daily_seed)', () => {
@@ -75,51 +79,42 @@ describe('tipos do contrato (shape do leaderboard)', () => {
   });
 });
 
-describe('Nome de Exibição (validateDisplayName — espelho de set_display_name)', () => {
-  test('nome válido: letras, números e espaço, dentro do tamanho', () => {
-    expect(validateDisplayName('Fulano')).toEqual({ valid: true });
-    expect(validateDisplayName('Player 7')).toEqual({ valid: true });
-    expect(validateDisplayName('abc')).toEqual({ valid: true }); // tamanho mínimo exato
-    expect(validateDisplayName('a'.repeat(16))).toEqual({ valid: true }); // tamanho máximo exato
+describe('Nome de Exibição — reexportado de engine/displayName.ts (suíte completa de comportamento em engine/displayName.test.ts)', () => {
+  test('validateDisplayName reexportado é a mesma função do espelho TS único, não uma cópia', () => {
+    expect(validateDisplayName).toBe(engineValidateDisplayName);
+  });
+});
+
+/** Extrai o array `_display_name_prohibited_terms()` do texto da migração SQL, sem precisar de Postgres. */
+function extractSqlProhibitedTerms(sql: string): string[] {
+  const match = sql.match(/_display_name_prohibited_terms[\s\S]*?array\[([\s\S]*?)\]/);
+  if (match === null) throw new Error('Não encontrou o array de termos proibidos na migração SQL.');
+  return match[1]
+    .split(',')
+    .map((term) => term.trim())
+    .filter((term) => term.length > 0)
+    .map((term) => term.replace(/^'|'$/g, ''));
+}
+
+/** Extrai o array PROHIBITED_DISPLAY_NAME_TERMS do texto de verify-contract.mjs, sem executá-lo. */
+function extractScriptProhibitedTerms(script: string): string[] {
+  const match = script.match(/PROHIBITED_DISPLAY_NAME_TERMS = \[([\s\S]*?)\]/);
+  if (match === null) throw new Error('Não encontrou o array de termos proibidos no script de verificação.');
+  return match[1]
+    .split(',')
+    .map((term) => term.trim())
+    .filter((term) => term.length > 0)
+    .map((term) => term.replace(/^'|'$/g, ''));
+}
+
+describe('Nome de Exibição — termos proibidos sem drift entre SQL, script e espelho TS (sem Postgres, ao contrário de npm run verify:backend)', () => {
+  test('lista embutida na migração 0003_display_name.sql bate com o espelho TS (engine/displayName.ts)', () => {
+    const sql = readFileSync(join(__dirname, 'migrations', '0003_display_name.sql'), 'utf8');
+    expect(extractSqlProhibitedTerms(sql).sort()).toEqual([...PROHIBITED_DISPLAY_NAME_TERMS].sort());
   });
 
-  test('aceita acentuação pt-br', () => {
-    expect(validateDisplayName('José Ção')).toEqual({ valid: true });
-    expect(validateDisplayName('ÁÉÍÓÚÇÑ áéíóúçñ')).toEqual({ valid: true });
-  });
-
-  test('corta espaços nas pontas antes de validar (trim)', () => {
-    expect(validateDisplayName('  Fulano  ')).toEqual({ valid: true });
-    expect(validateDisplayName('  ab  ')).toEqual({ valid: false, reason: 'tooShort' }); // "ab" após trim
-  });
-
-  test('nome curto demais (menos de 3 caracteres após trim)', () => {
-    expect(validateDisplayName('ab')).toEqual({ valid: false, reason: 'tooShort' });
-    expect(validateDisplayName('')).toEqual({ valid: false, reason: 'tooShort' });
-  });
-
-  test('nome longo demais (mais de 16 caracteres)', () => {
-    expect(validateDisplayName('a'.repeat(17))).toEqual({ valid: false, reason: 'tooLong' });
-  });
-
-  test('caractere fora do permitido: emoji e símbolo', () => {
-    expect(validateDisplayName('Nome😀')).toEqual({ valid: false, reason: 'invalidChars' });
-    expect(validateDisplayName('Nome!')).toEqual({ valid: false, reason: 'invalidChars' });
-    expect(validateDisplayName('Nome_x')).toEqual({ valid: false, reason: 'invalidChars' });
-  });
-
-  test('termo proibido pt-br é rejeitado, sem distinguir maiúscula/minúscula', () => {
-    expect(validateDisplayName('seu merda')).toEqual({ valid: false, reason: 'profanity' });
-    expect(validateDisplayName('MERDA total')).toEqual({ valid: false, reason: 'profanity' });
-  });
-
-  test('termo proibido en é rejeitado', () => {
-    expect(validateDisplayName('fuck you')).toEqual({ valid: false, reason: 'profanity' });
-  });
-
-  test('checagem de tamanho vem antes da de caracteres, que vem antes da de termo proibido', () => {
-    // "ab" é curto E teria caractere problemático se testado sozinho — mas o
-    // motivo devolvido é sempre o primeiro da ordem de checagem (tooShort).
-    expect(validateDisplayName('a!')).toEqual({ valid: false, reason: 'tooShort' });
+  test('lista duplicada em verify-contract.mjs bate com o espelho TS (engine/displayName.ts)', () => {
+    const script = readFileSync(join(__dirname, 'scripts', 'verify-contract.mjs'), 'utf8');
+    expect(extractScriptProhibitedTerms(script).sort()).toEqual([...PROHIBITED_DISPLAY_NAME_TERMS].sort());
   });
 });
