@@ -171,7 +171,7 @@ The system is tonal-layering-first. Three layers carry all depth:
 
 Shadows are reserved for exactly two use cases:
 - **Card shadows** (`shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 4, elevation: 3`): Playing cards in the hand need to feel like physical objects lifted off the table. The shadow is tight and directional (downward).
-- **Floating overlay shadows** (`shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 8, elevation: 6`): The break reminder banner and modals float above everything with a heavier shadow, signaling they are temporary and dismissible.
+- **Floating overlay shadows** (`shadowColor: '#000', shadowOpacity: 0.4, shadowRadius: 8, elevation: 6`): Modals float above everything with a heavier shadow, signaling they are temporary and dismissible.
 
 ### Shadow Vocabulary
 - **Card lift** (`shadowColor: '#000', shadowOpacity: 0.35, shadowRadius: 4, shadowOffset: {0, 2}, elevation: 3`): Playing cards only. Creates the illusion of a hand of cards held above a surface.
@@ -188,7 +188,7 @@ The form language is gently rounded — warm enough to feel approachable, tight 
 **Radius scale:**
 - **6px (sm):** Deck grid cells, badge dots, forged effect badges — the tightest radius for the smallest elements
 - **10px (md):** Nav buttons, shop item rows, milestone rows, pills, equip buttons — the default for interactive list items
-- **12px (lg):** Forger cards, action buttons, stat cards, section containers, the break reminder — the dominant radius for primary containers and buttons
+- **12px (lg):** Forger cards, action buttons, stat cards, section containers — the dominant radius for primary containers and buttons
 - **14px (xl):** Stat cards on the profile screen — the largest radius, used for wide, information-dense panels
 
 **Borders:** 1–2px solid, always using Anvil Border (#3a2f4c) as the default. Gold borders (#e0a53e) are reserved for active/selected states (selected forger card, selected playing card, equipped shop items). The border is the primary selection indicator — no glow, no highlight color, just a border color shift.

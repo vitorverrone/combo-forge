@@ -5,7 +5,6 @@ import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { AdBanner } from './components/AdBanner';
-import { BreakReminderBanner } from './components/BreakReminderBanner';
 import { CollectionScreen } from './components/CollectionScreen';
 import { DailyChallengeScreen } from './components/DailyChallengeScreen';
 import { GameFeedback } from './components/GameFeedback';
@@ -49,7 +48,6 @@ export default function App() {
         </View>
         <AdBanner />
         <UnlockChoiceModal />
-        <BreakReminderBanner />
         <GameFeedback />
         <StatusBar style="light" />
       </SafeAreaView>

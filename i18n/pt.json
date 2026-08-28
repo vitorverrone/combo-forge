@@ -198,11 +198,6 @@
     "submitted": "✓ Pontuação enviada",
     "failed": "Pontuação não enviada"
   },
-  "breakReminder": {
-    "title": "☕ Hora de uma pausa?",
-    "body": "Você está forjando muitas runs seguidas. Uma pausa curta mantém seu foco afiado.",
-    "button": "OK, VOU FAZER UMA PAUSA"
-  },
   "format": {
     "noRelic": "Sem relíquia inicial — puro skill.",
     "pattern": {
@@ -249,7 +244,6 @@
     "openProfile": "Abrir perfil",
     "openShop": "Abrir loja",
     "openCollection": "Abrir coleção",
-    "dismissBreakReminder": "Dispensar lembrete de pausa",
     "abandonRun": "Abandonar run",
     "clearSelection": "Limpar seleção",
     "discardSelectedCards": "Descartar cartas selecionadas",

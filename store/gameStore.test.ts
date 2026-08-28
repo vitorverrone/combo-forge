@@ -6,8 +6,6 @@ import {
   computeUnlocks,
   createDeck,
   COSMETIC_CATALOG,
-  createMemoryBreakStorage,
-  DEFAULT_BREAK_REMINDER_CONFIG,
   createDevShopProvider,
   createMemoryDailyChallengeStorage,
   createMemoryDdaStorage,
@@ -728,90 +726,6 @@ describe('loja (delegação para o shopFlow — refactor)', () => {
     // Novo store com o mesmo storage simula o restart do app.
     const second = createGameStore({ shopStorage: storage, shopProvider: createDevShopProvider() });
     expect(second.getState().adsRemoved).toBe(true);
-  });
-});
-
-describe('lembrete de pausa (ticket 15)', () => {
-  const QUAD_TENS = [clubs(10), spades(10), hearts(10), diamonds(10)];
-
-  /** Encerra a Run atual em vitória (Rodada 6) com o relógio injetado. */
-  function winCurrentRun(store: ReturnType<typeof createGameStore>): void {
-    store.setState({ run: { ...makeRunWithHand(QUAD_TENS), roundNumber: 6 } });
-    for (const card of QUAD_TENS) store.getState().toggleCard(cardKey(card));
-    store.getState().playSelection();
-  }
-
-  test('3 Runs seguidas em janela curta sugerem pausa (sem bloquear)', () => {
-    let t = 1_000_000;
-    const store = createGameStore({ breakNow: () => t, breakStorage: createMemoryBreakStorage() });
-    for (let i = 0; i < 3; i += 1) {
-      store.getState().startRun();
-      winCurrentRun(store);
-      expect(store.getState().breakHistory.runEndsAt).toHaveLength(i + 1);
-      t += 60_000; // 1 minuto entre fins de Run — dentro da janela
-      store.getState().backToStart();
-    }
-    expect(store.getState().breakSuggestion).toBe(true);
-  });
-
-  test('intervalo longo entre Runs não sugere pausa', () => {
-    let t = 1_000_000;
-    const store = createGameStore({ breakNow: () => t, breakStorage: createMemoryBreakStorage() });
-    for (let i = 0; i < 3; i += 1) {
-      store.getState().startRun();
-      winCurrentRun(store);
-      t += DEFAULT_BREAK_REMINDER_CONFIG.windowMs + 1; // fora da janela
-      store.getState().backToStart();
-    }
-    expect(store.getState().breakSuggestion).toBe(false);
-  });
-
-  test('dismissBreakReminder silencia por cooldown e persiste', () => {
-    let t = 1_000_000;
-    const storage = createMemoryBreakStorage();
-    const store = createGameStore({ breakNow: () => t, breakStorage: storage });
-    for (let i = 0; i < 3; i += 1) {
-      store.getState().startRun();
-      winCurrentRun(store);
-      t += 60_000;
-      store.getState().backToStart();
-    }
-    expect(store.getState().breakSuggestion).toBe(true);
-    store.getState().dismissBreakReminder();
-    expect(store.getState().breakSuggestion).toBe(false);
-    expect(storage.load()?.lastSuggestedAt).toBe(t);
-    // Sem novo descanso, não reaparece dentro do cooldown.
-    store.getState().startRun();
-    winCurrentRun(store);
-    expect(store.getState().breakSuggestion).toBe(false);
-  });
-
-  test('Run diária também conta para o lembrete de pausa', async () => {
-    let t = 1_000_000;
-    const store = createGameStore({
-      breakNow: () => t,
-      dailyBackend: makeFakeDailyBackend(),
-    });
-    // Três fins de Run: dois diários (gratuita + extra via anúncio) + um
-    // normal, todos em janela curta.
-    for (let i = 0; i < 3; i += 1) {
-      if (i % 2 === 0) {
-        await store.getState().startDailyChallenge();
-        store.setState({ run: { ...makeRunWithHand(QUAD_TENS), roundNumber: 6 } });
-        for (const card of QUAD_TENS) store.getState().toggleCard(cardKey(card));
-        store.getState().playSelection();
-        // Libera a tentativa extra para o segundo Desafio do loop (i=2).
-        if (i === 0) await store.getState().watchAdForExtraAttempt();
-        store.getState().openDaily();
-      } else {
-        store.getState().startRun();
-        winCurrentRun(store);
-        store.getState().backToStart();
-      }
-      t += 60_000;
-    }
-    expect(store.getState().breakSuggestion).toBe(true);
-    expect(store.getState().breakHistory.runEndsAt).toHaveLength(3);
   });
 });
 

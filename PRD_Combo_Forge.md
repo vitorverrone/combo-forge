@@ -144,15 +144,6 @@ usuário, avatar ou qualquer dado pessoal de outros jogadores. Não há sistema
 de contas/login: a identidade no leaderboard é um UUID de dispositivo opaco,
 não vinculado a e-mail, nome ou qualquer dado pessoal identificável.
 
-### 6.5 Bem-estar do jogador — regra de negócio
-
-Um lembrete gentil e dispensável de pausa aparece após 3 Runs consecutivas
-terminadas em menos de 10 minutos entre si, silenciando por 30 minutos após
-ser exibido. **Nunca bloqueia o jogo** — é apenas uma sugestão. Esta é uma
-decisão de produto deliberada em contraponto ao próprio pilar de retenção do
-restart instantâneo (GDD §10: mitigação ao risco de "restart instantâneo
-virar gatilho compulsivo").
-
 ## 7. Fluxos de Uso Principais
 
 (Fluxo completo botão-a-botão está na Especificação Funcional; aqui, a
@@ -171,9 +162,9 @@ vence Rodada → escolhe upgrade na Forja → próxima Rodada → ... → vence 
 
 ### 7.3 Retorno diário (comparação social assíncrona)
 Tela Início → Desafio Diário → joga a Run do dia (mesma para todos os
-jogadores) → opcionalmente assiste anúncio para 2ª tentativa → pontuação
-submetida automaticamente ao fim da Run → opcionalmente abre o leaderboard
-semanal (opt-in).
+jogadores) → opcionalmente assiste anúncio pra jogar de novo (sem limite,
+uma Run por anúncio) → pontuação submetida automaticamente ao fim de cada
+Run → opcionalmente abre o leaderboard semanal (opt-in).
 
 ### 7.4 Meta-progressão (entre sessões)
 Runs vencidas acumulam estatísticas de perfil → marcos desbloqueiam novos
@@ -193,9 +184,9 @@ some imediatamente) → Restaurar Compras disponível para troca de aparelho.
 - Dificuldade Dinâmica (DDA) persistente entre Runs.
 - Meta-progressão sem moeda (4 marcos).
 - Desafio Diário com backend Supabase (seed compartilhado, leaderboard
-  semanal opt-in, 1 tentativa grátis + 1 via anúncio).
+  semanal opt-in, 1 tentativa grátis + tentativas extras ilimitadas via
+  anúncio).
 - Loja cosmética (4 itens) + Remove Ads via RevenueCat.
-- Lembrete gentil de pausa.
 - Onboarding interativo (4 passos, dispensável).
 
 **Fora do escopo do MVP:**

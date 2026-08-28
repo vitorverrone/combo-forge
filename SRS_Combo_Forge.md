@@ -163,19 +163,18 @@ sistema deve prover.
 | RF-38 | O sistema deve solicitar anúncios não-personalizados (`requestNonPersonalizedAdsOnly: true`) tanto para banner quanto para recompensado. |
 | RF-39 | Falha ao carregar/exibir qualquer anúncio (NO_FILL, erro de rede, desistência do jogador) não deve travar, quebrar ou bloquear o fluxo do jogo — deve resolver graciosamente ao estado anterior. |
 
-### 3.8 Onboarding e Bem-estar
+### 3.8 Onboarding
 
 | ID | Requisito |
 |---|---|
 | RF-40 | O sistema deve exibir um tutorial de 4 passos na primeira sessão, dispensável a qualquer momento, e não deve reexibi-lo automaticamente após concluído ou pulado. |
-| RF-41 | O sistema deve sugerir uma pausa (banner dispensável, nunca bloqueante) após 3 Runs consecutivas encerradas em menos de 10 minutos entre si, silenciando por 30 minutos após cada sugestão. |
 
 ### 3.9 Persistência entre sessões
 
 | ID | Requisito |
 |---|---|
-| RF-42 | O sistema deve persistir localmente, sobrevivendo ao fechamento do app: histórico de DDA, meta-progressão (estatísticas + desbloqueios), tentativas/deviceId do Desafio Diário, estado da Loja (comprados/equipados/remoção de anúncios) e histórico do lembrete de pausa. |
-| RF-43 | Falha de leitura/gravação da persistência local (SQLite indisponível, JSON corrompido) não deve impedir o jogo de funcionar — deve degradar para estado neutro/em memória na sessão atual. |
+| RF-41 | O sistema deve persistir localmente, sobrevivendo ao fechamento do app: histórico de DDA, meta-progressão (estatísticas + desbloqueios), tentativas/deviceId do Desafio Diário, estado da Loja (comprados/equipados/remoção de anúncios). |
+| RF-42 | Falha de leitura/gravação da persistência local (SQLite indisponível, JSON corrompido) não deve impedir o jogo de funcionar — deve degradar para estado neutro/em memória na sessão atual. |
 
 ## 4. Requisitos Não Funcionais
 
@@ -264,9 +263,8 @@ sistema deve prover.
 - **RNF-15** — Persistência local via `expo-sqlite/kv-store` num banco
   dedicado (`combo-forge.db`), chaves: `combo-forge:dda`,
   `combo-forge:progression`, `combo-forge:daily-attempts`,
-  `combo-forge:daily-device-id`, `combo-forge:shop`,
-  `combo-forge:break-history` — mesmo padrão do storage de onboarding-seen
-  (chave separada, mesmo banco).
+  `combo-forge:daily-device-id`, `combo-forge:shop` — mesmo padrão do
+  storage de onboarding-seen (chave separada, mesmo banco).
 - **RNF-16** — Todo JSON persistido que falhar ao parsear (versão antiga
   incompatível, corrupção) é tratado como ausente (fallback ao estado
   inicial), nunca lança.
@@ -372,7 +370,6 @@ sistema deve prover.
 | `combo-forge:daily-attempts` | `DailyAttempts` — data, tentativas usadas, extra liberada, melhor pontuação submetida |
 | `combo-forge:daily-device-id` | UUID v4 opaco do dispositivo |
 | `combo-forge:shop` | `PersistedShop` — itens comprados, skin equipada, remoção de anúncios |
-| `combo-forge:break-history` | `BreakHistory` — timestamps dos últimos fins de Run + último lembrete exibido |
 | `combo-forge:onboarding-seen` | flag booleana (tutorial concluído/pulado) |
 
 ### 7.2 Backend (Supabase — tabela `daily_submissions`)
@@ -393,5 +390,5 @@ exclusivamente via as 3 funções RPC do §5.1. Estrutura completa em
 | Desafio Diário | RF-25–RF-30 | `DailyChallengeScreen`, `DailySubmitStatus` | `engine/daily.ts`, `store/dailyFlow.ts`, `services/supabase.ts` |
 | Loja | RF-31–RF-36 | `ShopScreen` | `engine/shop.ts`, `store/shopFlow.ts`, `services/revenuecat.ts` |
 | Anúncios | RF-37–RF-39 | `AdBanner` | `engine/adProvider.ts`, `services/ads.ts` |
-| Onboarding/Pausa | RF-40–RF-41 | `OnboardingOverlay`, `BreakReminderBanner` | `engine/breaks.ts` |
-| Persistência | RF-42–RF-43 | — | `store/sqlite.ts`, `store/bootstrap.ts` |
+| Onboarding | RF-40 | `OnboardingOverlay` | `store/sqlite.ts` |
+| Persistência | RF-41–RF-42 | — | `store/sqlite.ts`, `store/bootstrap.ts` |
