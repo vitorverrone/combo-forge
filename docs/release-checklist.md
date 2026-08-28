@@ -17,57 +17,70 @@ desenvolvimento — nada disso é opcional para um release real.
 A ordem abaixo evita trabalho retrabalhado e põe o item mais lento (o teste
 fechado de 14 dias) rodando o quanto antes:
 
-1. **AdMob → Pagamentos:** completar o perfil de pagamento. **Bloqueia a
-   revisão do app inteiro** — enquanto pendente, nenhum anúncio real sai do
-   `NO_FILL`, não importa o resto (seção 3).
+1. ~~**AdMob → Pagamentos:** completar o perfil de pagamento.~~ ✅ Feito em
+   2026-08-28 (aba "Verificação" checada — não bloqueia agora, só quando os
+   ganhos atingirem um limite). O app segue em "Requer revisão" mesmo assim
+   — provavelmente também depende do vínculo com a loja, que só é possível
+   pós-produção (item 12, seção 3).
 2. **Play Console → convidar testadores:** chegar a 12 testadores optados no
    teste fechado. É o item mais demorado (14 dias corridos **depois** de
    bater 12) — comece agora para não ser o gargalo do calendário (seção 6).
-3. **Play Console → Monetizar com o Google Play:** criar os 4 produtos
-   gerenciados (3 skins + Remove Ads) com os productIds exatos do catálogo
+3. ~~**Play Console → Monetizar com o Google Play:** criar os 4 produtos
+   gerenciados.~~ ✅ Feito em 2026-08-28 — os 4 produtos únicos (Remove Ads,
+   Royal/Emerald/Obsidian Deck) estão criados e ativos, productIds batendo
+   com o catálogo (seção 2).
+4. ~~**RevenueCat → app "Combo Forge (Play Store)":** criar os mesmos 4
+   produtos.~~ ✅ Feito em 2026-08-28 — os 4 produtos existem como
+   Non-consumable, a entitlement `remove_ads` está anexada ao Remove Ads
+   real, e os 4 packages da offering `default` já têm o lado Android
+   preenchido (seção 2).
+5. ~~**RevenueCat → credencial de service account do Google Play.**~~ ✅
+   Feito em 2026-08-28 — os 4 produtos já mostram "Published". Só falta um
+   check de assinatura (irrelevante pro Combo Forge, sem produtos de
+   assinatura) terminar de propagar do lado do Google, sem ação necessária
    (seção 2).
-4. **RevenueCat → app "Combo Forge (Play Store)":** criar os mesmos 4
-   produtos, anexar o produto Remove Ads à entitlement `remove_ads`, e
-   anexar cada produto Android ao package correspondente na offering
-   `default` (hoje só têm produto do Test Store) (seção 2).
-5. **EAS → corrigir a chave do RevenueCat no ambiente `production`** — ainda
-   é a chave de Test Store; `preview` e o `.env` local já têm a chave
-   `goog_...` real, mas os produtos por trás dela não existem ainda (ver
-   ⚠️ na seção 2 — a Loja do build preview atual deve estar quebrada para
-   quem já está testando).
-6. **AdMob:** criar a ad unit **Interstitial** do Android; preencher
-   `EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID` no `.env` e no EAS
-   (seção 3).
-7. **AdMob → Configurações do app → Detalhes da app store:** vincular a
-   ficha da Play Store (já existe, mesmo em teste fechado) — pré-requisito
-   da revisão de prontidão que libera o inventário de anúncios (seção 3).
+6. ~~**EAS → corrigir a chave do RevenueCat no ambiente `production`.**~~ ✅
+   Feito em 2026-08-28 — `production` agora tem a mesma chave `goog_...` de
+   `preview` e do `.env` local (seção 2).
+7. ~~**AdMob:** criar a ad unit **Interstitial** do Android.~~ ✅ Feito em
+   2026-08-28 (`ca-app-pub-7753200620000515/8281372704`), `.env` e os dois
+   ambientes do EAS já atualizados (seção 3).
 8. **`eas build --profile production --platform android`** com tudo acima no
    lugar; instalar num device físico e validar de ponta a ponta: compra real
    de cada skin + Remove Ads, restore, anúncio recompensado, intersticial,
-   banner (seção 5).
+   banner (o rewarded/intersticial/banner reais provavelmente continuam
+   `NO_FILL` até o item 11 — ver nota abaixo) (seção 5).
 9. **Play Console:** preencher o Data Safety form e os assets de loja
    (ícone, screenshots, descrição, política de privacidade) (seção 6/7).
 10. Quando o teste fechado completar **12 testadores × 14 dias**: clicar em
     "Solicitar a produção" (hoje desabilitado no painel) (seção 6).
-11. Publicar em produção.
+11. **Publicar em produção na Play Store.**
+12. **Só agora** — AdMob → Configurações do app → Detalhes da app store:
+    vincular a ficha da Play Store. **Reordenado em 2026-08-28:** tentamos
+    antes e o app não aparecia na busca do AdMob nem por nome nem por
+    pacote — confirmado que apps em teste fechado (ou aberto) **não são
+    pesquisáveis/vinculáveis no AdMob**, só depois de publicados em
+    produção. É só depois desse vínculo que a revisão de prontidão do
+    AdMob libera o inventário real de anúncios (seção 3).
 
 ---
 
-## Estado atual (consolidado em 2026-08-27)
+## Estado atual (consolidado em 2026-08-28)
 
 | Item | Onde está hoje | Próximo passo |
 |---|---|---|
 | Supabase | ✅ Projeto criado, migrations aplicadas, `.env` real e Desafio Diário validado de ponta a ponta | `submit_daily_score`/`get_weekly_leaderboard` pendem de um fim de Run (opcional: `verify:backend`) |
 | RevenueCat — catálogo | ✅ 3 skins pagas + Classic grátis + Remove Ads (VFX "Golden Combo" **removido do escopo**, código e docs já atualizados); preços confirmados (Royal Deck = $0.99) | — |
 | RevenueCat — Test Store | ✅ 4 produtos + offering `default` com 4 packages, tudo validado em dev build | — |
-| RevenueCat — app Android real | ❌ App "Combo Forge (Play Store)" existe no dashboard mas **sem nenhum produto** | Criar os 4 IAPs no Play Console primeiro, depois espelhar aqui e anexar aos packages |
-| RevenueCat — chave da API | ⚠️ **Inconsistente**: `.env` local e EAS `preview` já têm a chave `goog_...` real; EAS `production` ainda tem a chave `test_...` antiga | Igualar em `production`; mas os produtos reais precisam existir antes de fazer diferença |
-| AdMob — app Android | ⚠️ Criado (`ca-app-pub-7753200620000515~2190419729`), status **"Requer revisão"**, app oculto | Bloqueado pela pendência de pagamento abaixo |
-| AdMob — perfil de pagamento | 🔴 **Incompleto** — banner do painel: "os apps em análise vão permanecer sem revisão" | **Corrigir agora** (Pagamentos → preencher perfil) |
-| AdMob — ad units | ✅ Rewarded + Banner criadas e reais; ❌ **Interstitial ainda não existe** | Criar a unidade Interstitial |
-| AdMob — vínculo com a loja | ❌ "Detalhes da app store" vazio nas Configurações do app | Vincular à ficha da Play Store (já existe) |
+| RevenueCat — app Android real | ✅ **4 produtos criados** (Non-consumable) em 2026-08-28, "Published", entitlement `remove_ads` anexada ao Remove Ads real, os 4 packages da offering `default` já têm o lado Android preenchido | — |
+| RevenueCat — credencial do Google Play | ✅ **Configurada em 2026-08-28**, produtos "Published" | Check de assinatura ainda propagando (irrelevante — sem produtos de assinatura) |
+| RevenueCat — chave da API | ✅ **Igualada em 2026-08-28**: `.env` local, EAS `preview` e EAS `production` com a mesma chave `goog_...` real | — |
+| AdMob — app Android | ⚠️ Criado (`ca-app-pub-7753200620000515~2190419729`), status ainda **"Requer revisão"** em 2026-08-28, app oculto | Provavelmente só sai disso depois do vínculo com a loja (que só é possível pós-produção — ver linha abaixo) |
+| AdMob — perfil de pagamento | ✅ Corrigido em 2026-08-28 (aba "Informações dos pagamentos" preenchida) | — |
+| AdMob — ad units | ✅ Rewarded + Banner + **Interstitial** (criada 2026-08-28, `.../8281372704`) — as 3 reais | — |
+| AdMob — vínculo com a loja | ⏳ **Bloqueado, não pendente** — tentamos vincular em 2026-08-28 e o app não aparece na busca do AdMob (nem por nome, nem por pacote); confirmado que apps em teste fechado não são pesquisáveis lá | Só é possível depois de publicar em produção na Play Store (item 12 do roteiro) |
 | Google Play Console | ✅ **App já criado** (`com.combocardforge.app`), teste fechado publicado, 1 testador ativo | Recrutar até 12 testadores + aguardar 14 dias corridos |
-| Google Play Console — IAPs | ❌ Produtos em app ainda não criados | Criar os 4 (3 skins + Remove Ads) em "Monetizar com o Google Play" |
+| Google Play Console — IAPs | ✅ **4 produtos únicos criados e ativos** (2026-08-28): Remove Ads, Royal Deck, Emerald Deck, Obsidian Deck | — |
 | App Store (iOS) | ⏳ Fora de escopo por enquanto (Test App ID no AdMob, sem app no ASC) | Retomar quando decidir publicar iOS |
 | EAS | ✅ Projeto vinculado, builds `preview` validados no emulador | `production` build só depois dos itens acima |
 | Identificadores `com.combocardforge.app` | ✅ Iguais em `app.json`, AdMob e Play Console | — |
@@ -121,47 +134,70 @@ packages abaixo, nunca teve um 5º para o VFX:
 Preços confirmados (Royal Deck = $0.99, igual às outras duas skins — o PRD
 antes documentava $1.99 por engano, já corrigido).
 
-### O app Android real no RevenueCat está vazio
+### ✅ App Android real no RevenueCat — populado em 2026-08-28
 
 O dashboard tem dois "apps" dentro do projeto Combo Forge: **Test Store**
-(usado em dev, 4 produtos, tudo funcionando) e **Combo Forge (Play Store)**
-— este último **sem nenhum produto cadastrado ainda** (tela "Add products,
-create a new product or import existing ones to get started"). E na
-offering `default`, cada um dos 4 packages tem produto do Test Store
-anexado, mas a coluna do app Android mostra "+ New Product" — ou seja,
-**nenhum package tem produto real do Play Store anexado**.
+(usado em dev, 4 produtos, tudo funcionando) e **Combo Forge (Play Store)**.
+Este último agora tem os mesmos 4 produtos, criados como **Non-consumable**
+(nenhum é assinatura nem é consumido/recomprado — compra única, restaurável,
+igual às 3 skins e ao Remove Ads):
 
-- [ ] **Play Console primeiro:** criar os 4 IAPs gerenciados (seção 6) — o
-      RevenueCat não deixa (ou não faz sentido) criar o produto do lado do
-      Android antes de o produto existir na loja.
-- [ ] **RevenueCat depois:** para cada um dos 4 productIds, ir em Products →
-      app "Combo Forge (Play Store)" → New Product (ou Import) e criar/
-      importar o produto espelhando o Play Console.
-- [ ] Anexar o entitlement `remove_ads` (Product catalog → Entitlements →
-      `remove_ads` → Associated products → Attach) ao produto Remove Ads
-      real do Android — hoje só está anexado ao do Test Store.
-- [ ] Editar a offering `default` (Product catalog → Offerings → `default` →
-      Edit) e, em cada um dos 4 packages, anexar o produto Android
-      correspondente na coluna "Combo Forge (Play St...)".
+- [x] Os 4 productIds criados em Products → app "Combo Forge (Play Store)"
+      → New Product, um a um, batendo exatamente com o Play Console.
+- [x] Entitlement `remove_ads` (Product catalog → Entitlements →
+      `remove_ads` → Associated products) anexada ao produto Remove Ads
+      real do Android — a tela já mostra os dois (Test Store + Play Store)
+      na lista de "Associated products".
+- [x] Offering `default` (Product catalog → Offerings → `default` → Edit):
+      os 4 packages já têm o produto Android correspondente anexado ao lado
+      do produto do Test Store.
 
-### Chave da API — inconsistência entre ambientes
+### ✅ Credencial de service account do Google Play — configurada em 2026-08-28
 
-- ⚠️ **`.env` local** e **EAS `preview`** já têm a chave pública real
-  (`goog_...`) — alguém trocou a Test Store key antes desta revisão.
-- ⚠️ **EAS `production`** ainda tem a chave de Test Store (`test_...`) —
-  desatualizada em relação ao `preview`.
-- ⚠️ **Risco atual:** como o app Android no RevenueCat não tem nenhum
-  produto/package anexado (seção acima), o build **preview** já em teste
-  fechado (com testadores reais) provavelmente está com a Loja
-  funcionalmente quebrada: `loadOfferings()` deve devolver preços vazios ou
-  cair no `devPrice`, e tentar comprar deve falhar com o erro "Produto fora
-  das ofertas" (`services/revenuecat.ts`) — não trava o app, mas ninguém
-  consegue comprar nada no build que os testadores têm em mãos agora.
-- [ ] Depois de completar os produtos Android (passos acima), igualar a
-      chave em `production`:
+Resolvido o erro "Google Play service account credentials must be set
+before using this feature" que bloqueava o "Import" e deixava os 4 produtos
+Android com status "Could not check":
+
+- [x] Service account `revenuecat-combo-forge@pessoal-463414.iam.gserviceaccount.com`
+      criada no Google Cloud (projeto `pessoal-463414`), com a "Google Play
+      Android Developer API" habilitada e uma chave JSON gerada.
+- [x] Permissão concedida no Play Console — **não fica mais em
+      "Configurações → Acesso à API"** nas contas mais novas: o caminho
+      atual é **Usuários e permissões → Gerenciar usuários → Convidar
+      novos usuários**, adicionando o e-mail da service account como se
+      fosse um usuário. Concedido acesso de Administrador (cobre "Ver
+      dados financeiros, pedidos e histórico de cancelamento" +
+      "Gerenciar pedidos e assinaturas", as duas exigidas pela RevenueCat).
+- [x] JSON subido em RevenueCat → Apps → "Combo Forge (Play Store)" →
+      Service account credentials.
+- [x] Os 4 produtos saíram de "Could not check" e foram para **"Published"**
+      — confirma que a credencial já valida o catálogo/produtos.
+- [ ] **Pendência cosmética, não bloqueante:** o check "Can validate Google
+      Play subscription purchases" no modal de validação da RevenueCat
+      ainda aparece vermelho. Isso é conhecido — a comunidade da RevenueCat
+      reporta que é atraso de propagação de permissão do lado do Google,
+      podendo levar até 24–36h mesmo com tudo certo (já estamos com
+      Administrador, mais que suficiente). Como o Combo Forge não tem
+      nenhum produto de assinatura (todos Non-consumable), esse check
+      específico nem é exercitado pelo fluxo real de compra do app. Truque
+      pra tentar acelerar: editar a descrição de um produto no Play
+      Console, salvar, reverter e salvar de novo. Sem ação necessária além
+      de checar de novo depois de um tempo.
+
+### ✅ Chave da API — igualada em todos os ambientes (2026-08-28)
+
+- [x] `.env` local, EAS `preview` e EAS `production` têm a mesma chave
+      pública real (`goog_...`) — `production` estava com a chave de Test
+      Store (`test_...`) antiga, corrigida via:
       ```bash
-      eas env:set --name EXPO_PUBLIC_REVENUECAT_API_KEY --value <goog_... key> --environment production --visibility plaintext
+      eas env:set --name EXPO_PUBLIC_REVENUECAT_API_KEY --value <goog_... key> --environment production --visibility plaintext --non-interactive
       ```
+      (confirmado com `eas env:list --environment production`).
+- ✅ Como os produtos e packages do app Android já existem (seção acima),
+  `loadOfferings()` deve devolver preços reais em `preview` e `production` —
+  a compra em si ainda depende só do fluxo normal de Google Play Billing
+  (credencial de service account já resolvida acima, cobre a validação
+  server-to-server).
 
 ### Verificar
 
@@ -183,51 +219,66 @@ anexado, mas a coluna do app Android mostra "+ New Product" — ou seja,
 
 ## 3. AdMob (recompensado, intersticial, banner)
 
-### 🔴 Bloqueador: perfil de pagamento incompleto
+### ✅ Perfil de pagamento — corrigido em 2026-08-28
 
-O painel do AdMob mostra, no topo: **"Configuração de pagamento
-incompleta — Termine de configurar sua conta da AdMob preenchendo o perfil
-para pagamentos. Os apps em análise vão permanecer sem revisão até que você
-adicione as informações solicitadas."** Isso bloqueia a revisão do app
-inteiro (status hoje: "Requer revisão", ícone de app oculto) — sem revisão
-aprovada, o inventário real nunca sai do `NO_FILL`, não importa o que mais
-esteja configurado.
+O painel mostrava, no topo: **"Configuração de pagamento incompleta —
+Termine de configurar sua conta da AdMob preenchendo o perfil para
+pagamentos. Os apps em análise vão permanecer sem revisão até que você
+adicione as informações solicitadas."** Isso bloqueava a revisão do app
+inteiro. A aba "Informações dos pagamentos" (Pagamentos → conta AdSense
+Brasil, `pub-7753200620000515`) já está preenchida.
 
-- [ ] **Ir em Pagamentos → clicar em "Corrigir"** e preencher o que for
-      pedido (entidade legal, endereço, forma de pagamento, informações
-      fiscais).
+- [x] Perfil de pagamento preenchido (conta AdSense Brasil vinculada).
+- [x] Aba **"Verificação"** checada (2026-08-28): pede identidade/endereço
+      só quando os ganhos atingirem um certo limite — não bloqueia agora.
+- [x] Banner de aviso de pagamento sumiu da Visão geral do app.
+- [ ] Status em Configurações do aplicativo ainda em "Requer revisão" —
+      **não é mais esperado que suma só com o pagamento corrigido**: ver a
+      seção "Ad units"/"Detalhes da app store" abaixo, provavelmente
+      depende do vínculo com a loja, que só é possível pós-produção.
 
-### Ad units: falta o Interstitial
-
-O app tem hoje só 2 ad units criadas:
+### ✅ Ad units — as 3 criadas (2026-08-28)
 
 | Nome no painel | Formato | Ad unit ID |
 |---|---|---|
 | Desafio Diário — tentativa extra | Premiado (Rewarded) | `ca-app-pub-7753200620000515/2212947942` |
 | Remove ads | Banner | `ca-app-pub-7753200620000515/1366979567` |
+| (novo) | Intersticial | `ca-app-pub-7753200620000515/8281372704` |
 
-- [ ] Criar a ad unit **Interstitial** (Blocos de anúncios → Adicionar bloco
+- [x] Ad unit **Interstitial** criada (Blocos de anúncios → Adicionar bloco
       de anúncios → Intersticial) — `services/ads.ts` já lê
       `EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID` desde a correção
-      de 2026-08-26; falta só a ad unit existir.
-- [ ] Preencher a variável no `.env` (hoje ausente) e no EAS (`preview` +
-      `production`, hoje ausente nos dois):
+      de 2026-08-26.
+- [x] Variável preenchida no `.env` local e no EAS (`preview` + `production`):
       ```bash
-      eas env:set --name EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID --value <novo ad unit id> --environment preview --visibility plaintext
-      eas env:set --name EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID --value <novo ad unit id> --environment production --visibility plaintext
+      eas env:set --name EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID --value ca-app-pub-7753200620000515/8281372704 --environment preview --visibility plaintext --non-interactive
+      eas env:set --name EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID --value ca-app-pub-7753200620000515/8281372704 --environment production --visibility plaintext --non-interactive
       ```
+- [ ] O AdMob avisa que blocos novos podem levar até 1h para começar a
+      servir anúncios — não testar o intersticial real antes disso.
 
 ### Configurações do app
 
 - [x] App ID real (`ca-app-pub-7753200620000515~2190419729`) igual no
       `app.json` e no painel — build de release não crasha.
 - [x] Verificação de apps: "Não obrigatório" — nada a fazer.
-- [ ] **Detalhes da app store: vazio** ("—" / "—", botão "Adicionar"). Agora
-      que o app existe no Play Console (mesmo em teste fechado), vincular a
-      ficha — pré-requisito da revisão de prontidão que libera o inventário
-      pago.
+- [ ] **Detalhes da app store: vazio** ("—" / "—", botão "Adicionar").
+      **Tentado em 2026-08-28 e não funcionou** — a busca do AdMob não
+      encontrou o app nem por nome ("Combo Forge") nem por pacote
+      (`com.combocardforge.app`). Confirmado (relatos da comunidade do
+      AdMob/Play Console): **apps em teste fechado (ou aberto) não aparecem
+      na busca de vínculo do AdMob** — esse recurso só encontra apps já
+      publicados em produção na Play Store. Não é um passo pendente agora,
+      é um passo **bloqueado até depois da publicação** (item 12 do
+      roteiro, seção "Ordem recomendada").
 - [ ] Serviços vinculados: nada vinculado ainda — revisar depois de linkar a
-      app store acima.
+      app store acima (ou seja, pós-produção).
+- [ ] **Consequência:** o status "Requer revisão" do app no AdMob
+      provavelmente só sai depois desse vínculo — ou seja, a revisão de
+      prontidão pode depender do app já estar público, não só do perfil de
+      pagamento corrigido. Anúncios reais (rewarded/intersticial/banner)
+      devem continuar em `NO_FILL` até esse ponto, mesmo com tudo o mais
+      configurado.
 
 ### Verificar
 
@@ -245,20 +296,26 @@ O app tem hoje só 2 ad units criadas:
 ## 4. `.env` final (resumo)
 
 ```
-SUPABASE_URL=https://<project-ref>.supabase.co
-SUPABASE_ANON_KEY=<anon public key>
 EXPO_PUBLIC_SUPABASE_URL=https://<project-ref>.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=<anon public key>
 EXPO_PUBLIC_REVENUECAT_API_KEY=<revenuecat public sdk key — goog_...>
 EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID=<admob rewarded ad unit id (android)>
 EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID=<admob banner ad unit id (android)>
-EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID=<admob interstitial ad unit id (android)>  # pendente — criar a ad unit (seção 3)
+EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID=<admob interstitial ad unit id (android)>
 # EXPO_PUBLIC_ADMOB_*_AD_UNIT_ID_IOS=<...>  # quando publicar iOS
 ```
 
-- [x] `.env` local sem placeholder para Supabase, RevenueCat (já com a chave
-      real `goog_...`) e AdMob Android rewarded/banner.
-- [ ] Interstitial ausente — depende da seção 3.
+- [x] `.env` local tem Supabase e RevenueCat (chave real `goog_...`) sem
+      placeholder; `EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID`
+      adicionado em 2026-08-28.
+- ⚠️ **Achado ao revisar o `.env` local em 2026-08-28:** ele não tem
+      `EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID` nem
+      `EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID` — ao contrário do que
+      revisões anteriores deste checklist afirmavam. Não bloqueia nada (em
+      dev o app cai no `TestIds` do Google de qualquer forma quando a
+      variável da plataforma/formato atual não existe — `services/ads.ts`),
+      mas deixa o `.env` local inconsistente com o EAS. Baixa prioridade;
+      resolver quando for mexer no `.env` de novo.
 - [x] `.env` fora do git (`git check-ignore .env`).
 
 ---
@@ -269,32 +326,49 @@ O EAS **não lê o `.env` local em builds de nuvem** — as `EXPO_PUBLIC_*` vêm
 de EAS Environment Variables por ambiente (`eas env:list --environment
 <env>`).
 
-### Estado por ambiente (verificado 2026-08-27)
+### Estado por ambiente (verificado 2026-08-28)
 
 | Variável | `preview` | `production` |
 |---|---|---|
 | `EXPO_PUBLIC_SUPABASE_URL`/`ANON_KEY` | ✅ real | ✅ real |
-| `EXPO_PUBLIC_REVENUECAT_API_KEY` | ✅ `goog_...` (real, mas sem produtos por trás — ver seção 2) | ⚠️ `test_...` (desatualizada) |
+| `EXPO_PUBLIC_REVENUECAT_API_KEY` | ✅ `goog_...` real, produtos Android já existem | ✅ `goog_...` real (igualada em 2026-08-28) |
 | `EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID` | ✅ | ✅ |
 | `EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID` | ✅ | ✅ |
-| `EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID` | ❌ ausente | ❌ ausente |
+| `EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID` | ✅ (2026-08-28) | ✅ (2026-08-28) |
 
-- [ ] Igualar `EXPO_PUBLIC_REVENUECAT_API_KEY` em `production` (comando na
-      seção 2) — só depois de os produtos Android existirem, senão troca uma
-      chave quebrada por outra.
-- [ ] Adicionar a variável do Interstitial nos dois ambientes (seção 3).
+- [x] `EXPO_PUBLIC_REVENUECAT_API_KEY` igualada em `production` (2026-08-28).
+- [x] Variável do Interstitial adicionada nos dois ambientes (2026-08-28).
 
 ### Builds
 
 - [x] `eas build --profile preview --platform android` — validado no
-      emulador (2026-08-16); atualmente em teste fechado no Play Console com
-      testadores reais.
-- [ ] `eas build --profile production --platform android` — só depois dos
-      itens pendentes das seções 2 e 3 (senão o build de loja sai com a
-      mesma Loja/anúncios quebrados que o preview tem hoje).
+      emulador (2026-08-16). ⚠️ **Nota de 2026-08-28:** esse profile gera
+      **APK** (`distribution: internal`) — o Play Console exige **AAB** pra
+      qualquer track, inclusive teste fechado. Não está claro como a build
+      hoje em teste fechado chegou lá (não documentado neste checklist);
+      daqui pra frente o caminho combinado é sempre via profile
+      `production` (AAB) + `eas submit` (abaixo).
+- [x] `eas.json` → `submit.production.android` configurado (2026-08-28):
+      reaproveita a mesma service account criada pra RevenueCat
+      (`revenuecat-combo-forge@pessoal-463414...`, já com acesso de
+      Administrador no Play Console) via `serviceAccountKeyPath` apontando
+      pra `google-play-service-account.json` (copiado do Downloads,
+      **no `.gitignore`, nunca commitar**). `track: "alpha"` é o mapeamento
+      padrão do EAS pra teste fechado — **a confirmar** quando o
+      `eas submit` rodar (se a track não existir com esse nome, o comando
+      deve listar as tracks reais do app).
+- [~] `eas build --profile production --platform android` — **disparado em
+      2026-08-28**, rodando em background.
+- [ ] `eas submit --platform android --profile production --latest` — depois
+      do build acima terminar, envia o AAB pro teste fechado.
 - [ ] Instalar o build de produção num device físico e validar de ponta a
       ponta: Run normal, Desafio Diário completo, compra + restore reais de
       cada skin e do Remove Ads, anúncio recompensado, intersticial, banner.
+- [x] Alternativa pra ver anúncios de teste garantidos num device físico sem
+      depender da aprovação do AdMob: `npx expo run:android` (modo debug,
+      via USB) — `NODE_ENV=development` faz os 3 formatos usarem os
+      `TestIds` oficiais do Google, com Supabase/RevenueCat reais (não são
+      afetados pelo modo debug).
 - [x] `npm run typecheck` limpo e `npm test` verde (19 suites, 354 testes —
       verificado 2026-08-27, após a remoção do VFX "Golden Combo").
 
@@ -338,12 +412,15 @@ versão anterior assumia "app em validação, não criado ainda").
 
 ## 7. Checklist final pré-produção
 
-- [ ] AdMob: perfil de pagamento completo, app aprovado (fora de "Requer
-      revisão"), ad unit Interstitial criada, vinculado à ficha da Play
-      Store.
-- [ ] RevenueCat: 4 produtos reais criados no app Android, anexados à
-      offering `default` e à entitlement `remove_ads`; chave `production`
-      igual à `preview`.
+- [ ] AdMob: perfil de pagamento completo (✅ 2026-08-28), ad unit
+      Interstitial criada (✅ 2026-08-28). Vínculo com a ficha da Play Store
+      e saída de "Requer revisão" ficam **bloqueados até depois da
+      publicação em produção** (não são mais um pré-requisito — são
+      pós-requisito, ver seção 3).
+- [x] RevenueCat: 4 produtos reais criados no app Android, anexados à
+      offering `default` e à entitlement `remove_ads`, credencial de
+      service account do Google Play configurada, chave igual em
+      `preview`/`production` — tudo ✅ em 2026-08-28.
 - [ ] Play Console: 4 produtos em app criados; Data safety preenchido;
       assets de loja completos; teste fechado com 12 testadores por 14 dias
       concluído.
