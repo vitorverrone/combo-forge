@@ -182,11 +182,14 @@
     },
     "beatTarget": {
       "title": "Vença o Alvo",
-      "body": "Alcance o alvo da rodada antes que suas jogadas acabem. Ganhar rodadas 1–5 abre a Forja.",
+      "body": "Alcance o alvo da rodada antes que suas jogadas acabem. O alvo cresce a cada rodada. Ganhar rodadas 1–5 abre a Forja.",
       "tip": "Dica: passe todas as 6 rodadas para ganhar a run."
     },
-    "letsForge": "Vamos Forjar",
-    "patternExampleBase": "10 + valor das cartas"
+    "letsForge": "Vamos Forjar"
+  },
+  "patternReference": {
+    "title": "Padrões",
+    "subtitle": "Composição e bônus de cada Padrão."
   },
   "unlockChoice": {
     "milestoneReached": "Marco alcançado",
@@ -250,6 +253,7 @@
     "playSelectedCards": "Jogar cartas selecionadas",
     "backToHome": "Voltar ao início",
     "skipTutorial": "Pular tutorial",
+    "openPatternReference": "Ver referência de Padrões",
     "startPlaying": "Começar a jogar",
     "nextStep": "Próximo passo",
     "confirmForge": "Confirmar forja",

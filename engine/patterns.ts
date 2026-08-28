@@ -57,8 +57,28 @@ export const PATTERN_BONUSES: Readonly<Record<PatternKind, number>> = {
   [PatternKind.FourOfAKind]: 70,
 };
 
-/** Prioridade dos Padrões para a melhor Jogada (maior = melhor). */
-const PATTERN_RANK: Readonly<Record<PatternKind, number>> = {
+/**
+ * Descrição curta de composição de cada Padrão (texto de jogo, em inglês —
+ * mesmo padrão de nomes de Relíquia em relics.ts). Fonte única consumida
+ * pelo tutorial de onboarding e pelo modal de referência de Padrões.
+ */
+export const PATTERN_COMPOSITIONS: Readonly<Record<PatternKind, string>> = {
+  [PatternKind.HighCard]: 'No matching cards',
+  [PatternKind.Pair]: '2 cards of the same value',
+  [PatternKind.TwoPair]: '2 different pairs',
+  [PatternKind.ThreeOfAKind]: '3 cards of the same value',
+  [PatternKind.Straight]: '5 consecutive values',
+  [PatternKind.FullHouse]: '3 of a kind + a pair',
+  [PatternKind.FourOfAKind]: '4 cards of the same value',
+};
+
+/**
+ * Prioridade dos Padrões para a melhor Jogada (maior = melhor). Exportado
+ * porque é também a ordem canônica (do mais fraco ao mais forte) usada pela
+ * UI para listar os 7 Padrões (ver components/PatternList.tsx) — uma única
+ * fonte para "qual Padrão é melhor" evita duas listas divergentes.
+ */
+export const PATTERN_RANK: Readonly<Record<PatternKind, number>> = {
   [PatternKind.FourOfAKind]: 7,
   [PatternKind.FullHouse]: 6,
   [PatternKind.ThreeOfAKind]: 5,

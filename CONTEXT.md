@@ -67,11 +67,11 @@ O alvo de pontos de uma Rodada. Atingida quando a pontuação acumulada da Rodad
 _Evitar_: Blind, objetivo, alvo
 
 **Dificuldade Dinâmica (DDA)**:
-O sistema que ajusta a Meta para manter o jogador em Flow, persistente entre Runs. Falhar a mesma Rodada 3 vezes seguidas reduz a Meta dela em 10%; 5 vitórias fáceis consecutivas (margem ≥ 30% acima da Meta com 1+ Jogada sobrando) aumentam a Meta em 10% e a chance de Relíquia rara. Hesitação dispara apenas dicas visuais, sem tocar a Meta. Fica desligado no Desafio Diário.
+O sistema que ajusta a Meta para manter o jogador em Flow, persistente entre Runs. É assimétrico: falhar a mesma Rodada 3 vezes seguidas reduz a Meta dela em 10%; 5 vitórias fáceis consecutivas (margem ≥ 30% acima da Meta com 1+ Jogada sobrando) aumentam a Meta em 15% e a chance de Relíquia rara — exceto Relíquias de categoria Combo, nunca favorecidas por esse boost, pra não retroalimentar builds de Multiplicador de Combo bem na hora em que o jogador já está ganhando fácil (ver ADR 0006). Hesitação dispara apenas dicas visuais, sem tocar a Meta. Fica desligado no Desafio Diário.
 _Evitar_: Curva de dificuldade (a curva base é o alicerce; DDA é o ajuste dinâmico sobre ela), adaptive difficulty
 
 **Forjador**:
-Um personagem jogável definido por uma Relíquia exclusiva de largada (fora do teto de 3). O MVP tem três: Aprendiz (neutro, sem relíquia — o onboarding), Martelo (fortalece um Padrão) e Bigorna (mexe no Multiplicador de Combo). O Aprendiz é sempre disponível; os demais são desbloqueados por marcos de meta-progressão.
+Um personagem jogável definido por uma Relíquia exclusiva de largada (fora do teto de 3), cada um com uma identidade de build própria (ver ADR 0006). O MVP tem três: Aprendiz (padrão de início — ganha 1 carta extra na Mão, explorador de mais opções de Padrão), Martelo (especialista — fortalece a Trinca, vale persegui-la como padrão principal) e Bigorna (estável — começa a Run com o Multiplicador de Combo mais alto). O Aprendiz é sempre disponível; os demais são desbloqueados por marcos de meta-progressão.
 _Evitar_: Personagem, classe, herói
 
 **Desafio Diário**:

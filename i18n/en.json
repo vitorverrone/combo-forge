@@ -182,11 +182,14 @@
     },
     "beatTarget": {
       "title": "Beat the Target",
-      "body": "Reach the round's target before your plays run out. Winning rounds 1–5 opens the Forge.",
+      "body": "Reach the round's target before your plays run out. The target grows every round. Winning rounds 1–5 opens the Forge.",
       "tip": "Tip: clear all 6 rounds to win the run."
     },
-    "letsForge": "Let's Forge",
-    "patternExampleBase": "10 + card values"
+    "letsForge": "Let's Forge"
+  },
+  "patternReference": {
+    "title": "Patterns",
+    "subtitle": "What each pattern needs and how many points it's worth."
   },
   "unlockChoice": {
     "milestoneReached": "Milestone reached",
@@ -250,6 +253,7 @@
     "playSelectedCards": "Play selected cards",
     "backToHome": "Back to home",
     "skipTutorial": "Skip tutorial",
+    "openPatternReference": "View pattern reference",
     "startPlaying": "Start playing",
     "nextStep": "Next step",
     "confirmForge": "Confirm forge",
