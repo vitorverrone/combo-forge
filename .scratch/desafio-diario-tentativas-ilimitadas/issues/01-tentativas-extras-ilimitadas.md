@@ -30,7 +30,7 @@ sequência sem jogar entre eles.
 
 **Blocked by:** nenhuma (segue direto do Desafio Diário já em produção).
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] `canPlayDaily`/`canWatchExtraAd`/`consumeDailyAttempt`/`unlockExtraAttempt` usam
       `unlockedTotal` em vez de `extraUnlocked`, sem teto de tentativas por dia
