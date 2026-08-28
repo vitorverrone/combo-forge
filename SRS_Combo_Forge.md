@@ -139,7 +139,7 @@ sistema deve prover.
 |---|---|
 | RF-25 | O sistema deve buscar do backend um seed único por dia (fronteira UTC), idêntico para todos os jogadores. |
 | RF-26 | A Run do Desafio Diário deve usar Forjador fixo (Aprendiz), todos os pools de conteúdo abertos e DDA desligado, garantindo que dois jogadores com meta-progressão diferente recebam a mesma experiência. |
-| RF-27 | O sistema deve conceder 1 tentativa gratuita por dia + 1 tentativa extra via anúncio recompensado assistido até o fim, com reinício às 00:00 UTC. |
+| RF-27 | O sistema deve conceder 1 tentativa gratuita por dia + tentativas extras ilimitadas via anúncio recompensado assistido até o fim, uma por vez (precisa jogar a tentativa desbloqueada antes de assistir o próximo anúncio), com reinício às 00:00 UTC. |
 | RF-28 | O sistema deve submeter automaticamente a pontuação da Run do dia ao backend ao final (vitória ou derrota), mantendo a melhor pontuação do dia por dispositivo. |
 | RF-29 | O sistema deve permitir consultar (opt-in) um leaderboard semanal mostrando apenas a posição/pontuação do próprio dispositivo e o Top 10 (rank + score), nunca identidade ou derrota de terceiros. |
 | RF-30 | O Desafio Diário não deve alterar estatísticas de perfil nem meta-progressão (é isolado do modo normal). |
