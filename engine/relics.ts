@@ -14,6 +14,7 @@
  * ativas — consumidos por patterns.ts e run.ts.
  */
 
+import { assertNever } from './assert';
 import { Suit } from './cards';
 import { DISCARDS_PER_ROUND, HAND_SIZE, RoundStructure } from './deck';
 import { PatternKind, ScoreModifiers } from './patterns';
@@ -128,30 +129,56 @@ export function activeRelics(startingRelic: Relic | undefined, relics: readonly 
   return startingRelic === undefined ? [...relics] : [startingRelic, ...relics];
 }
 
-/** Modificadores de pontuação (Naipe e Padrão) derivados das Relíquias ativas. */
+/**
+ * Modificadores de pontuação (Naipe e Padrão) derivados das Relíquias
+ * ativas. Switch exaustivo sobre RelicEffect.kind (mesmo quando a maioria
+ * dos casos não afeta pontuação): um 7º kind adicionado à união sem
+ * atualizar este switch vira erro de compilação aqui, não uma Relíquia
+ * silenciosamente inerte.
+ */
 export function scoreModifiers(relics: readonly Relic[]): ScoreModifiers {
   const suitMultipliers: Partial<Record<Suit, number>> = {};
   const patternBonuses: Partial<Record<PatternKind, number>> = {};
   for (const relic of relics) {
-    if (relic.effect.kind === 'suit') {
-      suitMultipliers[relic.effect.suit] = relic.effect.multiplier;
-    } else if (relic.effect.kind === 'pattern') {
-      patternBonuses[relic.effect.pattern] =
-        (patternBonuses[relic.effect.pattern] ?? 0) + relic.effect.bonus;
+    switch (relic.effect.kind) {
+      case 'suit':
+        suitMultipliers[relic.effect.suit] = relic.effect.multiplier;
+        break;
+      case 'pattern':
+        patternBonuses[relic.effect.pattern] =
+          (patternBonuses[relic.effect.pattern] ?? 0) + relic.effect.bonus;
+        break;
+      case 'discard':
+      case 'handSize':
+      case 'comboStart':
+      case 'comboGrowth':
+        break;
+      default:
+        assertNever(relic.effect);
     }
   }
   return { suitMultipliers, patternBonuses };
 }
 
-/** Estrutura da Rodada (Mão e Descarte) derivada das Relíquias de Mecânica. */
+/** Estrutura da Rodada (Mão e Descarte) derivada das Relíquias de Mecânica. Switch exaustivo — ver scoreModifiers. */
 export function structureModifiers(relics: readonly Relic[]): RoundStructure {
   let handSize = HAND_SIZE;
   let discardsPerRound = DISCARDS_PER_ROUND;
   for (const relic of relics) {
-    if (relic.effect.kind === 'handSize') {
-      handSize += relic.effect.amount;
-    } else if (relic.effect.kind === 'discard') {
-      discardsPerRound += relic.effect.amount;
+    switch (relic.effect.kind) {
+      case 'handSize':
+        handSize += relic.effect.amount;
+        break;
+      case 'discard':
+        discardsPerRound += relic.effect.amount;
+        break;
+      case 'suit':
+      case 'pattern':
+      case 'comboStart':
+      case 'comboGrowth':
+        break;
+      default:
+        assertNever(relic.effect);
     }
   }
   return { handSize, discardsPerRound };
@@ -160,16 +187,27 @@ export function structureModifiers(relics: readonly Relic[]): RoundStructure {
 /**
  * Multiplicador de Combo da Jogada N (1-based) com as Relíquias ativas:
  * base ×1 na 1ª Jogada crescendo +1; comboStart muda o ponto de partida
- * (ex.: ×2) e comboGrowth o passo (ex.: +2 por Jogada).
+ * (ex.: ×2) e comboGrowth o passo (ex.: +2 por Jogada). Switch exaustivo —
+ * ver scoreModifiers.
  */
 export function comboMultiplier(playNumber: number, relics: readonly Relic[]): number {
   let first = 1;
   let step = 1;
   for (const relic of relics) {
-    if (relic.effect.kind === 'comboStart') {
-      first = relic.effect.multiplier;
-    } else if (relic.effect.kind === 'comboGrowth') {
-      step = relic.effect.step;
+    switch (relic.effect.kind) {
+      case 'comboStart':
+        first = relic.effect.multiplier;
+        break;
+      case 'comboGrowth':
+        step = relic.effect.step;
+        break;
+      case 'suit':
+      case 'pattern':
+      case 'discard':
+      case 'handSize':
+        break;
+      default:
+        assertNever(relic.effect);
     }
   }
   return first + (playNumber - 1) * step;

@@ -1,8 +1,8 @@
-import { useEffect } from 'react';
+import { ReactElement, useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 
-import { PatternKind, Relic } from '../engine';
+import { assertNever, PatternKind, Relic } from '../engine';
 
 import { useTranslation } from '../i18n';
 import { isRedSuit, relicDescription } from './format';
@@ -56,7 +56,8 @@ export function RelicIcon({ relic, open, onPress, onDismiss }: RelicIconProps) {
     );
 }
 
-function RelicGlyph({ relic, color }: { relic: Relic; color: string }) {
+/** Retorno declarado + switch exaustivo — ver relics.ts::scoreModifiers. */
+function RelicGlyph({ relic, color }: { relic: Relic; color: string }): ReactElement {
     switch (relic.effect.kind) {
         case 'suit':
             return <SuitSymbol suit={relic.effect.suit} color={color} size={20} />;
@@ -95,6 +96,8 @@ function RelicGlyph({ relic, color }: { relic: Relic; color: string }) {
                     <Circle cx={15.5} cy={12} r={3.5} />
                 </Svg>
             );
+        default:
+            return assertNever(relic.effect);
     }
 }
 

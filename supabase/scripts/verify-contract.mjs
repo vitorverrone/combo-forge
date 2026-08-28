@@ -35,7 +35,7 @@ function isoWeekStart(dateIso) {
 }
 
 // Espelho da validação de set_display_name, duplicado aqui pela mesma razão
-// das fórmulas acima — fonte canônica é supabase/contract.ts.
+// das fórmulas acima — fonte canônica é engine/displayName.ts.
 const DISPLAY_NAME_CHARSET_REGEX =
   /^[a-zA-Z0-9 ÁÀÂÃÄáàâãäÉÈÊËéèêëÍÌÎÏíìîïÓÒÔÕÖóòôõöÚÙÛÜúùûüÇçÑñ]+$/;
 const PROHIBITED_DISPLAY_NAME_TERMS = [

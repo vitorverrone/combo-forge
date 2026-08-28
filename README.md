@@ -116,6 +116,32 @@ Abra o app no emulador. O Metro conecta automaticamente.
 
 ---
 
+### TESTAR O APK COM ANUNCIOS DE TESTE
+
+### 1 - Setar variaveis
+
+```bash
+npx eas env:set --environment preview --name EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID --value ca-app-pub-3940256099942544/9214589741 --visibility plaintext --non-interactive
+npx eas env:set --environment preview --name EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID --value ca-app-pub-3940256099942544/1033173712 --visibility plaintext --non-interactive
+npx eas env:set --environment preview --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID --value ca-app-pub-3940256099942544/5224354917 --visibility plaintext --non-interactive
+```
+
+### 2 Rodar o comando
+
+```bash
+npx eas build --profile preview --platform android --no-wait --non-interactive
+```
+
+### 3 Depois que o build terminar voltar as variaveis
+
+```bash
+npx eas env:set --environment preview --name EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID --value ca-app-pub-7753200620000515/1366979567 --visibility plaintext --non-interactive
+npx eas env:set --environment preview --name EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT_ID_ANDROID --value ca-app-pub-7753200620000515/8281372704 --visibility plaintext --non-interactive
+npx eas env:set --environment preview --name EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID --value ca-app-pub-7753200620000515/2212947942 --visibility plaintext --non-interactive
+```
+
+---
+
 ### ⚡ Fast Refresh (Hot Reload) e Controles
 
 O Expo possui **Fast Refresh** habilitado por padrão. Qualquer modificação que você salvar no código (como em `components/` ou `store/`) será refletida instantaneamente no emulador sem que o app perca o estado atual.
