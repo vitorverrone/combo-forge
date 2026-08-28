@@ -38,6 +38,9 @@ coverage/
 .env.local
 .env.*.local
 
+# Google Play service account key (eas submit) — secret, never commit
+google-play-service-account.json
+
 # TypeScript
 *.tsbuildinfo
 
