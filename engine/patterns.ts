@@ -20,6 +20,7 @@
  * dica sutil quando o jogador hesita; nunca altera estado nem Meta.
  */
 
+import { assertNever } from './assert';
 import {
   ACE_HIGH_VALUE,
   Card,
@@ -203,18 +204,27 @@ function isStraightPossible(values: readonly number[]): boolean {
  * pelos Multiplicadores — "somas antes de multiplicadores", independente da
  * ordem em que os efeitos foram aplicados.
  */
+/** Switch exaustivo sobre ForgeEffect.kind — ver relics.ts::scoreModifiers. */
 function cardContribution(rawValue: number, forged: ForgedCard, playNumber?: number): number {
   let sum = rawValue;
   let product = 1;
   for (const effect of forged.effects) {
-    if (effect.kind === 'valueBonus') {
-      sum += effect.amount;
-    } else if (effect.kind === 'multiplier') {
-      product *= effect.multiplier;
-    } else if (effect.kind === 'trigger' && playNumber === effect.triggerPlay) {
-      sum += effect.bonus;
+    switch (effect.kind) {
+      case 'valueBonus':
+        sum += effect.amount;
+        break;
+      case 'multiplier':
+        product *= effect.multiplier;
+        break;
+      case 'trigger':
+        if (playNumber === effect.triggerPlay) sum += effect.bonus;
+        break;
+      case 'wildcard':
+        // o papel de valor já foi resolvido em rawValue
+        break;
+      default:
+        assertNever(effect);
     }
-    // wildcard: o papel de valor já foi resolvido em rawValue
   }
   return sum * product;
 }

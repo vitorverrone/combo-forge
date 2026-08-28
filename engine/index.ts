@@ -6,6 +6,7 @@
  * vive aqui.
  */
 
+export * from './assert';
 export * from './cards';
 export * from './patterns';
 export * from './random';
