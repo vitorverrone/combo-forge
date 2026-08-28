@@ -3,9 +3,13 @@
     "name": "Combo Forge",
     "slug": "combo-forge",
     "version": "1.0.0",
+    "supportsTablet": true,
     "orientation": "portrait",
     "scheme": "comboforge",
     "userInterfaceStyle": "light",
+    "splash": {
+      "backgroundColor": "#161120"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.combocardforge.app"
@@ -13,6 +17,7 @@
     "android": {
       "predictiveBackGestureEnabled": false,
       "package": "com.combocardforge.app",
+      "backgroundColor": "#161120",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
@@ -39,6 +44,8 @@
         }
       ],
       "./plugins/withKotlinVersionPin",
+      "./plugins/withAndroidResizable",
+      "./plugins/withOrientationLockCompat",
       "expo-font",
       "expo-localization"
     ],
