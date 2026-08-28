@@ -2,7 +2,9 @@ import './i18n';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { StyleSheet, View } from 'react-native';
-import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as ScreenOrientation from 'expo-screen-orientation';
+import { useEffect } from 'react';
 
 import { AdBanner } from './components/AdBanner';
 import { CollectionScreen } from './components/CollectionScreen';
@@ -21,7 +23,10 @@ import { useGameStore } from './store/gameStore';
 // carrega a meta-progressão salva entre sessões. Uma vez, na avaliação.
 initializeSqlitePersistence();
 
-export default function App() {
+// Força a orientação vertical antes mesmo da renderização completa
+ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+
+function AppShell() {
   const [fontsLoaded] = useFonts({
     'Rubik': require('./assets/fonts/Rubik-Variable.ttf'),
     'Selawik': require('./assets/fonts/Selawik-Regular.ttf'),
@@ -29,6 +34,7 @@ export default function App() {
   });
 
   const screen = useGameStore((state) => state.screen);
+  const insets = useSafeAreaInsets();
 
   // Mantém o splash visível até as fontes carregarem.
   if (!fontsLoaded) {
@@ -36,21 +42,43 @@ export default function App() {
   }
 
   return (
+    <View
+      style={[
+        styles.container,
+        {
+          paddingTop: insets.top,
+          paddingLeft: insets.left,
+          paddingRight: insets.right
+        }
+      ]}
+    >
+      <View style={styles.screenWrapper}>
+        {screen === 'start' && <StartScreen />}
+        {screen === 'game' && <GameScreen />}
+        {screen === 'profile' && <ProfileScreen />}
+        {screen === 'collection' && <CollectionScreen />}
+        {screen === 'daily' && <DailyChallengeScreen />}
+        {screen === 'shop' && <ShopScreen />}
+      </View>
+      <AdBanner />
+      <UnlockChoiceModal />
+      <GameFeedback />
+      <StatusBar style="light" />
+    </View>
+  );
+}
+
+export default function App() {
+  useEffect(() => {
+    async function lockOrientation() {
+      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    }
+    lockOrientation();
+  }, []);
+
+  return (
     <SafeAreaProvider>
-      <SafeAreaView edges={['top']} style={styles.container}>
-        <View style={styles.screenWrapper}>
-          {screen === 'start' && <StartScreen />}
-          {screen === 'game' && <GameScreen />}
-          {screen === 'profile' && <ProfileScreen />}
-          {screen === 'collection' && <CollectionScreen />}
-          {screen === 'daily' && <DailyChallengeScreen />}
-          {screen === 'shop' && <ShopScreen />}
-        </View>
-        <AdBanner />
-        <UnlockChoiceModal />
-        <GameFeedback />
-        <StatusBar style="light" />
-      </SafeAreaView>
+      <AppShell />
     </SafeAreaProvider>
   );
 }
@@ -63,5 +91,9 @@ const styles = StyleSheet.create({
   screenWrapper: {
     flex: 1,
     backgroundColor: colors.background,
+    maxWidth: 480,        // largura máxima do conteúdo
+    alignSelf: 'center',  // centraliza horizontalmente
+    width: '100%',
+    paddingBottom: 12,    // respiro para os botões do jogo não colarem no ad
   },
 });

@@ -7,22 +7,6 @@ import { bannerAdUnitId } from '../services/ads';
 import { useGameStore } from '../store/gameStore';
 import { colors } from './theme';
 
-/** Altura reservada do rodapé (50dp — decisão do grilling/ADR 0004). */
-// DO NOT CHANGE: está 90 porque fica melhor
-const BANNER_HEIGHT = 90;
-
-/**
- * Banner full-width de 50dp no rodapé de todas as telas (ticket banner-01).
- * Componente fino: a visibilidade vem da regra pura shouldShowBanner (engine)
- * — oculto quando a remoção de anúncios foi comprada (ticket 02) ou quando
- * não há ad unit — e o ad unit de cada build vem de services/ads.ts — em dev
- * o TestId oficial de banner adaptativo (sempre carrega), em produção o ad
- * unit real da plataforma (sem env → oculto; o jogo segue intacto, anúncio
- * nunca obrigatório).
- *
- * O container reserva os 50dp mesmo quando o anúncio não carrega (NO_FILL):
- * estabilidade de layout — o conteúdo nunca pula quando o anúncio aparecer.
- */
 export function AdBanner() {
   const insets = useSafeAreaInsets();
   const adsRemoved = useGameStore((state) => state.adsRemoved);
@@ -32,7 +16,7 @@ export function AdBanner() {
   if (!shouldShowBanner(adsRemoved, unitId)) return null;
 
   return (
-    <View style={[styles.container, { paddingBottom: insets.bottom }]}>
+    <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 8) }]}>
       <BannerAd
         unitId={unitId}
         size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
@@ -44,10 +28,11 @@ export function AdBanner() {
 
 const styles = StyleSheet.create({
   container: {
-    height: BANNER_HEIGHT,
+    width: '100%',
+    minHeight: 50, // Garante reserva de espaço sem prender a altura máxima
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background,
-    paddingTop: 16
+    paddingTop: 8, // Margem de respiro superior do ad
   },
 });
