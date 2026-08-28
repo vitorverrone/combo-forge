@@ -54,6 +54,17 @@ Loop de meta-progressão (entre runs):
 
 - Passe de temporada cosmético sem expiração de itens (itens ficam disponíveis para resgate posterior, sem punição por ausência).
 
+**3.1 Interação de Jogada e Onboarding**
+
+Na tela de jogo (\"Run\"), o jogador toca nas cartas da mão para selecioná-las --- entre 1 e 5 cartas; a carta selecionada sobe com uma borda dourada. Um preview inline acima da mão mostra, assim que há seleção, o nome do Padrão formado e o Valor-Base projetado. Três botões abaixo da mão controlam a seleção: **Jogar** (pontua a Jogada), **Descartar** (descarta as cartas selecionadas, consumindo 1 descarte da Rodada --- desabilitado sem descartes restantes) e **Limpar** (desmarca a seleção sem gastar descarte). Um ícone \"?\" persistente no topo da tela, ao lado do botão de abandonar a run, abre a qualquer momento um modal de referência com os 7 Padrões (composição e bônus) --- não é preciso depender só da memória do tutorial visto na primeira Run.
+
+O tutorial de onboarding (4 passos, mostrado automaticamente na primeira Run e sempre pulável) cobre:
+
+1. **Selecione Cartas** --- como tocar para escolher entre 1 e 5 cartas da mão.
+2. **Pontue o Padrão** --- lista completa dos 7 Padrões do jogo, cada um com sua composição e o bônus que vale (mesma lista do modal de referência \"?\").
+3. **Ride o Combo** --- o Multiplicador de Combo sobe a cada Jogada dentro da Rodada.
+4. **Vença o Alvo** --- a Meta cresce a cada Rodada; vencer as Rodadas 1--5 abre a Forja.
+
 **4. Sistemas de Jogo**
 
 **4.1 Sistema de Cartas e Combos**

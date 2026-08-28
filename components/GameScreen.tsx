@@ -6,6 +6,7 @@ import { activeRelics, cardKey, cosmeticItemById, currentMultiplier } from '../e
 import { useTranslation } from '../i18n';
 import { PlayingCard } from './PlayingCard';
 import { patternName } from './format';
+import { PatternReferenceModal } from './PatternReferenceModal';
 import { PhaseScreen } from './PhaseScreen';
 import { RelicRow } from './RelicRow';
 import { colors, spacing, radius } from './theme';
@@ -15,6 +16,7 @@ import { selectionPreview, useGameStore } from '../store/gameStore';
 export function GameScreen() {
   const { t } = useTranslation();
   const [showAbandon, setShowAbandon] = useState(false);
+  const [showPatternReference, setShowPatternReference] = useState(false);
   const run = useGameStore((state) => state.run);
   const runMode = useGameStore((state) => state.runMode);
   const selectedKeys = useGameStore((state) => state.selectedKeys);
@@ -40,14 +42,24 @@ export function GameScreen() {
     <View style={styles.container}>
       {/* Top bar */}
       <View style={styles.topbar}>
-        <Pressable
-          accessibilityLabel={t('a11y.abandonRun')}
-          accessibilityRole="button"
-          onPress={() => setShowAbandon(true)}
-          style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
-        >
-          <Text style={styles.navBtnText}>←</Text>
-        </Pressable>
+        <View style={styles.navGroup}>
+          <Pressable
+            accessibilityLabel={t('a11y.abandonRun')}
+            accessibilityRole="button"
+            onPress={() => setShowAbandon(true)}
+            style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
+          >
+            <Text style={styles.navBtnText}>←</Text>
+          </Pressable>
+          <Pressable
+            accessibilityLabel={t('a11y.openPatternReference')}
+            accessibilityRole="button"
+            onPress={() => setShowPatternReference(true)}
+            style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
+          >
+            <Text style={styles.navBtnText}>?</Text>
+          </Pressable>
+        </View>
         <View style={styles.roundLabelWrap}>
           <Text style={styles.roundLabel}>{t('game.round', { number: run.roundNumber })}</Text>
           {runMode === 'daily' && <Text style={styles.dailyBadge}>{t('game.daily')}</Text>}
@@ -172,6 +184,8 @@ export function GameScreen() {
           </View>
         </View>
       )}
+
+      <PatternReferenceModal visible={showPatternReference} onClose={() => setShowPatternReference(false)} />
     </View>
   );
 }
@@ -193,6 +207,10 @@ const styles = StyleSheet.create({
     minHeight: 48,
     flexWrap: 'wrap',
     position: 'relative'
+  },
+  navGroup: {
+    flexDirection: 'row',
+    gap: spacing[8],
   },
   navBtn: {
     width: 40,

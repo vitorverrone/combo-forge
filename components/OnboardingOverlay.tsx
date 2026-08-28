@@ -1,11 +1,9 @@
 import { SQLiteStorage } from 'expo-sqlite/kv-store';
 import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
-
-import { PatternKind } from '../engine';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useTranslation } from '../i18n';
-import { patternName } from './format';
+import { PatternList } from './PatternList';
 import { colors, spacing, radius } from './theme';
 
 const STORAGE_KEY = 'combo-forge:onboarding-seen';
@@ -68,19 +66,28 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
             <Text style={styles.counter}>{step + 1}/{STEP_KEYS.length}</Text>
           </View>
 
-          {/* Visual area */}
-          <View style={styles.visual}>
-            <StepVisual kind={current.visual} />
-          </View>
+          {/* Scrollable content: visual + title/body/tip. Bounded height so a
+              tall visual (the 7-Pattern list) scrolls instead of overlapping
+              the actions below, on any screen size. */}
+          <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
+            {current.visual === 'pattern' ? (
+              <View style={styles.patternVisual}>
+                <PatternList />
+              </View>
+            ) : (
+              <View style={styles.visual}>
+                <StepVisual kind={current.visual} />
+              </View>
+            )}
 
-          {/* Content */}
-          <Text style={styles.title}>{current.title}</Text>
-          <Text style={styles.body}>{current.body}</Text>
+            <Text style={styles.title}>{current.title}</Text>
+            <Text style={styles.body}>{current.body}</Text>
 
-          {/* Tip box */}
-          <View style={styles.tipBox}>
-            <Text style={styles.tipText}>{current.tip}</Text>
-          </View>
+            {/* Tip box */}
+            <View style={styles.tipBox}>
+              <Text style={styles.tipText}>{current.tip}</Text>
+            </View>
+          </ScrollView>
 
           {/* Actions */}
           <View style={styles.actions}>
@@ -107,9 +114,8 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
   );
 }
 
-/** Step-specific visual illustrations. */
-function StepVisual({ kind }: { kind: Step['visual'] }) {
-  const { t } = useTranslation();
+/** Step-specific visual illustrations (excludes 'pattern' — that step renders PatternList directly). */
+function StepVisual({ kind }: { kind: Exclude<Step['visual'], 'pattern'> }) {
   switch (kind) {
     case 'cards':
       return (
@@ -126,13 +132,6 @@ function StepVisual({ kind }: { kind: Step['visual'] }) {
             <Text style={[styles.vCardRank, styles.vCardRankRed]}>10</Text>
             <Text style={[styles.vCardSuit, styles.vCardSuitRed]}>♦</Text>
           </View>
-        </View>
-      );
-    case 'pattern':
-      return (
-        <View style={styles.vPattern}>
-          <Text style={styles.vPatternName}>{patternName(PatternKind.Pair)}</Text>
-          <Text style={styles.vPatternBase}>{t('onboarding.patternExampleBase')}</Text>
         </View>
       );
     case 'combo':
@@ -208,6 +207,15 @@ const styles = StyleSheet.create({
     color: colors.textDim,
     textTransform: 'uppercase',
   },
+  /**
+   * Conteúdo com altura variável por passo (a lista de 7 Padrões do passo
+   * scorePattern é bem mais alta que os outros visuals) — teto de altura
+   * fixo evita que o conteúdo colida com as Ações abaixo; rola por dentro
+   * quando não cabe, em vez de sobrepor o título/corpo do passo.
+   */
+  scrollBody: {
+    maxHeight: 340,
+  },
   /* ── Visual area ── */
   visual: {
     height: 120,
@@ -219,6 +227,12 @@ const styles = StyleSheet.create({
     borderRadius: radius[12],
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  /* ── Pattern visual (passo scorePattern) ── */
+  patternVisual: {
+    width: '100%',
+    marginTop: spacing[18],
+    marginBottom: spacing[16],
   },
   /* ── Cards visual ── */
   vCards: {
@@ -258,21 +272,6 @@ const styles = StyleSheet.create({
   },
   vCardSuitRed: {
     color: colors.red,
-  },
-  /* ── Pattern visual ── */
-  vPattern: {
-    alignItems: 'center',
-  },
-  vPatternName: {
-    fontSize: 24,
-    fontWeight: '700',
-    color: colors.gold,
-  },
-  vPatternBase: {
-    fontSize: 13,
-    fontWeight: '400',
-    color: colors.textDim,
-    marginTop: spacing[4],
   },
   /* ── Combo visual ── */
   vCombo: {
