@@ -12,7 +12,6 @@ import {
   baseTarget,
   DailyBackend,
   DailyLeaderboard,
-  DAILY_MAX_ATTEMPTS,
   createInitialDailyAttempts,
   createMemoryDailyChallengeStorage,
   utcDateIso,
@@ -116,17 +115,17 @@ describe('runDailyCommand — start', () => {
     state = (await runDailyCommand(state, deps, { type: 'watchAd' })).daily; // libera a extra
     state = (await runDailyCommand(state, deps, { type: 'start' })).daily; // extra
     expect(fetches).toBe(1);
-    expect(state.attempts.attemptsUsed).toBe(DAILY_MAX_ATTEMPTS);
+    expect(state.attempts.attemptsUsed).toBe(2);
   });
 
-  test('sem tentativa disponível, não inicia Run nem muda as tentativas', async () => {
+  test('sem tentativa disponível (liberada já jogada), não inicia Run nem muda as tentativas', async () => {
     const deps = makeDeps();
     const state = makeDailyState({
-      attempts: { date: TODAY, attemptsUsed: DAILY_MAX_ATTEMPTS, extraUnlocked: true, bestSubmitted: null },
+      attempts: { date: TODAY, attemptsUsed: 2, unlockedTotal: 2, bestSubmitted: null },
     });
     const result = await runDailyCommand(state, deps, { type: 'start' });
     expect(result.run).toBeNull();
-    expect(result.daily.attempts.attemptsUsed).toBe(DAILY_MAX_ATTEMPTS);
+    expect(result.daily.attempts.attemptsUsed).toBe(2);
   });
 
   test('falha do backend marca erro e não consome tentativa', async () => {
@@ -151,25 +150,40 @@ describe('runDailyCommand — watchAd', () => {
   /** Estado com a gratuita já usada (pré-requisito do anúncio). */
   const usedFree = (): DailyState =>
     makeDailyState({
-      attempts: { date: TODAY, attemptsUsed: 1, extraUnlocked: false, bestSubmitted: null },
+      attempts: { date: TODAY, attemptsUsed: 1, unlockedTotal: 1, bestSubmitted: null },
     });
 
-  test('assistir o anúncio libera a tentativa extra e persiste', async () => {
+  test('assistir o anúncio libera mais uma tentativa e persiste', async () => {
     const storage = createMemoryDailyChallengeStorage();
     const deps = makeDeps({ storage });
     const result = await runDailyCommand(usedFree(), deps, { type: 'watchAd' });
-    expect(result.daily.attempts.extraUnlocked).toBe(true);
+    expect(result.daily.attempts.unlockedTotal).toBe(2);
     expect(result.daily.adLoading).toBe(false);
-    expect(storage.loadAttempts()?.extraUnlocked).toBe(true);
+    expect(storage.loadAttempts()?.unlockedTotal).toBe(2);
   });
 
-  test('anúncio não assistido não libera a extra', async () => {
+  test('assistir vários anúncios em sequência (um por Run jogada entre eles) não tem teto', async () => {
+    const storage = createMemoryDailyChallengeStorage();
+    const deps = makeDeps({ storage });
+    let state = usedFree();
+    for (let ciclo = 0; ciclo < 4; ciclo += 1) {
+      const watched = await runDailyCommand(state, deps, { type: 'watchAd' });
+      expect(watched.daily.attempts.unlockedTotal).toBe(state.attempts.unlockedTotal + 1);
+      const played = await runDailyCommand(watched.daily, deps, { type: 'start' });
+      expect(played.run).not.toBeNull();
+      state = played.daily;
+    }
+    expect(state.attempts.attemptsUsed).toBe(5);
+    expect(state.attempts.unlockedTotal).toBe(5);
+  });
+
+  test('anúncio não assistido não libera tentativa extra', async () => {
     const deps = makeDeps({ adProvider: { requestRewardedAd: async () => false, requestInterstitialAd: async () => false } });
     const result = await runDailyCommand(usedFree(), deps, { type: 'watchAd' });
-    expect(result.daily.attempts.extraUnlocked).toBe(false);
+    expect(result.daily.attempts.unlockedTotal).toBe(1);
   });
 
-  test('falha do anúncio não quebra nem libera a extra', async () => {
+  test('falha do anúncio não quebra nem libera tentativa extra', async () => {
     const deps = makeDeps({
       adProvider: {
         requestRewardedAd: async () => {
@@ -180,7 +194,7 @@ describe('runDailyCommand — watchAd', () => {
     });
     const result = await runDailyCommand(usedFree(), deps, { type: 'watchAd' });
     // Fluxo intacto: sem recompensa, sem loading preso e sem tentativa gasta.
-    expect(result.daily.attempts.extraUnlocked).toBe(false);
+    expect(result.daily.attempts.unlockedTotal).toBe(1);
     expect(result.daily.adLoading).toBe(false);
     expect(result.daily.attempts.attemptsUsed).toBe(1);
   });
@@ -194,7 +208,7 @@ describe('runDailyCommand — rollover (fronteira de dia UTC)', () => {
     state = (await runDailyCommand(state, deps, { type: 'start' })).daily;
     state = (await runDailyCommand(state, deps, { type: 'watchAd' })).daily;
     state = (await runDailyCommand(state, deps, { type: 'start' })).daily;
-    expect(state.attempts.attemptsUsed).toBe(DAILY_MAX_ATTEMPTS);
+    expect(state.attempts.attemptsUsed).toBe(2);
     // Dia seguinte: a gratuita volta e o seed do novo dia é buscado de novo.
     now = new Date('2026-08-12T12:00:00Z');
     const nextDay = await runDailyCommand(state, deps, { type: 'start' });
@@ -207,7 +221,7 @@ describe('runDailyCommand — rollover (fronteira de dia UTC)', () => {
 describe('runDailyCommand — submit', () => {
   const submittedState = (): DailyState =>
     makeDailyState({
-      attempts: { date: TODAY, attemptsUsed: 1, extraUnlocked: false, bestSubmitted: null },
+      attempts: { date: TODAY, attemptsUsed: 1, unlockedTotal: 1, bestSubmitted: null },
     });
 
   test('submete com o deviceId do dispositivo, registra a melhor pontuação e persiste', async () => {
@@ -339,7 +353,7 @@ describe('rollover também vale para comandos sem mutação', () => {
     // Mesmo dia anterior com tentativas esgotadas; hoje é um dia novo.
     const deps = makeDeps({ now: () => NOW });
     const stale = makeDailyState({
-      attempts: { date: '2026-08-10', attemptsUsed: DAILY_MAX_ATTEMPTS, extraUnlocked: true, bestSubmitted: 500 },
+      attempts: { date: '2026-08-10', attemptsUsed: 2, unlockedTotal: 2, bestSubmitted: 500 },
     });
     const result = await runDailyCommand(stale, deps, { type: 'watchAd' });
     // Ainda sem gate para anúncio (gratuita não usada hoje), mas o estado já

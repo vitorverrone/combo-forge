@@ -9,7 +9,6 @@ import Animated, {
 import {
   computeUnlocks,
   dailyAttemptsForDay,
-  DAILY_MAX_ATTEMPTS,
   FORGERS,
   isForgerUnlocked,
   milestoneForForger,
@@ -171,7 +170,7 @@ export function StartScreen() {
             >
               <Text style={styles.btnSecondaryText}>{t('start.dailyChallenge')}</Text>
               <Text style={styles.btnSecondaryHint}>
-                {t('start.attemptsUsed', { used: dailyAttempts.attemptsUsed, max: DAILY_MAX_ATTEMPTS })}
+                {t('start.attemptsUsed', { used: dailyAttempts.attemptsUsed, max: dailyAttempts.unlockedTotal })}
               </Text>
             </Pressable>
 

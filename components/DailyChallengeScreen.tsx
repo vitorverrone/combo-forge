@@ -5,8 +5,6 @@ import {
   canPlayDaily,
   canWatchExtraAd,
   dailyAttemptsForDay,
-  DAILY_FREE_ATTEMPTS,
-  DAILY_MAX_ATTEMPTS,
   DailyLeaderboard,
   utcDateIso,
 } from '../engine';
@@ -20,12 +18,14 @@ import TopButton from './TopButton';
 
 /**
  * Tela do Desafio Diário (ticket 13): mesma Run para todos (seed do dia,
- * DDA desligado, Forjador fixo), 1 tentativa gratuita + 1 via anúncio
- * recompensado, e leaderboard semanal com a posição própria + top 10 (nunca
- * expõe derrotas de ninguém). O ranking carrega sozinho ao entrar na tela e
- * de novo após cada submissão bem-sucedida — sem botão de "ver ranking"
- * (ticket 03). O Nome de Exibição de cada dispositivo é obrigatório
- * (ticket 02) — o modal bloqueante cobre o resto da tela até ser salvo.
+ * DDA desligado, Forjador fixo), 1 tentativa gratuita por dia + tentativas
+ * extras ilimitadas via anúncio recompensado (uma por vez — precisa jogar a
+ * tentativa desbloqueada antes de assistir o próximo anúncio), e leaderboard
+ * semanal com a posição própria + top 10 (nunca expõe derrotas de ninguém).
+ * O ranking carrega sozinho ao entrar na tela e de novo após cada submissão
+ * bem-sucedida — sem botão de "ver ranking" (ticket 03). O Nome de Exibição
+ * de cada dispositivo é obrigatório (ticket 02) — o modal bloqueante cobre o
+ * resto da tela até ser salvo.
  */
 export function DailyChallengeScreen() {
   const { t } = useTranslation();
@@ -41,22 +41,24 @@ export function DailyChallengeScreen() {
   const playable = canPlayDaily(attempts);
   const canAd = canWatchExtraAd(attempts);
 
-  // Cálculo de tentativas restantes
-  const rem = (attempts.attemptsUsed === 0 ? 1 : 0) + (attempts.extraUnlocked && attempts.attemptsUsed < 2 ? 1 : 0);
-  // Denominador do "X/Y": o que está DESBLOQUEADO agora, não o máximo teórico
-  // do dia. Sem isso, um jogador que nunca jogou via "1/2" — lido como "já
-  // usei 1 das 2" — quando na verdade é "1 de 1 disponível agora" (a 2ª só
-  // existe depois de assistir o anúncio).
-  const availableNow = attempts.extraUnlocked ? DAILY_MAX_ATTEMPTS : DAILY_FREE_ATTEMPTS;
+  // Tentativas restantes: unlockedTotal cresce sem teto (1 grátis + 1 por
+  // anúncio assistido), sempre à frente de attemptsUsed por no máximo 1 — é
+  // o gate "uma tentativa por anúncio" (canWatchExtraAd) que garante isso.
+  const rem = attempts.unlockedTotal - attempts.attemptsUsed;
+  // Denominador do "X/Y": tentativas já desbloqueadas hoje, não um teto —
+  // sem teto, o jogador pode assistir quantos anúncios quiser ao longo do
+  // dia (um por vez, entre uma Run e a próxima).
+  const availableNow = attempts.unlockedTotal;
 
   let hintText = '';
-  let hintDim = false;
-  if (rem === 0 && attempts.extraUnlocked) {
-    hintText = t('daily.noAttemptsLeft');
-    hintDim = true;
-  } else if (rem === 0) {
+  if (rem === 0) {
+    // canWatchExtraAd é sempre true aqui (sem teto, sempre dá pra assistir
+    // outro anúncio depois de jogar a tentativa disponível).
     hintText = t('daily.watchAdHint');
-  } else if (attempts.extraUnlocked) {
+  } else if (attempts.attemptsUsed > 0) {
+    // attemptsUsed > 0 só significa "a tentativa pronta é extra" porque
+    // DAILY_FREE_ATTEMPTS === 1 — se isso mudasse, esta condição precisaria
+    // comparar contra DAILY_FREE_ATTEMPTS, não contra 0.
     hintText = t('daily.extraReady');
   } else {
     hintText = t('daily.freeReady');
@@ -83,9 +85,7 @@ export function DailyChallengeScreen() {
             {rem}
             <Text style={styles.attemptsValueSlash}>/{availableNow}</Text>
           </Text>
-          <Text style={[styles.attemptsHint, hintDim && styles.attemptsHintDim]}>
-            {hintText}
-          </Text>
+          <Text style={styles.attemptsHint}>{hintText}</Text>
         </View>
 
         {canAd && (
@@ -312,9 +312,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing[6],
     lineHeight: 18,
-  },
-  attemptsHintDim: {
-    color: colors.textDim,
   },
   btnPrimary: {
     alignSelf: 'stretch',

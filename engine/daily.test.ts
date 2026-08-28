@@ -6,8 +6,9 @@ import {
   createInitialDailyAttempts,
   createMemoryDailyChallengeStorage,
   createUnavailableDailyBackend,
+  DailyAttempts,
+  DAILY_FREE_ATTEMPTS,
   dailyAttemptsForDay,
-  DAILY_MAX_ATTEMPTS,
   hasFreeAttempt,
   unlockExtraAttempt,
   utcDateIso,
@@ -18,7 +19,7 @@ describe('tentativas do Desafio Diário', () => {
   test('dia novo começa com 1 tentativa gratuita, sem extra', () => {
     const state = createInitialDailyAttempts('2026-08-11');
     expect(state.attemptsUsed).toBe(0);
-    expect(state.extraUnlocked).toBe(false);
+    expect(state.unlockedTotal).toBe(DAILY_FREE_ATTEMPTS);
     expect(hasFreeAttempt(state)).toBe(true);
     expect(canPlayDaily(state)).toBe(true);
     expect(canWatchExtraAd(state)).toBe(false); // ainda tem a gratuita
@@ -33,14 +34,29 @@ describe('tentativas do Desafio Diário', () => {
     expect(canWatchExtraAd(state)).toBe(true); // agora o anúncio faz sentido
   });
 
-  test('o anúncio libera a extra e o limite de 2 tentativas bloqueia a terceira', () => {
+  test('o anúncio libera mais uma tentativa e trava o próximo anúncio até ela ser jogada', () => {
     let state = createInitialDailyAttempts('2026-08-11');
     state = consumeDailyAttempt(state);
     state = unlockExtraAttempt(state);
+    expect(state.unlockedTotal).toBe(2);
     expect(canPlayDaily(state)).toBe(true);
+    expect(canWatchExtraAd(state)).toBe(false); // já tem uma liberada, não jogada
     state = consumeDailyAttempt(state);
-    expect(state.attemptsUsed).toBe(DAILY_MAX_ATTEMPTS);
     expect(canPlayDaily(state)).toBe(false);
+    expect(canWatchExtraAd(state)).toBe(true); // jogou, pode assistir de novo
+  });
+
+  test('vários ciclos de anúncio → Run → anúncio → Run não têm teto', () => {
+    let state = createInitialDailyAttempts('2026-08-11');
+    for (let ciclo = 0; ciclo < 5; ciclo += 1) {
+      state = consumeDailyAttempt(state); // joga a tentativa disponível
+      expect(canWatchExtraAd(state)).toBe(true);
+      state = unlockExtraAttempt(state); // assiste o anúncio
+      expect(canWatchExtraAd(state)).toBe(false); // não pode assistir outro sem jogar
+      expect(canPlayDaily(state)).toBe(true);
+    }
+    expect(state.attemptsUsed).toBe(5);
+    expect(state.unlockedTotal).toBe(6);
   });
 
   test('rollover de dia zera as tentativas e mantém o melhor do dia passado', () => {
@@ -50,18 +66,33 @@ describe('tentativas do Desafio Diário', () => {
     );
     state = dailyAttemptsForDay(state, '2026-08-12');
     expect(state.attemptsUsed).toBe(0);
-    expect(state.extraUnlocked).toBe(false);
+    expect(state.unlockedTotal).toBe(DAILY_FREE_ATTEMPTS);
     expect(state.bestSubmitted).toBeNull();
     expect(canPlayDaily(state)).toBe(true);
   });
 
   test('mesmo dia não zera o estado', () => {
     const state = dailyAttemptsForDay(
-      { date: '2026-08-11', attemptsUsed: 2, extraUnlocked: true, bestSubmitted: 900 },
+      { date: '2026-08-11', attemptsUsed: 2, unlockedTotal: 3, bestSubmitted: 900 },
       '2026-08-11',
     );
     expect(state.attemptsUsed).toBe(2);
-    expect(state.extraUnlocked).toBe(true);
+    expect(state.unlockedTotal).toBe(3);
+  });
+
+  test('estado do mesmo dia sem unlockedTotal (formato anterior, extraUnlocked) é normalizado, não trava o dia', () => {
+    // Simula dado persistido antes deste campo existir (era extraUnlocked:
+    // boolean) — cast explícito porque o formato antigo não compila mais.
+    const legacy = {
+      date: '2026-08-11',
+      attemptsUsed: 1,
+      extraUnlocked: false,
+      bestSubmitted: null,
+    } as unknown as DailyAttempts;
+    const state = dailyAttemptsForDay(legacy, '2026-08-11');
+    expect(state.unlockedTotal).toBe(DAILY_FREE_ATTEMPTS);
+    expect(state.attemptsUsed).toBe(1);
+    expect(canWatchExtraAd(state)).toBe(true);
   });
 
   test('withBestSubmitted é monótono', () => {

@@ -16,7 +16,6 @@ import {
   createSeededRng,
   DailyBackend,
   DailyLeaderboard,
-  DAILY_MAX_ATTEMPTS,
   DEFAULT_DDA_CONFIG,
   DEFAULT_PROFILE_STATS,
   DEFAULT_PROGRESSION,
@@ -384,7 +383,7 @@ describe('Desafio Diário (ticket 13)', () => {
     await store.getState().watchAdForExtraAttempt(); // libera a extra
     await store.getState().startDailyChallenge(); // extra
     expect(fetches).toBe(1);
-    expect(store.getState().daily.attempts.attemptsUsed).toBe(DAILY_MAX_ATTEMPTS);
+    expect(store.getState().daily.attempts.attemptsUsed).toBe(2);
   });
 
   test('sem anúncio, a segunda tentativa é bloqueada', async () => {
@@ -397,23 +396,34 @@ describe('Desafio Diário (ticket 13)', () => {
     expect(state.daily.attempts.attemptsUsed).toBe(1);
   });
 
-  test('assistir o anúncio libera a tentativa extra', async () => {
+  test('assistir o anúncio libera mais uma tentativa', async () => {
     const storage = createMemoryDailyChallengeStorage();
     const store = createGameStore({ dailyStorage: storage, dailyBackend: makeFakeDailyBackend() });
     await store.getState().startDailyChallenge();
     await store.getState().watchAdForExtraAttempt();
-    expect(store.getState().daily.attempts.extraUnlocked).toBe(true);
-    expect(storage.loadAttempts()?.extraUnlocked).toBe(true);
+    expect(store.getState().daily.attempts.unlockedTotal).toBe(2);
+    expect(storage.loadAttempts()?.unlockedTotal).toBe(2);
   });
 
-  test('anúncio não assistido (provider falso) não libera a extra', async () => {
+  test('assistir vários anúncios em sequência (um por Run jogada entre eles) não tem teto', async () => {
+    const store = createGameStore({ dailyBackend: makeFakeDailyBackend() });
+    await store.getState().startDailyChallenge(); // gratuita
+    for (let ciclo = 0; ciclo < 4; ciclo += 1) {
+      await store.getState().watchAdForExtraAttempt();
+      await store.getState().startDailyChallenge();
+    }
+    expect(store.getState().daily.attempts.attemptsUsed).toBe(5);
+    expect(store.getState().daily.attempts.unlockedTotal).toBe(5);
+  });
+
+  test('anúncio não assistido (provider falso) não libera tentativa extra', async () => {
     const store = createGameStore({
       dailyBackend: makeFakeDailyBackend(),
       adProvider: { requestRewardedAd: async () => false, requestInterstitialAd: async () => false },
     });
     await store.getState().startDailyChallenge();
     await store.getState().watchAdForExtraAttempt();
-    expect(store.getState().daily.attempts.extraUnlocked).toBe(false);
+    expect(store.getState().daily.attempts.unlockedTotal).toBe(1);
   });
 
   test('falha do anúncio (provider rejeita) não quebra nem libera a extra', async () => {
@@ -430,7 +440,7 @@ describe('Desafio Diário (ticket 13)', () => {
     await store.getState().watchAdForExtraAttempt();
     const state = store.getState();
     // Fluxo intacto: sem recompensa, sem loading preso e sem tentativa gasta.
-    expect(state.daily.attempts.extraUnlocked).toBe(false);
+    expect(state.daily.attempts.unlockedTotal).toBe(1);
     expect(state.daily.adLoading).toBe(false);
     expect(state.daily.attempts.attemptsUsed).toBe(1); // só a gratuita
   });
@@ -465,7 +475,7 @@ describe('Desafio Diário (ticket 13)', () => {
     await store.getState().startDailyChallenge();
     await store.getState().watchAdForExtraAttempt();
     await store.getState().startDailyChallenge();
-    expect(store.getState().daily.attempts.attemptsUsed).toBe(DAILY_MAX_ATTEMPTS);
+    expect(store.getState().daily.attempts.attemptsUsed).toBe(2);
     // Dia seguinte: a gratuita volta.
     now = new Date('2026-08-12T12:00:00Z');
     store.getState().openDaily();

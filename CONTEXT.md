@@ -75,7 +75,7 @@ Um personagem jogável definido por uma Relíquia exclusiva de largada (fora do 
 _Evitar_: Personagem, classe, herói
 
 **Desafio Diário**:
-O modo diário de comparação social justa. Um seed cobre a Run inteira (embaralhamento do Baralho + ofertas de Forja e de Relíquia), idêntico para todos os jogadores, e o DDA fica desligado. São 1 tentativa gratuita por dia + 1 extra via anúncio recompensado (opt-in). O ranking é semanal, ordenado pela pontuação final da Run, exige Nome de Exibição para participar e mostra sempre a própria posição e o top 10, atualizados ao abrir a tela.
+O modo diário de comparação social justa. Um seed cobre a Run inteira (embaralhamento do Baralho + ofertas de Forja e de Relíquia), idêntico para todos os jogadores, e o DDA fica desligado. São 1 tentativa gratuita por dia + tentativas extras ilimitadas via anúncio recompensado (opt-in), uma por vez — precisa terminar a Run desbloqueada pelo anúncio anterior antes de poder assistir o próximo. O ranking é semanal, ordenado pela pontuação final da Run, exige Nome de Exibição para participar e mostra sempre a própria posição e o top 10, atualizados ao abrir a tela.
 _Evitar_: Daily, desafio do dia
 
 **Nome de Exibição**:

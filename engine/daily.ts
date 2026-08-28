@@ -8,11 +8,13 @@
  * abertos (ALL_UNLOCKS) — assim as ofertas são idênticas entre jogadores com
  * meta-progressão diferente (comparação justa, ADR 0003).
  *
- * Tentativas: 1 gratuita por dia + 1 extra liberada pelo provider de anúncio
- * (abstração AdProvider; implementação real no ticket 16). A fronteira do dia
- * é UTC, igual à do backend. A identidade do dispositivo é um UUID opaco
- * gerado uma vez e persistido localmente (o backend deduplica por
- * (day, device_id)).
+ * Tentativas: 1 gratuita por dia + tentativas extras ilimitadas liberadas
+ * pelo provider de anúncio (abstração AdProvider), uma por vez — precisa
+ * consumir (jogar) a tentativa desbloqueada pelo anúncio anterior antes de
+ * poder assistir o próximo (nunca acumula anúncios sem jogar entre eles). A
+ * fronteira do dia é UTC, igual à do backend. A identidade do dispositivo é
+ * um UUID opaco gerado uma vez e persistido localmente (o backend deduplica
+ * por (day, device_id)).
  *
  * Este módulo é puro (regras e ports), sem IO: o port DailyChallengeStorage
  * guarda tentativas e deviceId (SQLite no app, memória nos testes); o port
@@ -21,37 +23,49 @@
 
 /** Tentativas gratuitas por dia. */
 export const DAILY_FREE_ATTEMPTS = 1;
-/** Tentativa extra liberada por anúncio recompensado por dia. */
-export const DAILY_EXTRA_ATTEMPTS = 1;
-/** Total de tentativas possíveis por dia (gratuita + extra). */
-export const DAILY_MAX_ATTEMPTS = DAILY_FREE_ATTEMPTS + DAILY_EXTRA_ATTEMPTS;
 
 /** Tentativas do dia, persistidas entre sessões. */
 export interface DailyAttempts {
   /** Data do desafio (YYYY-MM-DD, UTC) a que este estado se refere. */
   readonly date: string;
-  /** Tentativas já usadas hoje (0..DAILY_MAX_ATTEMPTS). */
+  /** Tentativas já usadas hoje. */
   readonly attemptsUsed: number;
-  /** Tentativa extra já liberada por anúncio hoje. */
-  readonly extraUnlocked: boolean;
+  /**
+   * Tentativas já liberadas hoje (gratuita + 1 por anúncio assistido).
+   * Cresce sem teto; nunca passa à frente de `attemptsUsed` por mais de 1 —
+   * é isso que impõe "uma tentativa por anúncio" (canWatchExtraAd).
+   */
+  readonly unlockedTotal: number;
   /** Melhor pontuação submetida hoje (para re-submissões do servidor). */
   readonly bestSubmitted: number | null;
 }
 
 export function createInitialDailyAttempts(dateIso: string): DailyAttempts {
-  return { date: dateIso, attemptsUsed: 0, extraUnlocked: false, bestSubmitted: null };
+  return {
+    date: dateIso,
+    attemptsUsed: 0,
+    unlockedTotal: DAILY_FREE_ATTEMPTS,
+    bestSubmitted: null,
+  };
 }
 
 /**
  * Zera as tentativas quando o dia muda (rollover UTC); mantém o estado
  * intacto no mesmo dia. Não toca o deviceId (outra chave do storage).
+ *
+ * Também normaliza `unlockedTotal` ausente: dado persistido no formato
+ * anterior a este campo (era `extraUnlocked: boolean`) chega aqui sem ele —
+ * sem isso, `attemptsUsed < undefined`/`attemptsUsed >= undefined` dão
+ * sempre falso e travam o dia inteiro (jogar e assistir anúncio) até o
+ * próximo rollover sobrescrever o estado sozinho.
  */
 export function dailyAttemptsForDay(
   state: DailyAttempts,
   dateIso: string,
 ): DailyAttempts {
-  if (state.date === dateIso) return state;
-  return createInitialDailyAttempts(dateIso);
+  if (state.date !== dateIso) return createInitialDailyAttempts(dateIso);
+  if (state.unlockedTotal === undefined) return { ...state, unlockedTotal: DAILY_FREE_ATTEMPTS };
+  return state;
 }
 
 /** Há tentativa gratuita disponível hoje? */
@@ -59,12 +73,9 @@ export function hasFreeAttempt(state: DailyAttempts): boolean {
   return state.attemptsUsed < DAILY_FREE_ATTEMPTS;
 }
 
-/** Pode jogar agora (gratuita restante ou extra liberada e não usada)? */
+/** Pode jogar agora (tem tentativa liberada e ainda não usada)? */
 export function canPlayDaily(state: DailyAttempts): boolean {
-  return (
-    state.attemptsUsed < DAILY_MAX_ATTEMPTS &&
-    (state.attemptsUsed < DAILY_FREE_ATTEMPTS || state.extraUnlocked)
-  );
+  return state.attemptsUsed < state.unlockedTotal;
 }
 
 /** Consome uma tentativa (gratuita ou extra). */
@@ -72,21 +83,20 @@ export function consumeDailyAttempt(state: DailyAttempts): DailyAttempts {
   return { ...state, attemptsUsed: state.attemptsUsed + 1 };
 }
 
-/** Libera a tentativa extra (chamado após o anúncio recompensado). */
+/** Libera mais uma tentativa (chamado após o anúncio recompensado). */
 export function unlockExtraAttempt(state: DailyAttempts): DailyAttempts {
-  return { ...state, extraUnlocked: true };
+  return { ...state, unlockedTotal: state.unlockedTotal + 1 };
 }
 
 /**
- * Pode assistir o anúncio agora? Só faz sentido depois de usar a tentativa
- * gratuita, antes de esgotar as tentativas possíveis.
+ * Pode assistir o anúncio agora? Só enquanto não houver tentativa liberada e
+ * ainda não jogada esperando — é essa condição que impõe "uma tentativa por
+ * anúncio" (nunca acumula anúncios sem jogar entre eles). Como
+ * `unlockedTotal` começa em DAILY_FREE_ATTEMPTS, isso já implica que a
+ * gratuita foi usada.
  */
 export function canWatchExtraAd(state: DailyAttempts): boolean {
-  return (
-    !state.extraUnlocked &&
-    state.attemptsUsed >= DAILY_FREE_ATTEMPTS &&
-    state.attemptsUsed < DAILY_MAX_ATTEMPTS
-  );
+  return state.attemptsUsed >= state.unlockedTotal;
 }
 
 /** Registra a melhor pontuação submetida no dia (monótona). */
