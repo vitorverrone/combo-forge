@@ -23,17 +23,21 @@ describe('adjustTarget (curva base ± DDA)', () => {
     expect(adjustTarget(baseTarget(1), 1, dda, DEFAULT_DDA_CONFIG)).toBe(baseTarget(1));
   });
 
-  test('5 vitórias fáceis consecutivas aumentam a Meta em 10%', () => {
+  test('5 vitórias fáceis consecutivas aumentam a Meta em 15% (pós rebalance, assimétrico)', () => {
     const dda = { lastFailedRound: 0, consecutiveFailures: 0, easyWins: 5 };
-    expect(adjustTarget(baseTarget(3), 3, dda, DEFAULT_DDA_CONFIG)).toBe(Math.round(baseTarget(3) * 1.1));
+    expect(adjustTarget(baseTarget(3), 3, dda, DEFAULT_DDA_CONFIG)).toBe(Math.round(baseTarget(3) * 1.15));
   });
 
-  test('falhas e vitórias fáceis combinam no mesmo ajuste (sequencial: 0.9 depois 1.1)', () => {
+  test('falhas e vitórias fáceis combinam no mesmo ajuste (sequencial: 0.9 depois 1.15)', () => {
     const dda = { lastFailedRound: 3, consecutiveFailures: 3, easyWins: 5 };
-    // a implementação arredonda entre os dois fatores: round(round(144 × 0.9) × 1.1)
+    // a implementação arredonda entre os dois fatores: round(round(144 × 0.9) × 1.15)
     expect(adjustTarget(baseTarget(3), 3, dda, DEFAULT_DDA_CONFIG)).toBe(
-      Math.round(Math.round(baseTarget(3) * 0.9) * 1.1),
+      Math.round(Math.round(baseTarget(3) * 0.9) * 1.15),
     );
+  });
+
+  test('failureAdjustment permanece 0.1, inalterado pelo rebalance (mudança assimétrica)', () => {
+    expect(DEFAULT_DDA_CONFIG.failureAdjustment).toBe(0.1);
   });
 
   test('DDA desligado devolve a base intacta mesmo com histórico de ajuste', () => {

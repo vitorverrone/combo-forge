@@ -115,10 +115,15 @@ export function generateForgeOffers(
   }));
   if (hasRelicSlot) {
     const available = relicPool.filter((relic) => !ownedRelics.some((owned) => owned.id === relic.id));
-    const rares = available.filter((relic) => relic.rarity === 'rare');
+    // Exclui categoria combo do subconjunto raro do boost (rebalance pós
+    // health-check, ADR 0006): o próprio boost de Relíquia rara do DDA não
+    // deve mais alimentar o desequilíbrio de Combo que o DDA existe pra
+    // conter. Sem raras fora de combo, o boost simplesmente não tem efeito
+    // nesta chamada — cai para o sorteio normal entre `available`.
+    const boostableRares = available.filter((relic) => relic.rarity === 'rare' && relic.category !== 'combo');
     let candidates = available;
-    if (options.rareRelicBoost && rares.length > 0 && rng() < RARE_RELIC_BOOST_RATE) {
-      candidates = rares;
+    if (options.rareRelicBoost && boostableRares.length > 0 && rng() < RARE_RELIC_BOOST_RATE) {
+      candidates = boostableRares;
     }
     const [relic] = pickDistinct(candidates, 1, rng);
     if (relic === undefined) {

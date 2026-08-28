@@ -3,8 +3,10 @@
  *
  * Um Forjador define o arquétipo da build pela Relíquia exclusiva de
  * largada, aplicada no início da Run fora do teto de 3 Relíquias. O MVP tem
- * três: Aprendiz (neutro, sem Relíquia — o onboarding), Martelo (fortalece
- * um Padrão) e Bigorna (mexe no Multiplicador de Combo). O Aprendiz é sempre
+ * três, cada um com identidade própria (rebalance pós health-check, ADR
+ * 0006): Aprendiz (explorador — +1 carta na Mão, mais opções de Padrão),
+ * Martelo (especialista em Trinca) e Bigorna (Multiplicador de Combo, sem
+ * mais ser estritamente melhor que os outros dois). O Aprendiz é sempre
  * disponível; os demais são desbloqueados por marcos de meta-progressão
  * (ticket 11) — aqui só os dados e a aplicação de largada.
  *
@@ -19,12 +21,24 @@ export type ForgerId = 'apprentice' | 'hammer' | 'anvil';
 export interface Forger {
   readonly id: ForgerId;
   readonly name: string;
-  /** Relíquia exclusiva de largada (fora do teto); ausente para o Aprendiz. */
+  /** Relíquia exclusiva de largada (fora do teto). */
   readonly startingRelic?: Relic;
 }
 
 export const FORGERS: readonly Forger[] = [
-  { id: 'apprentice', name: 'Apprentice' },
+  {
+    id: 'apprentice',
+    name: 'Apprentice',
+    // Identidade própria de build (rebalance pós health-check, ADR 0006):
+    // explorador com +1 carta na Mão, mais opções de Padrão por Jogada.
+    startingRelic: {
+      id: 'forger-apprentice',
+      name: 'Apprentice Reach',
+      category: 'mechanic',
+      rarity: 'common',
+      effect: { kind: 'handSize', amount: 1 },
+    },
+  },
   {
     id: 'hammer',
     name: 'Hammer',
@@ -33,7 +47,9 @@ export const FORGERS: readonly Forger[] = [
       name: 'Hammer Rhythm',
       category: 'pattern',
       rarity: 'common',
-      effect: { kind: 'pattern', pattern: PatternKind.ThreeOfAKind, bonus: 10 },
+      // Bônus dobrado de 10 para 20 (ADR 0006): perseguir Trinca vira
+      // estratégia de especialista que compensa.
+      effect: { kind: 'pattern', pattern: PatternKind.ThreeOfAKind, bonus: 20 },
     },
   },
   {
@@ -44,7 +60,9 @@ export const FORGERS: readonly Forger[] = [
       name: 'Anvil Beat',
       category: 'combo',
       rarity: 'common',
-      effect: { kind: 'comboStart', multiplier: 2 },
+      // Multiplicador inicial reduzido de 2 para 1.5 (ADR 0006): escolher
+      // Bigorna deixa de ser estritamente melhor que os outros Forjadores.
+      effect: { kind: 'comboStart', multiplier: 1.5 },
     },
   },
 ];

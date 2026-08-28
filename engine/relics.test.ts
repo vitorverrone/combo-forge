@@ -41,18 +41,18 @@ describe('comboMultiplier', () => {
     expect(comboMultiplier(4, relics)).toBe(5);
   });
 
-  test('comboGrowth: cresce em passos de 2 (×1, ×3, ×5, ×7)', () => {
+  test('comboGrowth: cresce em passos de 1.5 (×1, ×2.5, ×4, ×5.5) — Chain Reaction pós rebalance', () => {
     const relics = [RELIC_POOL[9]];
     expect(comboMultiplier(1, relics)).toBe(1);
-    expect(comboMultiplier(2, relics)).toBe(3);
-    expect(comboMultiplier(3, relics)).toBe(5);
-    expect(comboMultiplier(4, relics)).toBe(7);
+    expect(comboMultiplier(2, relics)).toBe(2.5);
+    expect(comboMultiplier(3, relics)).toBe(4);
+    expect(comboMultiplier(4, relics)).toBe(5.5);
   });
 
-  test('comboStart + comboGrowth empilham: ×2, ×4, ×6, ×8', () => {
+  test('comboStart + comboGrowth empilham: ×2, ×3.5, ×5, ×6.5', () => {
     const relics = [RELIC_POOL[8], RELIC_POOL[9]];
     expect(comboMultiplier(1, relics)).toBe(2);
-    expect(comboMultiplier(4, relics)).toBe(8);
+    expect(comboMultiplier(4, relics)).toBe(6.5);
   });
 });
 

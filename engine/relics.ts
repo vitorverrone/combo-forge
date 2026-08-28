@@ -114,7 +114,9 @@ export const RELIC_POOL: readonly Relic[] = [
     name: 'Chain Reaction',
     category: 'combo',
     rarity: 'rare',
-    effect: { kind: 'comboGrowth', step: 2 },
+    // Passo reduzido de 2 para 1.5 (rebalance pós health-check, ADR 0006):
+    // uma única oferta de sorte não deve mais resolver a Run sozinha.
+    effect: { kind: 'comboGrowth', step: 1.5 },
   },
 ];
 

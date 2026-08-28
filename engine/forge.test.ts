@@ -1,7 +1,7 @@
 import { Card, ForgeEffect } from './cards';
 import { DEFAULT_DDA_CONFIG, DEFAULT_DDA_STATE } from './dda';
 import { createDeck, DeckState, DISCARDS_PER_ROUND, HAND_SIZE } from './deck';
-import { ForgeOffer, forgeCard, forgeOfferSeed, generateForgeOffers } from './forge';
+import { ForgeOffer, forgeCard, forgeOfferSeed, generateForgeOffers, RARE_RELIC_BOOST_RATE } from './forge';
 import { createSeededRng, Rng } from './random';
 import { ALL_UNLOCKS } from './progression';
 import { RELIC_CAP, RELIC_POOL } from './relics';
@@ -321,6 +321,52 @@ describe('boost de Relíquia rara (ticket 07)', () => {
     const a = generateForgeOffers(lowRng, [], { rareRelicBoost: true });
     const b = generateForgeOffers(lowRng, [], { rareRelicBoost: true });
     expect(a).toEqual(b);
+  });
+
+  test('com o boost ativo e a decisão sempre a favor, a oferta de Relíquia nunca é de categoria combo (rebalance pós health-check, ADR 0006)', () => {
+    // rng() < RARE_RELIC_BOOST_RATE precisa dar true pra exercitar o subconjunto
+    // boostado; escala cada sorteio real por RARE_RELIC_BOOST_RATE para garantir
+    // isso sem fixar um único valor (mantém variação real entre seeds).
+    const forceBoostRng = (seed: number): Rng => {
+      const real = createSeededRng(seed);
+      return () => real() * RARE_RELIC_BOOST_RATE;
+    };
+    for (let seed = 1; seed <= 50; seed += 1) {
+      const offers = generateForgeOffers(forceBoostRng(seed), [], { rareRelicBoost: true });
+      const relicOffer = offers.find((o) => o.type === 'relic');
+      expect(relicOffer).toBeDefined();
+      if (relicOffer !== undefined && relicOffer.type === 'relic') {
+        expect(relicOffer.relic.category).not.toBe('combo');
+      }
+    }
+  });
+
+  test('quando o boost não teria efeito (sem raras fora de combo), cai para o sorteio normal sem lançar erro', () => {
+    // Só Relíquias de categoria combo raras disponíveis: boostableRares fica vazio.
+    const comboRareOnly = RELIC_POOL.filter((relic) => relic.rarity !== 'rare' || relic.category === 'combo');
+    const lowRng: Rng = () => 0.1; // decidiria pelo boost se houvesse candidatos
+    expect(() =>
+      generateForgeOffers(lowRng, [], { rareRelicBoost: true, relics: comboRareOnly }),
+    ).not.toThrow();
+    const offers = generateForgeOffers(lowRng, [], { rareRelicBoost: true, relics: comboRareOnly });
+    expect(offers.filter((o) => o.type === 'relic')).toHaveLength(1);
+  });
+});
+
+describe('determinismo do Desafio Diário com a exclusão de categoria combo (ADR 0003 + ADR 0006)', () => {
+  test('mesmo seed → mesma sequência de ofertas, mesmo com o boost de Relíquia rara ativo', () => {
+    const a = generateForgeOffers(createSeededRng(99), [], { rareRelicBoost: true });
+    const b = generateForgeOffers(createSeededRng(99), [], { rareRelicBoost: true });
+    expect(a).toEqual(b);
+  });
+
+  test('mesmo seed e mesmo caminho de Jogadas produzem a mesma Run com DDA ligado e vitórias fáceis acumuladas', () => {
+    const dda = { lastFailedRound: 0, consecutiveFailures: 0, easyWins: 5 };
+    const overrides = { seed: 123, dda, ddaConfig: { ...DEFAULT_DDA_CONFIG, enabled: true } };
+    const a = winRoundOne(createSeededRng(1), overrides).run;
+    const b = winRoundOne(createSeededRng(1), overrides).run;
+    expect(a).toEqual(b);
+    expect(a.forgeOffers.some((o) => o.type === 'relic' && o.relic.category === 'combo')).toBe(false);
   });
 });
 
