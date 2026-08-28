@@ -8,8 +8,9 @@
  *
  * - Falhar a mesma Rodada 3 vezes seguidas reduz a Meta dela em 10%.
  * - 5 vitórias fáceis consecutivas (margem ≥ 30% acima da Meta com 1+
- *   Jogada sobrando) aumentam a Meta em 10% e a frequência de Relíquia
- *   rara (consumido por forge.ts via rareRelicBoost).
+ *   Jogada sobrando) aumentam a Meta em 15% e a frequência de Relíquia
+ *   rara (consumido por forge.ts via rareRelicBoost — exclui Relíquias de
+ *   categoria combo do boost, ver forge.ts).
  *
  * A flag "sem DDA" desliga todos os ajustes de Meta (usada pelo Desafio
  * Diário). Hesitação dispara apenas dicas visuais (patterns.ts,
@@ -53,7 +54,10 @@ export const DEFAULT_DDA_CONFIG: DdaConfig = {
   failureAdjustment: 0.1,
   easyWinThreshold: 5,
   easyWinMargin: 0.3,
-  easyWinAdjustment: 0.1,
+  // Assimétrico por decisão (rebalance pós health-check, ADR 0006): reage
+  // mais rápido a sequências de vitórias fáceis (0.10 → 0.15) sem tornar
+  // Rodadas travadas mais fáceis — failureAdjustment permanece 0.1.
+  easyWinAdjustment: 0.15,
 };
 
 /** Port de persistência do histórico do DDA (injetado; memória para testes). */

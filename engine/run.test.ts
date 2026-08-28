@@ -71,7 +71,7 @@ describe('baseTarget (curva 50 × 1,7^(R−1))', () => {
 });
 
 describe('startRun', () => {
-  test('inicia Rodada 1 com 4 Jogadas, Mão de 7 e Meta 50', () => {
+  test('inicia Rodada 1 com 4 Jogadas, Mão de 8 (Aprendiz: +1 carta, pós rebalance) e Meta 50', () => {
     const run = startRun(1);
     expect(run.roundNumber).toBe(1);
     expect(run.playsRemaining).toBe(PLAYS_PER_ROUND);
@@ -79,7 +79,7 @@ describe('startRun', () => {
     expect(run.runScore).toBe(0);
     expect(run.target).toBe(50);
     expect(run.phase).toBe('playing');
-    expect(run.deck.hand).toHaveLength(7);
+    expect(run.deck.hand).toHaveLength(8);
   });
 
   test('currentMultiplier: 1ª Jogada ×1, 4ª ×4', () => {
@@ -284,25 +284,26 @@ describe('Forjadores na Run (ticket 06)', () => {
     expect(run.relics).toHaveLength(0);
   });
 
-  test('Martelo fortalece a Trinca na pontuação', () => {
+  test('Martelo fortalece a Trinca na pontuação (bônus dobrado, pós rebalance)', () => {
     const run = makeRun([spades(7), hearts(7), diamonds(7)], {
       forger: 'hammer',
       startingRelic: getForger('hammer').startingRelic,
     });
     const { run: next } = makePlay(run, [spades(7), hearts(7), diamonds(7)], createSeededRng(34));
-    expect(next.score).toBe(56); // (25 + 10) + 21
+    expect(next.score).toBe(66); // (25 + 20) + 21
   });
 
-  test('Bigorna começa com ×2 na 1ª Jogada', () => {
+  test('Bigorna começa com ×1.5 na 1ª Jogada (reduzido de ×2, pós rebalance)', () => {
     const run = startRun(42, { forger: 'anvil' });
     expect(run.forger).toBe('anvil');
-    expect(currentMultiplier(run)).toBe(2);
+    expect(currentMultiplier(run)).toBe(1.5);
   });
 
-  test('Aprendiz é neutro: sem Relíquia de largada e ×1 na 1ª Jogada', () => {
+  test('Aprendiz explora com +1 carta na Mão e ×1 na 1ª Jogada (identidade própria, pós rebalance)', () => {
     const run = startRun(42);
     expect(run.forger).toBe('apprentice');
-    expect(run.startingRelic).toBeUndefined();
+    expect(run.startingRelic).toEqual(getForger('apprentice').startingRelic);
+    expect(run.deck.hand).toHaveLength(8);
     expect(currentMultiplier(run)).toBe(1);
   });
 
@@ -336,7 +337,7 @@ describe('DDA na Run (ticket 07)', () => {
     expect(next.target).toBe(Math.round(baseTarget(2) * 0.9)); // 85 → 77
   });
 
-  test('5 vitórias fáceis consecutivas aumentam a Meta em 10%', () => {
+  test('5 vitórias fáceis consecutivas aumentam a Meta em 15% (pós rebalance)', () => {
     const run = makeRun([], {
       phase: 'roundWon',
       roundNumber: 1,
@@ -344,7 +345,7 @@ describe('DDA na Run (ticket 07)', () => {
       target: 0,
     });
     const next = startNextRound(run, createSeededRng(41));
-    expect(next.target).toBe(Math.round(baseTarget(2) * 1.1)); // 85 → 94
+    expect(next.target).toBe(Math.round(baseTarget(2) * 1.15)); // 85 → 98
   });
 
   test('sem DDA (Desafio Diário): Meta igual à curva base', () => {

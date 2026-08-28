@@ -189,7 +189,7 @@ describe('ações despachadas para o motor', () => {
     const state = store.getState();
     expect(state.run!.score).toBeGreaterThan(scoreBefore);
     expect(state.selectedKeys).toHaveLength(0);
-    expect(state.run!.deck.hand).toHaveLength(7);
+    expect(state.run!.deck.hand).toHaveLength(8); // Aprendiz: Mão base +1 (pós rebalance)
     expect(state.lastEvents.some((event) => event.type === 'played')).toBe(true);
   });
 
@@ -203,7 +203,7 @@ describe('ações despachadas para o motor', () => {
     store.getState().discardSelection();
     const state = store.getState();
     expect(state.run!.deck.discardsRemaining).toBe(discardsBefore - 1);
-    expect(state.run!.deck.hand).toHaveLength(7);
+    expect(state.run!.deck.hand).toHaveLength(8); // Aprendiz: Mão base +1 (pós rebalance)
     expect(state.selectedKeys).toHaveLength(0);
     expect(state.run!.score).toBe(0);
   });
