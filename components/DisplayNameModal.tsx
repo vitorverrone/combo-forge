@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { BackHandler, Keyboard, KeyboardEvent, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { BackHandler, Dimensions, Keyboard, KeyboardEvent, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTranslation } from '../i18n';
 import { useDisplayNameForm } from './useDisplayNameForm';
@@ -32,7 +32,8 @@ export function DisplayNameModal({ saving, error, onSave }: DisplayNameModalProp
     saving,
     onSave,
   });
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [bottomSpace, setBottomSpace] = useState<number | undefined>(undefined);
+  const restingWindowHeight = useRef(Dimensions.get('window').height);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
@@ -40,28 +41,29 @@ export function DisplayNameModal({ saving, error, onSave }: DisplayNameModalProp
   }, []);
 
   useEffect(() => {
-    // iOS não redimensiona nada sozinho — soma a altura cheia do teclado ao
-    // respiro. Android já redimensiona a janela pelo teclado
-    // (android:windowSoftInputMode="adjustResize", padrão do Expo) — somar a
-    // altura de novo duplicaria o deslocamento, então aqui só falta o respiro.
     const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
     const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
     const showSubscription = Keyboard.addListener(showEvent, (event: KeyboardEvent) => {
-      setKeyboardHeight(event.endCoordinates.height);
+      // Quanto a janela já encolheu sozinha até aqui (ex.: Android com
+      // android:windowSoftInputMode="adjustResize", já confirmado no manifest
+      // gerado pelo build) — medido de verdade via Dimensions, não suposto por
+      // plataforma, então continua correto mesmo se esse comportamento nativo
+      // mudar. O respiro só precisa compensar o que ainda sobrepõe o teclado.
+      const alreadyShrunkBy = Math.max(0, restingWindowHeight.current - Dimensions.get('window').height);
+      const remainingOverlap = Math.max(0, event.endCoordinates.height - alreadyShrunkBy);
+      setBottomSpace(remainingOverlap + KEYBOARD_GAP);
     });
-    const hideSubscription = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setBottomSpace(undefined);
+      restingWindowHeight.current = Dimensions.get('window').height;
+    });
     return () => {
       showSubscription.remove();
       hideSubscription.remove();
     };
   }, []);
 
-  const keyboardVisible = keyboardHeight > 0;
-  const bottomSpace = !keyboardVisible
-    ? undefined
-    : Platform.OS === 'ios'
-      ? keyboardHeight + KEYBOARD_GAP
-      : KEYBOARD_GAP;
+  const keyboardVisible = bottomSpace !== undefined;
 
   const displayedError = clientError ?? error;
 
