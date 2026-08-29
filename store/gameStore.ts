@@ -100,7 +100,7 @@ export type RunMode = 'normal' | 'daily';
 export const MAX_SELECTION = 5;
 
 /** Intervalo de Runs entre anúncios intersticiais (ticket 02). */
-const INTERSTITIAL_RUNS_INTERVAL = 2;
+const INTERSTITIAL_RUNS_INTERVAL = 1;
 
 export interface GameState {
   readonly screen: Screen;

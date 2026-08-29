@@ -729,6 +729,48 @@ describe('loja (delegação para o shopFlow — refactor)', () => {
   });
 });
 
+describe('anúncio intersticial ao fim de Run (ticket 01, app-polish-pass-2)', () => {
+  const QUAD_TENS = [clubs(10), spades(10), hearts(10), diamonds(10)];
+
+  /** Coloca uma Run na Rodada 6 com Mão vencedora e joga a quadra (runWon). */
+  function winStoreRun(store: ReturnType<typeof createGameStore>): void {
+    store.getState().startRun(); // garante a stream de RNG no store
+    store.setState({ run: { ...makeRunWithHand(QUAD_TENS), roundNumber: 6 } });
+    for (const card of QUAD_TENS) store.getState().toggleCard(cardKey(card));
+    store.getState().playSelection();
+  }
+
+  test('showInterstitial fica true ao final da 1ª Run normal concluída', () => {
+    const store = createGameStore();
+    expect(store.getState().showInterstitial).toBe(false);
+    winStoreRun(store);
+    const state = store.getState();
+    expect(state.run?.phase).toBe('runWon');
+    expect(state.showInterstitial).toBe(true);
+    expect(state.interstitialRunsSinceAd).toBe(0);
+  });
+
+  test('com adsRemoved, showInterstitial nunca vira true', async () => {
+    const storage = createMemoryShopStorage();
+    const store = createGameStore({ shopStorage: storage, shopProvider: createDevShopProvider() });
+    await store.getState().purchaseRemoveAds();
+    winStoreRun(store);
+    expect(store.getState().run?.phase).toBe('runWon');
+    expect(store.getState().showInterstitial).toBe(false);
+  });
+
+  test('Run do Desafio Diário concluída não dispara showInterstitial', async () => {
+    const backend = makeFakeDailyBackend();
+    const store = createGameStore({ dailyBackend: backend });
+    await store.getState().startDailyChallenge();
+    store.setState({ run: { ...makeRunWithHand(QUAD_TENS), roundNumber: 6 } });
+    for (const card of QUAD_TENS) store.getState().toggleCard(cardKey(card));
+    store.getState().playSelection();
+    expect(store.getState().run?.phase).toBe('runWon');
+    expect(store.getState().showInterstitial).toBe(false);
+  });
+});
+
 describe('meta-progressão (ticket 11)', () => {
   const QUAD_TENS = [clubs(10), spades(10), hearts(10), diamonds(10)];
 
