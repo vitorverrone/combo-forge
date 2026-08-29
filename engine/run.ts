@@ -112,14 +112,15 @@ export function baseTarget(roundNumber: number): number {
  * (store/dailyFlow.ts) — nunca passa por aqui com `anvil`, então o ranking
  * semanal comparável entre jogadores não é afetado.
  */
-const FORGER_TARGET_MULTIPLIER: Readonly<Partial<Record<ForgerId, number>>> = {
+const FORGER_TARGET_MULTIPLIER: Readonly<Record<ForgerId, number>> = {
+  apprentice: 1,
+  hammer: 1,
   anvil: 1.5,
 };
 
 /** Meta base da Rodada R já escalada pelo Forjador, antes do ajuste de DDA. */
 function forgerScaledTarget(roundNumber: number, forger: ForgerId): number {
-  const multiplier = FORGER_TARGET_MULTIPLIER[forger] ?? 1;
-  return Math.round(baseTarget(roundNumber) * multiplier);
+  return Math.round(baseTarget(roundNumber) * FORGER_TARGET_MULTIPLIER[forger]);
 }
 
 /** Número (1-based) da próxima Jogada dentro da Rodada. */
