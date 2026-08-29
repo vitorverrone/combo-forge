@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { BackHandler, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { BackHandler, Dimensions, Keyboard, KeyboardEvent, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTranslation } from '../i18n';
 import { useDisplayNameForm } from './useDisplayNameForm';
@@ -11,6 +11,13 @@ interface DisplayNameModalProps {
   readonly error: string | null;
   readonly onSave: (name: string) => void;
 }
+
+/**
+ * Respiro entre a base do card e o topo do teclado aberto (app-polish-pass-2,
+ * ticket 02) — fora da escala curada de `spacing` (theme.ts vai só até 28),
+ * mesma regra dos offsets de layout específicos que também usam número cru.
+ */
+const KEYBOARD_GAP = 32;
 
 /**
  * Modal bloqueante do Nome de Exibição (ticket 02): pedido uma única vez, na
@@ -25,16 +32,49 @@ export function DisplayNameModal({ saving, error, onSave }: DisplayNameModalProp
     saving,
     onSave,
   });
+  const [bottomSpace, setBottomSpace] = useState<number | undefined>(undefined);
+  const restingWindowHeight = useRef(Dimensions.get('window').height);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => subscription.remove();
   }, []);
 
+  useEffect(() => {
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSubscription = Keyboard.addListener(showEvent, (event: KeyboardEvent) => {
+      // Quanto a janela já encolheu sozinha até aqui (ex.: Android com
+      // android:windowSoftInputMode="adjustResize", já confirmado no manifest
+      // gerado pelo build) — medido de verdade via Dimensions, não suposto por
+      // plataforma, então continua correto mesmo se esse comportamento nativo
+      // mudar. O respiro só precisa compensar o que ainda sobrepõe o teclado.
+      const alreadyShrunkBy = Math.max(0, restingWindowHeight.current - Dimensions.get('window').height);
+      const remainingOverlap = Math.max(0, event.endCoordinates.height - alreadyShrunkBy);
+      setBottomSpace(remainingOverlap + KEYBOARD_GAP);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => {
+      setBottomSpace(undefined);
+      restingWindowHeight.current = Dimensions.get('window').height;
+    });
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const keyboardVisible = bottomSpace !== undefined;
+
   const displayedError = clientError ?? error;
 
   return (
-    <View style={styles.overlay}>
+    <View
+      style={[
+        styles.overlay,
+        keyboardVisible && styles.overlayKeyboardOpen,
+        keyboardVisible && { paddingBottom: bottomSpace },
+      ]}
+    >
       <View style={styles.card}>
         <Text style={styles.title}>{t('daily.displayNameTitle')}</Text>
         <Text style={styles.desc}>{t('daily.displayNameDesc')}</Text>
@@ -79,6 +119,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing[24],
     zIndex: 20,
+  },
+  overlayKeyboardOpen: {
+    justifyContent: 'flex-end',
   },
   card: {
     width: '100%',
