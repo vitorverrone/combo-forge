@@ -4,7 +4,7 @@
 
 **Blocked by:** Nenhum — pode começar imediatamente.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] `engine/run.ts`: `baseTarget(roundNumber)` (ou a função que o chama, que já recebe `forger: ForgerId` no escopo onde a Rodada é montada) passa a escalar o alvo por ×1.5 quando `forger === 'anvil'`, mantendo o alvo inalterado para os demais Forjadores. Aplicado **antes** do ajuste de DDA (`adjustTarget`), na mesma ordem em que os dois já compõem hoje. Implementado sem mudar a assinatura de `baseTarget` (continua puro, forger-agnóstico, igual usado hoje em `gameStore.test.ts`/`run.test.ts`): nova função privada `forgerScaledTarget(roundNumber, forger)` em `startRoundState` (que já tinha `forger` no escopo) multiplica o resultado de `baseTarget` por `FORGER_TARGET_MULTIPLIER[forger] ?? 1` (mapa `Partial<Record<ForgerId, number>>`, hoje só `{ anvil: 1.5 }`), arredonda, e só então passa pro `adjustTarget` existente — mesma composição de hoje, só com um passo a mais no meio.
 - [x] Nenhuma mudança em `Forger`/`ForgerId` (`engine/forgers.ts`) — a regra "só Anvil, ×1.5" vive inteiramente no cálculo do alvo, sem exigir campo novo no catálogo de Forjadores.
