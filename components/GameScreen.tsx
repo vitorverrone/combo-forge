@@ -514,6 +514,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: spacing[14],
+    paddingHorizontal: spacing[8],
   },
   overlayBtnPrimary: {
     backgroundColor: colors.gold,
