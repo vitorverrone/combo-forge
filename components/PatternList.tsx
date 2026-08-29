@@ -1,8 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 
-import { PATTERN_BONUSES, PATTERN_COMPOSITIONS, PATTERN_RANK, PatternKind } from '../engine';
+import { PATTERN_BONUSES, PATTERN_RANK, PatternKind } from '../engine';
 
-import { patternName } from './format';
+import { patternComposition, patternName } from './format';
 import { colors, spacing, radius } from './theme';
 
 /** Do mais fraco ao mais forte — derivado de PATTERN_RANK, fonte única de qual Padrão é melhor. */
@@ -21,7 +21,7 @@ export function PatternList() {
         <View key={kind} style={styles.row}>
           <View style={styles.info}>
             <Text style={styles.name}>{patternName(kind)}</Text>
-            <Text style={styles.composition}>{PATTERN_COMPOSITIONS[kind]}</Text>
+            <Text style={styles.composition}>{patternComposition(kind)}</Text>
           </View>
           <Text style={styles.bonus}>+{PATTERN_BONUSES[kind]}</Text>
         </View>

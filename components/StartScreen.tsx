@@ -16,6 +16,7 @@ import {
 } from '../engine';
 
 import { useTranslation } from '../i18n';
+import { forgerName, milestoneDescription } from './format';
 import { completeOnboarding, hasSeenOnboarding, OnboardingOverlay } from './OnboardingOverlay';
 import { PlayingCard } from './PlayingCard';
 import { colors, spacing, radius } from './theme';
@@ -121,8 +122,8 @@ export function StartScreen() {
                   key={candidate.id}
                   accessibilityLabel={
                     unlocked
-                      ? t('a11y.forgerOption', { name: candidate.name })
-                      : t('a11y.forgerOptionLocked', { name: candidate.name })
+                      ? t('a11y.forgerOption', { name: forgerName(candidate.id) })
+                      : t('a11y.forgerOptionLocked', { name: forgerName(candidate.id) })
                   }
                   accessibilityRole="button"
                   accessibilityState={{ disabled: !unlocked, selected }}
@@ -137,14 +138,14 @@ export function StartScreen() {
                 >
                   <View style={[styles.forgerAvatar, !unlocked && styles.forgerAvatarLocked]}>
                     <Text style={[styles.forgerAvatarText, !unlocked && styles.forgerAvatarTextLocked]}>
-                      {candidate.name.charAt(0)}
+                      {forgerName(candidate.id).charAt(0)}
                     </Text>
                   </View>
                   <Text style={[styles.forgerChipName, !unlocked && styles.forgerChipNameLocked]}>
-                    {candidate.name}
+                    {forgerName(candidate.id)}
                   </Text>
                   {!unlocked && milestone !== undefined && (
-                    <Text style={styles.forgerLock}>{milestone.description}</Text>
+                    <Text style={styles.forgerLock}>{milestoneDescription(milestone.id)}</Text>
                   )}
                 </Pressable>
               );

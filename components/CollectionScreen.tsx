@@ -15,7 +15,15 @@ import {
 } from '../engine';
 
 import { useTranslation } from '../i18n';
-import { forgeEffectDescription, forgeEffectLabel, relicDescription } from './format';
+import {
+  forgeEffectDescription,
+  forgeEffectLabel,
+  forgerName,
+  milestoneDescription,
+  milestoneTitle,
+  relicCategoryLabel,
+  relicDescription,
+} from './format';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -92,10 +100,10 @@ export function CollectionScreen() {
                 </View>
                 <View style={styles.milestoneBody}>
                   <Text style={[styles.milestoneLabel, claimed && styles.milestoneLabelDone]}>
-                    {milestone.title}
+                    {milestoneTitle(milestone.id)}
                   </Text>
                   <Text style={[styles.milestoneReward, claimed && styles.milestoneRewardDone]}>
-                    {milestone.description}
+                    {milestoneDescription(milestone.id)}
                   </Text>
                 </View>
               </View>
@@ -112,18 +120,18 @@ export function CollectionScreen() {
             <View key={forger.id} style={[styles.forgerRow, !unlocked && styles.forgerRowLocked]}>
               <View style={styles.forgerAvatar}>
                 <Text style={[styles.forgerAvatarText, !unlocked && styles.forgerAvatarTextLocked]}>
-                  {forger.name.charAt(0)}
+                  {forgerName(forger.id).charAt(0)}
                 </Text>
               </View>
               <View style={styles.forgerInfo}>
                 <Text style={[styles.forgerName, !unlocked && styles.forgerNameLocked]}>
-                  {forger.name}
+                  {forgerName(forger.id)}
                 </Text>
                 <Text style={styles.forgerDesc}>
                   {relicDescription(getForger(forger.id).startingRelic)}
                 </Text>
                 {!unlocked && milestone !== undefined && (
-                  <Text style={styles.forgerUnlock}>{milestone.description}</Text>
+                  <Text style={styles.forgerUnlock}>{milestoneDescription(milestone.id)}</Text>
                 )}
               </View>
               <StatusBadge unlocked={unlocked} />
@@ -163,7 +171,7 @@ export function CollectionScreen() {
               <View key={relic.id} style={[styles.relicTile, locked && styles.relicTileLocked]}>
                 <View style={styles.relicHead}>
                   <View style={[styles.relicGemSmall, locked && styles.relicGemSmallLocked]} />
-                  <Text style={styles.relicCat}>{relic.category}</Text>
+                  <Text style={styles.relicCat}>{relicCategoryLabel(relic.category)}</Text>
                 </View>
                 <Text style={[styles.relicName, locked && styles.relicNameLocked]}>
                   {locked ? `🔒 ${relic.name}` : relic.name}
@@ -171,7 +179,9 @@ export function CollectionScreen() {
                 {!locked ? (
                   <Text style={styles.relicEffect}>{relicDescription(relic)}</Text>
                 ) : (
-                  <Text style={styles.relicLock}>{rareMilestone?.description ?? t('common.locked')}</Text>
+                  <Text style={styles.relicLock}>
+                    {rareMilestone !== undefined ? milestoneDescription(rareMilestone.id) : t('common.locked')}
+                  </Text>
                 )}
               </View>
             );
@@ -210,7 +220,11 @@ export function CollectionScreen() {
                   {forgeEffectLabel(option.effect)}
                 </Text>
                 <Text style={styles.fxDesc}>{forgeEffectDescription(option.effect)}</Text>
-                {!unlocked && <Text style={styles.fxLock}>{status?.milestone.description ?? t('common.locked')}</Text>}
+                {!unlocked && (
+                  <Text style={styles.fxLock}>
+                    {status !== undefined ? milestoneDescription(status.milestone.id) : t('common.locked')}
+                  </Text>
+                )}
               </View>
               {unlocked ? (
                 <StatusBadge unlocked />

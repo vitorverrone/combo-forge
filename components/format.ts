@@ -4,7 +4,17 @@
  */
 
 import i18n from '../i18n';
-import { Card, DisplayNameValidation, ForgeEffect, PatternKind, Relic, Suit } from '../engine';
+import {
+  Card,
+  DeckSkinItem,
+  DisplayNameValidation,
+  ForgeEffect,
+  ForgerId,
+  PatternKind,
+  Relic,
+  RelicCategory,
+  Suit,
+} from '../engine';
 
 export const SUIT_SYMBOL: Readonly<Record<Suit, string>> = {
   spades: '♠',
@@ -49,6 +59,22 @@ export const PATTERN_NAME: Readonly<Record<PatternKind, string>> = {
 /** Translated pattern name for display. */
 export function patternName(kind: PatternKind): string {
   return i18n.t(PATTERN_I18N_KEY[kind]);
+}
+
+/** Pattern composition descriptions — translated via i18n. */
+const PATTERN_COMPOSITION_I18N_KEY: Readonly<Record<PatternKind, string>> = {
+  [PatternKind.HighCard]: 'format.patternComposition.highCard',
+  [PatternKind.Pair]: 'format.patternComposition.pair',
+  [PatternKind.TwoPair]: 'format.patternComposition.twoPair',
+  [PatternKind.ThreeOfAKind]: 'format.patternComposition.threeOfAKind',
+  [PatternKind.Straight]: 'format.patternComposition.straight',
+  [PatternKind.FullHouse]: 'format.patternComposition.fullHouse',
+  [PatternKind.FourOfAKind]: 'format.patternComposition.fourOfAKind',
+};
+
+/** Translated composition description of a Padrão (ex.: "2 cards of the same value"). */
+export function patternComposition(kind: PatternKind): string {
+  return i18n.t(PATTERN_COMPOSITION_I18N_KEY[kind]);
 }
 
 export function cardLabel(card: Card): string {
@@ -117,4 +143,49 @@ export function relicDescription(relic: Relic | undefined): string {
     case 'comboGrowth':
       return i18n.t('format.relic.comboGrowth', { step: relic.effect.step });
   }
+}
+
+/** Relic category labels — translated via i18n. */
+const RELIC_CATEGORY_I18N_KEY: Readonly<Record<RelicCategory, string>> = {
+  suit: 'format.relicCategory.suit',
+  pattern: 'format.relicCategory.pattern',
+  mechanic: 'format.relicCategory.mechanic',
+  combo: 'format.relicCategory.combo',
+};
+
+/** Translated Relic category label for display (Coleção). */
+export function relicCategoryLabel(category: RelicCategory): string {
+  return i18n.t(RELIC_CATEGORY_I18N_KEY[category]);
+}
+
+/** Forger names — translated via i18n (exceção à convenção de nomes de jogo em inglês). */
+const FORGER_NAME_I18N_KEY: Readonly<Record<ForgerId, string>> = {
+  apprentice: 'format.forgerName.apprentice',
+  hammer: 'format.forgerName.hammer',
+  anvil: 'format.forgerName.anvil',
+};
+
+/** Translated Forjador name for display. */
+export function forgerName(id: ForgerId): string {
+  return i18n.t(FORGER_NAME_I18N_KEY[id]);
+}
+
+/** Translated Deck skin description (Loja). Nome do Deck continua em inglês. */
+export function deckSkinDescription(item: DeckSkinItem): string {
+  return i18n.t(`format.deckSkin.${item.id}`);
+}
+
+/** Translated Marco (Meta-Progressão) title, por id estável (engine/progression.ts). */
+export function milestoneTitle(id: string): string {
+  return i18n.t(`milestones.${id}.title`);
+}
+
+/** Translated Marco description, por id estável. */
+export function milestoneDescription(id: string): string {
+  return i18n.t(`milestones.${id}.description`);
+}
+
+/** Translated título de uma opção de desbloqueio (MilestoneOption), por id estável. */
+export function milestoneOptionTitle(id: string): string {
+  return i18n.t(`milestoneOptions.${id}.title`);
 }

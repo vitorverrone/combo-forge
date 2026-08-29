@@ -9,6 +9,7 @@ import {
 } from '../engine';
 
 import { useTranslation } from '../i18n';
+import { deckSkinDescription } from './format';
 import { SuitSymbol } from './SuitSymbol';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
@@ -53,7 +54,7 @@ export function ShopScreen() {
               <DeckPreview item={item} />
               <View style={styles.shopInfo}>
                 <Text style={styles.shopName}>{item.name}</Text>
-                <Text style={styles.shopSub}>{item.description}</Text>
+                <Text style={styles.shopSub}>{deckSkinDescription(item)}</Text>
               </View>
               <View style={styles.shopAction}>
                 {owned && equipped ? (

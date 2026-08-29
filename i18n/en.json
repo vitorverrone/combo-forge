@@ -237,6 +237,67 @@
       "tooLong": "At most 16 characters.",
       "invalidChars": "Only letters, numbers and spaces.",
       "profanity": "That name isn't allowed."
+    },
+    "patternComposition": {
+      "highCard": "No matching cards",
+      "pair": "2 cards of the same value",
+      "twoPair": "2 different pairs",
+      "threeOfAKind": "3 cards of the same value",
+      "straight": "5 consecutive values",
+      "fullHouse": "3 of a kind + a pair",
+      "fourOfAKind": "4 cards of the same value"
+    },
+    "forgerName": {
+      "apprentice": "Apprentice",
+      "hammer": "Hammer",
+      "anvil": "Anvil"
+    },
+    "deckSkin": {
+      "deck-classic": "Classic parchment deck",
+      "deck-obsidian": "Charcoal face with silver ink — forged in shadow.",
+      "deck-emerald": "Deep green face with gold ink — forest alloy.",
+      "deck-royal": "Navy face with ivory ink — crown of the forge."
+    },
+    "relicCategory": {
+      "suit": "Suit",
+      "pattern": "Pattern",
+      "mechanic": "Mechanic",
+      "combo": "Combo"
+    }
+  },
+  "milestones": {
+    "firstRunWon": {
+      "title": "First Victory",
+      "description": "Win your first run."
+    },
+    "thirdRunWon": {
+      "title": "Third Victory",
+      "description": "Win 3 runs."
+    },
+    "fifthRunWon": {
+      "title": "Fifth Victory",
+      "description": "Win 5 runs."
+    },
+    "scoreRecord2500": {
+      "title": "Legendary Forge",
+      "description": "Score 2,500+ points in a single run."
+    }
+  },
+  "milestoneOptions": {
+    "unlock-forger-hammer": {
+      "title": "Hammer forger"
+    },
+    "unlock-forger-anvil": {
+      "title": "Anvil forger"
+    },
+    "value-bonus-7": {
+      "title": "+7 to a card's value"
+    },
+    "trigger-2-15": {
+      "title": "+15 pts on play 2"
+    },
+    "unlock-rare-relics": {
+      "title": "Rare relics in the forge"
     }
   },
   "ad": {
