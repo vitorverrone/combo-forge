@@ -1,5 +1,5 @@
-import { useEffect } from 'react';
-import { BackHandler, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { BackHandler, Keyboard, KeyboardEvent, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTranslation } from '../i18n';
 import { useDisplayNameForm } from './useDisplayNameForm';
@@ -11,6 +11,13 @@ interface DisplayNameModalProps {
   readonly error: string | null;
   readonly onSave: (name: string) => void;
 }
+
+/**
+ * Respiro entre a base do card e o topo do teclado aberto (app-polish-pass-2,
+ * ticket 02) — fora da escala curada de `spacing` (theme.ts vai só até 28),
+ * mesma regra dos offsets de layout específicos que também usam número cru.
+ */
+const KEYBOARD_GAP = 32;
 
 /**
  * Modal bloqueante do Nome de Exibição (ticket 02): pedido uma única vez, na
@@ -25,16 +32,47 @@ export function DisplayNameModal({ saving, error, onSave }: DisplayNameModalProp
     saving,
     onSave,
   });
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
 
   useEffect(() => {
     const subscription = BackHandler.addEventListener('hardwareBackPress', () => true);
     return () => subscription.remove();
   }, []);
 
+  useEffect(() => {
+    // iOS não redimensiona nada sozinho — soma a altura cheia do teclado ao
+    // respiro. Android já redimensiona a janela pelo teclado
+    // (android:windowSoftInputMode="adjustResize", padrão do Expo) — somar a
+    // altura de novo duplicaria o deslocamento, então aqui só falta o respiro.
+    const showEvent = Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow';
+    const hideEvent = Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide';
+    const showSubscription = Keyboard.addListener(showEvent, (event: KeyboardEvent) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+    const hideSubscription = Keyboard.addListener(hideEvent, () => setKeyboardHeight(0));
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
+
+  const keyboardVisible = keyboardHeight > 0;
+  const bottomSpace = !keyboardVisible
+    ? undefined
+    : Platform.OS === 'ios'
+      ? keyboardHeight + KEYBOARD_GAP
+      : KEYBOARD_GAP;
+
   const displayedError = clientError ?? error;
 
   return (
-    <View style={styles.overlay}>
+    <View
+      style={[
+        styles.overlay,
+        keyboardVisible && styles.overlayKeyboardOpen,
+        keyboardVisible && { paddingBottom: bottomSpace },
+      ]}
+    >
       <View style={styles.card}>
         <Text style={styles.title}>{t('daily.displayNameTitle')}</Text>
         <Text style={styles.desc}>{t('daily.displayNameDesc')}</Text>
@@ -79,6 +117,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: spacing[24],
     zIndex: 20,
+  },
+  overlayKeyboardOpen: {
+    justifyContent: 'flex-end',
   },
   card: {
     width: '100%',
