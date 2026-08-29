@@ -216,7 +216,7 @@
       "valueBonus": "Adiciona +{{amount}} ao valor da carta",
       "multiplier": "Multiplica o valor da carta por ×{{multiplier}}",
       "wildcard": "Conta como qualquer valor e naipe para formar padrões",
-      "trigger": "Adiciona +{{bonus}} pts quando jogado na jogada {{triggerPlay}} de uma rodada"
+      "trigger": "Adiciona +{{bonus}} pts quando jogado na {{triggerPlay}}ª jogada da rodada"
     },
     "relic": {
       "suit": "Cartas de {{suit}} ×{{multiplier}}",
