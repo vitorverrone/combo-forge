@@ -4,7 +4,7 @@
 
 **Blocked by:** Nenhum — pode começar imediatamente.
 
-**Status:** ready-for-human
+**Status:** done
 
 - [x] `i18n/pt.json`: corrige `onboarding.rideCombo.title` (hoje `"Ride o Combo"`, mistura de idioma) para uma tradução completa. Implementado como `"Aproveite o Combo"`.
 - [x] `engine/patterns.ts`: remove o export `PATTERN_COMPOSITIONS` (hardcoded em inglês).
