@@ -176,7 +176,7 @@
       "tip": "Dica: base = bônus do padrão + valor das cartas."
     },
     "rideCombo": {
-      "title": "Ride o Combo",
+      "title": "Aproveite o Combo",
       "body": "Cada jogada aumenta o Multiplicador de Combo — ×1, ×2, ×3, ×4 — então jogadas depois valem mais.",
       "tip": "Dica: o multiplicador reseta a cada rodada."
     },
@@ -237,6 +237,67 @@
       "tooLong": "No máximo 16 caracteres.",
       "invalidChars": "Só letras, números e espaço.",
       "profanity": "Esse nome não é permitido."
+    },
+    "patternComposition": {
+      "highCard": "Nenhuma carta combina",
+      "pair": "2 cartas de mesmo valor",
+      "twoPair": "2 pares diferentes",
+      "threeOfAKind": "3 cartas de mesmo valor",
+      "straight": "5 valores consecutivos",
+      "fullHouse": "Trinca + par",
+      "fourOfAKind": "4 cartas de mesmo valor"
+    },
+    "forgerName": {
+      "apprentice": "Aprendiz",
+      "hammer": "Martelo",
+      "anvil": "Bigorna"
+    },
+    "deckSkin": {
+      "deck-classic": "Baralho clássico de pergaminho",
+      "deck-obsidian": "Face carvão com tinta prateada — forjado na sombra.",
+      "deck-emerald": "Face verde profundo com tinta dourada — liga da floresta.",
+      "deck-royal": "Face azul-marinho com tinta marfim — coroa da forja."
+    },
+    "relicCategory": {
+      "suit": "Naipe",
+      "pattern": "Padrão",
+      "mechanic": "Mecânica",
+      "combo": "Combo"
+    }
+  },
+  "milestones": {
+    "firstRunWon": {
+      "title": "Primeira Vitória",
+      "description": "Vença sua primeira run."
+    },
+    "thirdRunWon": {
+      "title": "Terceira Vitória",
+      "description": "Vença 3 runs."
+    },
+    "fifthRunWon": {
+      "title": "Quinta Vitória",
+      "description": "Vença 5 runs."
+    },
+    "scoreRecord2500": {
+      "title": "Forja Lendária",
+      "description": "Marque 2.500+ pontos em uma única run."
+    }
+  },
+  "milestoneOptions": {
+    "unlock-forger-hammer": {
+      "title": "Forjador Martelo"
+    },
+    "unlock-forger-anvil": {
+      "title": "Forjadora Bigorna"
+    },
+    "value-bonus-7": {
+      "title": "+7 no valor de uma carta"
+    },
+    "trigger-2-15": {
+      "title": "+15 pts na jogada 2"
+    },
+    "unlock-rare-relics": {
+      "title": "Relíquias raras na forja"
     }
   },
   "ad": {

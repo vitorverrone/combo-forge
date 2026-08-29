@@ -3,6 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-
 import { computeUnlocks, MILESTONES, Suit } from '../engine';
 
 import i18n, { useTranslation } from '../i18n';
+import { milestoneDescription, milestoneTitle } from './format';
 import { SuitSymbol } from './SuitSymbol';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
@@ -110,9 +111,9 @@ export function ProfileScreen() {
                 </View>
                 <View style={styles.milestoneText}>
                   <Text style={[styles.milestoneTitle, claimed && styles.milestoneTitleDone]}>
-                    {milestone.title}
+                    {milestoneTitle(milestone.id)}
                   </Text>
-                  <Text style={styles.milestoneDesc}>{milestone.description}</Text>
+                  <Text style={styles.milestoneDesc}>{milestoneDescription(milestone.id)}</Text>
                 </View>
                 <View style={styles.milestoneBadge}>
                   <Text style={[styles.milestoneBadgeText, claimed && styles.milestoneBadgeDone, !claimed && reached && styles.milestoneBadgeReady]}>

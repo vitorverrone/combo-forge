@@ -3,8 +3,6 @@ import {
   availablePatternHints,
   evaluatePlay,
   identifyPattern,
-  PATTERN_BONUSES,
-  PATTERN_COMPOSITIONS,
   PatternKind,
   ScoreModifiers,
 } from './patterns';
@@ -246,14 +244,6 @@ describe('availablePatternHints (dicas de hesitação, ticket 07)', () => {
 
   test('Mão sem Padrão não gera dica de combinação', () => {
     expect(availablePatternHints([spades(1), spades(3), spades(6), spades(8), spades(10)])).toEqual([]);
-  });
-});
-
-describe('PATTERN_COMPOSITIONS', () => {
-  test('tem exatamente as mesmas chaves de PATTERN_BONUSES, sem faltar nem duplicar Padrão', () => {
-    const bonusKeys = Object.keys(PATTERN_BONUSES).sort();
-    const compositionKeys = Object.keys(PATTERN_COMPOSITIONS).sort();
-    expect(compositionKeys).toEqual(bonusKeys);
   });
 });
 

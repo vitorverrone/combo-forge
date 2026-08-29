@@ -3,7 +3,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { bonusForgeEffectById, MilestoneOption } from '../engine';
 
 import { useTranslation } from '../i18n';
-import { forgeEffectDescription } from './format';
+import { forgeEffectDescription, milestoneDescription, milestoneOptionTitle, milestoneTitle } from './format';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -41,8 +41,8 @@ export function UnlockChoiceModal() {
         <View style={styles.card}>
           {/* Eyebrow */}
           <Text style={styles.eyebrow}>{t('unlockChoice.milestoneReached')}</Text>
-          <Text style={styles.title}>{milestone.title}</Text>
-          <Text style={styles.subtitle}>{milestone.description}</Text>
+          <Text style={styles.title}>{milestoneTitle(milestone.id)}</Text>
+          <Text style={styles.subtitle}>{milestoneDescription(milestone.id)}</Text>
           <Text style={styles.prompt}>
             {t('unlockChoice.pickUnlock')}
           </Text>
@@ -52,7 +52,7 @@ export function UnlockChoiceModal() {
             {unclaimedOptions.map((option) => (
               <Pressable
                 key={option.id}
-                accessibilityLabel={t('a11y.unlockItem', { name: option.title })}
+                accessibilityLabel={t('a11y.unlockItem', { name: milestoneOptionTitle(option.id) })}
                 accessibilityRole="button"
                 onPress={() => claimUnlock(option.id)}
                 style={({ pressed }) => [styles.option, pressed && styles.btnPressed]}
@@ -62,7 +62,7 @@ export function UnlockChoiceModal() {
                 </View>
                 <View style={styles.optionInfo}>
                   <View style={styles.optionTitleRow}>
-                    <Text style={styles.optionTitle}>{option.title}</Text>
+                    <Text style={styles.optionTitle}>{milestoneOptionTitle(option.id)}</Text>
                     <View style={styles.newBadge}>
                       <Text style={styles.newBadgeText}>{t('unlockChoice.new')}</Text>
                     </View>
