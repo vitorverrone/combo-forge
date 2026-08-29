@@ -312,6 +312,43 @@ describe('Forjadores na Run (ticket 06)', () => {
   });
 });
 
+describe('Alvo de Rodada escalado pelo Forjador (app-polish-pass-2, ticket 04)', () => {
+  test('Bigorna: Meta da Rodada 1 escalada por ×1.5 (50 → 75)', () => {
+    const run = startRun(42, { forger: 'anvil' });
+    expect(run.target).toBe(75);
+    expect(run.target).toBe(Math.round(baseTarget(1) * 1.5));
+  });
+
+  test('Bigorna: Meta escalada na fórmula de crescimento também na Rodada 2', () => {
+    const run = makeRun([], { phase: 'roundWon', roundNumber: 1, forger: 'anvil', target: 0 });
+    const next = startNextRound(run, createSeededRng(50));
+    expect(next.target).toBe(Math.round(baseTarget(2) * 1.5)); // 85 → 128
+  });
+
+  test('outros Forjadores: Meta inalterada nas mesmas Rodadas', () => {
+    expect(startRun(42, { forger: 'apprentice' }).target).toBe(baseTarget(1));
+    expect(startRun(42, { forger: 'hammer' }).target).toBe(baseTarget(1));
+
+    const run = makeRun([], { phase: 'roundWon', roundNumber: 1, forger: 'hammer', target: 0 });
+    const next = startNextRound(run, createSeededRng(51));
+    expect(next.target).toBe(baseTarget(2));
+  });
+
+  test('escala do Forjador é aplicada antes do ajuste de DDA, na mesma ordem já existente', () => {
+    const run = makeRun([], {
+      phase: 'roundWon',
+      roundNumber: 1,
+      forger: 'anvil',
+      dda: { lastFailedRound: 0, consecutiveFailures: 0, easyWins: 5 },
+      target: 0,
+    });
+    const next = startNextRound(run, createSeededRng(52));
+    // Bigorna escala 85 → 128 (arredondado), DDA soma +15% em cima: 128 → 147.
+    const anvilScaled = Math.round(baseTarget(2) * 1.5);
+    expect(next.target).toBe(Math.round(anvilScaled * 1.15));
+  });
+});
+
 describe('serialização', () => {
   test('estado da Run é serializável', () => {
     const run = startRun(16);

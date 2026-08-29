@@ -103,6 +103,26 @@ export function baseTarget(roundNumber: number): number {
   return Math.round(BASE_TARGET * Math.pow(TARGET_GROWTH, roundNumber - 1));
 }
 
+/**
+ * Multiplicador da Meta por Forjador (app-polish-pass-2, ticket 04) — hoje só
+ * a Bigorna: já começa com o Multiplicador de Combo em ×1.5 (ver
+ * forgers.ts), então a Meta sobe na mesma proporção pra virar uma troca de
+ * dificuldade real, não um bônus gratuito. Demais Forjadores ficam em 1
+ * (curva base inalterada). O Desafio Diário usa Forjador fixo `apprentice`
+ * (store/dailyFlow.ts) — nunca passa por aqui com `anvil`, então o ranking
+ * semanal comparável entre jogadores não é afetado.
+ */
+const FORGER_TARGET_MULTIPLIER: Readonly<Record<ForgerId, number>> = {
+  apprentice: 1,
+  hammer: 1,
+  anvil: 1.5,
+};
+
+/** Meta base da Rodada R já escalada pelo Forjador, antes do ajuste de DDA. */
+function forgerScaledTarget(roundNumber: number, forger: ForgerId): number {
+  return Math.round(baseTarget(roundNumber) * FORGER_TARGET_MULTIPLIER[forger]);
+}
+
 /** Número (1-based) da próxima Jogada dentro da Rodada. */
 export function currentPlayNumber(run: RunState): number {
   return PLAYS_PER_ROUND - run.playsRemaining + 1;
@@ -211,7 +231,7 @@ function startRoundState(
     playsRemaining: PLAYS_PER_ROUND,
     score: 0,
     runScore,
-    target: adjustTarget(baseTarget(roundNumber), roundNumber, dda, ddaConfig),
+    target: adjustTarget(forgerScaledTarget(roundNumber, forger), roundNumber, dda, ddaConfig),
     phase: 'playing',
     forgedCards,
     relics,
