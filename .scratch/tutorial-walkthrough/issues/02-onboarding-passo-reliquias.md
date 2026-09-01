@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (Remove a tentativa abandonada com react-joyride) — mesmo arquivo (`OnboardingOverlay.tsx`) tocado por ambos.
 
-**Status:** ready-for-human
+**Status:** done
 
 - [x] `components/OnboardingOverlay.tsx`: novo passo `relics` adicionado a `STEP_KEYS`/`STEP_VISUALS`, seguindo exatamente o padrão já existente dos outros 4 passos — inserido antes do passo final atual (que continua com o CTA "Vamos Forjar"). **Achado do code-review (Spec review):** a primeira versão tinha adicionado `relics` no fim dos arrays (depois de `beatTarget`), o que fazia o novo passo virar o último e herdar o CTA "Vamos Forjar" — exatamente o inverso do pedido. Corrigido: `relics` entra entre `rideCombo` e `beatTarget`, que continua sendo o passo final de verdade.
 - [x] Visual próprio do novo passo (mesmo padrão dos outros `StepVisual`): um ícone de Relíquia (mesmo losango dourado já usado em `ForgeScreen`/`CollectionScreen`) ao lado de uma carta com Efeito (+2), lado a lado, cada um com um rótulo abaixo.
