@@ -12,6 +12,7 @@ import { RelicRow } from './RelicRow';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { selectionPreview, useGameStore } from '../store/gameStore';
+import { TOTAL_TUTORIAL_STEPS } from '../store/tutorialFlow';
 
 export function GameScreen() {
   const { t } = useTranslation();
@@ -35,10 +36,20 @@ export function GameScreen() {
   const tutorialClearOrDiscardTouched = useGameStore((state) => state.tutorialClearOrDiscardTouched);
   const tutorialNextPressed = useGameStore((state) => state.tutorialNextPressed);
   const tutorialSkipOrCompletePressed = useGameStore((state) => state.tutorialSkipOrCompletePressed);
+  const tutorialGameScreenLeft = useGameStore((state) => state.tutorialGameScreenLeft);
 
   useEffect(() => {
-    checkGameScreenTutorialTrigger();
-  }, [checkGameScreenTutorialTrigger, run?.phase, run?.roundNumber, runMode]);
+    const phase = run?.phase;
+    if (phase === undefined) return;
+    if (phase === 'playing') {
+      checkGameScreenTutorialTrigger();
+    } else {
+      // Rodada terminou (vencida/perdida) com a seção 1-2 ainda ativa: conta
+      // como vista, senão ela ficaria "presa" e reapareceria na Rodada 2 ou
+      // até numa Run do Desafio Diário seguinte.
+      tutorialGameScreenLeft();
+    }
+  }, [checkGameScreenTutorialTrigger, tutorialGameScreenLeft, run?.phase, run?.roundNumber, runMode]);
 
   if (run === null) return null;
   if (run.phase !== 'playing') return <PhaseScreen run={run} />;
@@ -51,13 +62,13 @@ export function GameScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Tutorial bar — sits above the game's own topbar; the game's own
-          chrome (Round/Score/progress) stays game information, never
-          replaced by the tutorial. */}
+      {/* Barra do tutorial — fica ACIMA do topbar do próprio jogo; o chrome
+          do jogo (Rodada/Pontuação/progresso) continua sendo informação do
+          jogo, nunca substituída pelo tutorial. */}
       {(tutorial.activeStep === 1 || tutorial.activeStep === 2) && (
         <View style={styles.tutorialBar}>
           <Text style={styles.tutorialBarStep}>
-            {t('tutorial.stepOf', { step: tutorial.activeStep, total: 3 })}
+            {t('tutorial.stepOf', { step: tutorial.activeStep, total: TOTAL_TUTORIAL_STEPS })}
           </Text>
           <View style={styles.tutorialBarActions}>
             {tutorial.activeStep === 2 && (
@@ -239,7 +250,13 @@ export function GameScreen() {
               <Pressable
                 accessibilityLabel={t('a11y.abandonRun')}
                 accessibilityRole="button"
-                onPress={backToStart}
+                onPress={() => {
+                  // backToStart zera `run` no mesmo set() — o efeito que observa
+                  // run.phase não roda mais depois disso, então a seção 1-2 do
+                  // tutorial (se ainda ativa) precisa ser marcada como vista aqui.
+                  tutorialGameScreenLeft();
+                  backToStart();
+                }}
                 style={({ pressed }) => [styles.overlayBtn, styles.overlayBtnDanger, pressed && styles.btnPressed]}
               >
                 <Text style={styles.overlayBtnDangerText}>{t('game.abandon')}</Text>
