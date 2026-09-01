@@ -30,6 +30,7 @@ export function GameScreen() {
   const deckSkin =
     shopOwned.equippedDeckSkin === null ? undefined : cosmeticItemById(shopOwned.equippedDeckSkin);
 
+  const tutorial = useGameStore((state) => state.tutorial);
   const checkGameScreenTutorialTrigger = useGameStore((state) => state.checkGameScreenTutorialTrigger);
   const tutorialCardTouched = useGameStore((state) => state.tutorialCardTouched);
   const tutorialClearOrDiscardTouched = useGameStore((state) => state.tutorialClearOrDiscardTouched);
@@ -164,7 +165,7 @@ export function GameScreen() {
         </View>
 
         {/* Actions — inside scroll so they flow below the hand */}
-        <View style={styles.actions}>
+        <View style={[styles.actions, tutorial.activeStep === 2 && styles.actionsWithCalloutAbove]}>
           <TutorialView
             step={2}
             text={t('tutorial.step2Callout')}
@@ -470,6 +471,15 @@ const styles = StyleSheet.create({
     marginTop: 100,
     paddingTop: spacing[10],
     paddingBottom: spacing[0],
+  },
+  /**
+   * Passo 2 do tutorial: o balão (texto + linha de ações) flutua 'above',
+   * crescendo pra cima a partir do topo de actionsSecondary — respiro extra
+   * evita que ele encoste na Mão logo acima (achado em code review; valor a
+   * conferir num teste manual real).
+   */
+  actionsWithCalloutAbove: {
+    marginTop: 190,
   },
   actionsSecondary: {
     flexDirection: 'row',

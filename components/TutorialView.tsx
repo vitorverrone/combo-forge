@@ -10,7 +10,9 @@ import { useGameStore } from '../store/gameStore';
 const CALLOUT_WIDTH = 240;
 
 interface TutorialAction {
+  /** Texto visível do botão, já traduzido (chame t() no call site). */
   readonly label: string;
+  /** Rótulo de acessibilidade, já traduzido — pode ser mais descritivo que o label visível. */
   readonly accessibilityLabel: string;
   readonly onPress: () => void;
 }

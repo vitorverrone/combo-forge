@@ -332,10 +332,12 @@ const styles = StyleSheet.create({
    * Passo 3 do tutorial: o balão fica absolute logo abaixo da lista de
    * ofertas (último item do scroll), então não conta pra altura medida do
    * conteúdo — sem esse respiro extra, a parte de baixo do balão fica fora
-   * da área rolável (achado em code review, não em teste manual).
+   * da área rolável (achado em code review, não em teste manual). Inclui
+   * espaço pra linha de ações (Concluir) dentro do próprio balão, não só
+   * pro texto — valor a conferir num teste manual real.
    */
   scrollWithCallout: {
-    paddingBottom: 170,
+    paddingBottom: 230,
   },
   /* ── Header ── */
   eyebrow: {
