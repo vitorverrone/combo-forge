@@ -4,7 +4,7 @@
 
 **Blocked by:** Nenhum — pode começar imediatamente.
 
-**Status:** ready-for-human
+**Status:** done
 
 - [x] `package.json`/`package-lock.json`: remove a dependência `react-joyride` (nunca chegou a ser commitada — instalada localmente, mas presente no `package.json` do working tree). Confirmado: o snapshot commitado (`chore: snapshot da tentativa...`) já não tinha mais a linha de dependência (removida em algum ponto antes do commit, fora desta sessão) — os dois arquivos já batiam com o estado limpo, sem diff a aplicar. O pacote órfão ainda instalado em `node_modules/react-joyride` (sem entrada em `package.json`) foi removido diretamente.
 - [x] `components/GameScreen.tsx`: reverte para o comportamento commitado — botão "?" volta a abrir `PatternReferenceModal` (não `OnboardingOverlay`), remove o `useEffect` com bug de Hook chamado depois do retorno condicional (`if (run === null) return null`), remove os imports/estado ligados ao `react-joyride` (`useJoyride`, `showOnboarding`, `hasSeenTutorial`, `markTutorialAsSeen`, `scrollViewRef`).
