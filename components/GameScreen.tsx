@@ -62,33 +62,40 @@ export function GameScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Barra do tutorial — fica ACIMA do topbar do próprio jogo; o chrome
-          do jogo (Rodada/Pontuação/progresso) continua sendo informação do
-          jogo, nunca substituída pelo tutorial. */}
+      {/* Painel do tutorial — absolute, flutua por cima do resto da tela em
+          vez de ocupar espaço no fluxo normal (senão empurra topbar/mão/
+          ações pra baixo e some com o layout entre os passos). */}
       {(tutorial.activeStep === 1 || tutorial.activeStep === 2) && (
-        <View style={styles.tutorialBar}>
-          <Text style={styles.tutorialBarStep}>
-            {t('tutorial.stepOf', { step: tutorial.activeStep, total: TOTAL_TUTORIAL_STEPS })}
-          </Text>
-          <View style={styles.tutorialBarActions}>
-            {tutorial.activeStep === 2 && (
+        <View style={styles.tutorialPanel}>
+          <View style={styles.tutorialBar}>
+            <Text style={styles.tutorialBarStep}>
+              {t('tutorial.stepOf', { step: tutorial.activeStep, total: TOTAL_TUTORIAL_STEPS })}
+            </Text>
+            <View style={styles.tutorialBarActions}>
+              {tutorial.activeStep === 2 && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={t('a11y.nextStep')}
+                  onPress={tutorialNextPressed}
+                  style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
+                >
+                  <Text style={styles.tutorialLinkText}>{t('common.next')}</Text>
+                </Pressable>
+              )}
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={t('a11y.nextStep')}
-                onPress={tutorialNextPressed}
+                accessibilityLabel={t('a11y.skipTutorial')}
+                onPress={tutorialSkipOrCompletePressed}
                 style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
               >
-                <Text style={styles.tutorialLinkText}>{t('common.next')}</Text>
+                <Text style={styles.tutorialLinkText}>{t('tutorial.skip')}</Text>
               </Pressable>
-            )}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('a11y.skipTutorial')}
-              onPress={tutorialSkipOrCompletePressed}
-              style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
-            >
-              <Text style={styles.tutorialLinkText}>{t('tutorial.skip')}</Text>
-            </Pressable>
+            </View>
+          </View>
+          <View style={styles.tutorialCallout}>
+            <Text style={styles.tutorialCalloutText}>
+              {t(tutorial.activeStep === 1 ? 'tutorial.step1Callout' : 'tutorial.step2Callout')}
+            </Text>
           </View>
         </View>
       )}
@@ -175,13 +182,6 @@ export function GameScreen() {
           ))}
         </View>
 
-        {/* Tutorial passo 1 — recorte na 1ª carta, balão logo abaixo da Mão */}
-        {tutorial.activeStep === 1 && (
-          <View style={styles.tutorialCallout}>
-            <Text style={styles.tutorialCalloutText}>{t('tutorial.step1Callout')}</Text>
-          </View>
-        )}
-
         {/* Actions — inside scroll so they flow below the hand */}
         <View style={styles.actions}>
           <View style={[styles.actionsSecondary, tutorial.activeStep === 2 && styles.tutorialSpotlight]}>
@@ -214,11 +214,6 @@ export function GameScreen() {
               </Text>
             </Pressable>
           </View>
-          {tutorial.activeStep === 2 && (
-            <View style={styles.tutorialCallout}>
-              <Text style={styles.tutorialCalloutText}>{t('tutorial.step2Callout')}</Text>
-            </View>
-          )}
           <Pressable
             accessibilityLabel={t('a11y.playSelectedCards')}
             accessibilityRole="button"
@@ -624,7 +619,19 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     textTransform: 'uppercase',
   },
-  /* ── Tutorial contextual (.scratch/tutorial-walkthrough) ── */
+  /**
+   * Tutorial contextual (.scratch/tutorial-walkthrough) — o painel inteiro
+   * (barra + balão) é absolute, ancorado no `container`: flutua por cima da
+   * tela em vez de ocupar espaço no fluxo normal, senão empurra
+   * topbar/mão/ações pra baixo e o layout "pula" entre os passos 1 e 2.
+   */
+  tutorialPanel: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 30,
+  },
   tutorialBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -669,13 +676,12 @@ const styles = StyleSheet.create({
     boxShadow: '0 0 0 999px rgba(22,17,32,0.82)',
   },
   tutorialCallout: {
-    marginTop: spacing[16],
+    margin: spacing[12],
     padding: spacing[12],
     backgroundColor: 'rgba(224,165,62,0.08)',
     borderWidth: 1,
     borderColor: 'rgba(224,165,62,0.35)',
     borderRadius: radius[10],
-    zIndex: 5,
   },
   tutorialCalloutText: {
     fontFamily: fonts.body,
