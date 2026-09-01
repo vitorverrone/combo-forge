@@ -4,14 +4,14 @@
 
 **Blocked by:** 03 (Motor do tutorial contextual).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `components/GameScreen.tsx`: consome `store/tutorialFlow.ts` pra saber se a seção GameScreen deve estar ativa (Run normal, Rodada 1, ainda não vista) e qual dos 2 passos está no ar.
-- [ ] Barra persistente no topo da tela enquanto a seção está ativa: "Passo N de 3" à esquerda, controle de saída à direita ("Pular tutorial") — camada visualmente distinta do chrome do próprio jogo (Rodada/Pontuação/barra de Meta continuam sendo informação do jogo, não do tutorial).
-- [ ] Passo 1: recorte no véu (scrim escurecido com um "buraco" exato) na 1ª carta da Mão + balão de instrução explicando que dá pra tocar em até 5 cartas pra formar uma Jogada. Avança ao tocar em qualquer carta da Mão (não precisa ser a 1ª).
-- [ ] Passo 2: recorte cobrindo os botões Limpar e Descartar juntos (um recorte só, não dois) + balão explicando o que cada um faz. Avança ao tocar em Limpar OU Descartar (ação real) OU ao tocar no botão "Próximo" adicional da barra do topo.
-- [ ] Tocar "Pular tutorial" em qualquer um dos 2 passos encerra a seção imediatamente e marca como vista (não reaparece nas próximas Runs).
-- [ ] A seção nunca inicia durante uma Run do Desafio Diário (`runMode === 'daily'`).
-- [ ] O recorte usa a técnica já validada no wireframe: `box-shadow` grande aplicado diretamente no elemento real já presente no fluxo normal da tela (a carta, o wrapper dos 2 botões) — não uma camada posicionada por coordenadas calculadas.
-- [ ] `i18n/en.json` e `i18n/pt.json`: novas chaves pros textos da barra e dos 2 balões de instrução.
-- [ ] Validação manual via skill `run`: percorrer os 2 passos numa Run nova, confirmar que "Pular tutorial" funciona em cada um, confirmar que uma 2ª Run não mostra a seção de novo, confirmar que o Desafio Diário nunca mostra a seção.
+- [x] `components/GameScreen.tsx`: consome `store/tutorialFlow.ts` pra saber se a seção GameScreen deve estar ativa (Run normal, Rodada 1, ainda não vista) e qual dos 2 passos está no ar. Um `useEffect` (antes dos early returns, pra não violar rules-of-hooks) chama `checkGameScreenTutorialTrigger` enquanto `run.phase === 'playing'` e a nova ação `tutorialGameScreenLeft` (wrapper de `abandonGameScreenTutorialIfActive`, deixado pronto pelo ticket 03) quando a Rodada termina — evita que a seção fique presa e vaze pra Rodada 2 ou pro Desafio Diário seguinte. `tutorialGameScreenLeft` também é chamado no botão "Abandonar Run", já que `backToStart` zera `run` no mesmo `set()` e o efeito que observa `run.phase` não pega essa transição.
+- [x] Barra persistente no topo da tela enquanto a seção está ativa: "Passo N de 3" à esquerda, controle de saída à direita ("Pular tutorial") — camada visualmente distinta do chrome do próprio jogo (Rodada/Pontuação/barra de Meta continuam sendo informação do jogo, não do tutorial).
+- [x] Passo 1: recorte na 1ª carta da Mão + balão de instrução explicando que dá pra tocar em até 5 cartas pra formar uma Jogada. Avança ao tocar em qualquer carta da Mão (não precisa ser a 1ª).
+- [x] Passo 2: recorte cobrindo os botões Limpar e Descartar juntos (um recorte só, via wrapper `actionsSecondary`) + balão explicando o que cada um faz. Avança ao tocar em Limpar OU Descartar (ação real) OU ao tocar no botão "Próximo" adicional da barra do topo.
+- [x] Tocar "Pular tutorial" em qualquer um dos 2 passos encerra a seção imediatamente e marca como vista (não reaparece nas próximas Runs).
+- [x] A seção nunca inicia durante uma Run do Desafio Diário (`runMode === 'daily'`) — gatilho já gated por `shouldStartGameScreenTutorial` (ticket 03); `tutorialGameScreenLeft` fecha o caso em que uma seção presa de uma Run normal anterior poderia vazar pro Desafio Diário.
+- [x] O recorte usa a técnica já validada no wireframe: `boxShadow` (suportado nativamente a partir do React Native 0.86 usado neste projeto) aplicado diretamente no elemento real já presente no fluxo normal da tela (a carta via a prop `style` de `PlayingCard`, o wrapper dos 2 botões), com `zIndex` pra garantir a ordem de pintura sobre os irmãos seguintes — não uma camada posicionada por coordenadas calculadas.
+- [x] `i18n/en.json` e `i18n/pt.json`: novas chaves (`tutorial.stepOf`, `tutorial.skip`, `tutorial.step1Callout`, `tutorial.step2Callout`) pros textos da barra e dos 2 balões de instrução; reaproveita `common.next`/`a11y.nextStep`/`a11y.skipTutorial` já existentes.
+- [ ] Validação manual via skill `run`: **não executada nesta sessão** — sem emulador/simulador ou navegador disponível no ambiente do agente pra percorrer a tela de verdade. Fica como validação manual pendente pro usuário antes de considerar a feature pronta pra jogadores reais.
