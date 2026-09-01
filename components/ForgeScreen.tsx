@@ -86,29 +86,34 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
 
   return (
     <View style={styles.container}>
-      {/* Barra do tutorial — último passo do tour (3/3), fica ACIMA do
-          topbar próprio da tela; "Concluir" em vez de "Pular tutorial"
-          porque não sobra mais nada pra pular. */}
+      {/* Painel do tutorial — último passo do tour (3/3); absolute, ancorado
+          em `container`, flutua por cima em vez de ocupar espaço no fluxo
+          normal (senão empurra o topbar/lista de ofertas pra baixo).
+          "Concluir" em vez de "Pular tutorial" porque não sobra mais nada
+          pra pular. */}
       {tutorial.activeStep === 3 && (
-        <View style={styles.tutorialBar}>
-          <Text style={styles.tutorialBarStep}>
-            {t('tutorial.stepOf', { step: tutorial.activeStep, total: TOTAL_TUTORIAL_STEPS })}
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('a11y.completeTutorial')}
-            onPress={tutorialSkipOrCompletePressed}
-            style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
-          >
-            <Text style={styles.tutorialLinkText}>{t('tutorial.complete')}</Text>
-          </Pressable>
+        <View style={styles.tutorialPanel}>
+          <View style={styles.tutorialBar}>
+            <Text style={styles.tutorialBarStep}>
+              {t('tutorial.stepOf', { step: tutorial.activeStep, total: TOTAL_TUTORIAL_STEPS })}
+            </Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('a11y.completeTutorial')}
+              onPress={tutorialSkipOrCompletePressed}
+              style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
+            >
+              <Text style={styles.tutorialLinkText}>{t('tutorial.complete')}</Text>
+            </Pressable>
+          </View>
+          <View style={styles.tutorialCallout}>
+            <Text style={styles.tutorialCalloutText}>{t('tutorial.step3Callout')}</Text>
+          </View>
         </View>
       )}
 
-      {/* Topbar with relic counter — abre mão do próprio paddingTop de
-          clearance quando a barra do tutorial já está por cima ocupando
-          esse espaço, senão o respiro dobraria. */}
-      <View style={[styles.topbar, tutorial.activeStep === 3 && styles.topbarUnderTutorialBar]}>
+      {/* Topbar with relic counter */}
+      <View style={styles.topbar}>
         <View style={styles.relicCounter}>
           <Text style={styles.relicCounterLabel}>{t('forge.relics')}</Text>
           <Text style={styles.relicCounterValue}>{relicCount}/3</Text>
@@ -134,13 +139,6 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
             />
           ))}
         </View>
-
-        {/* Tutorial passo 3 — recorte na lista de ofertas inteira */}
-        {tutorial.activeStep === 3 && (
-          <View style={styles.tutorialCallout}>
-            <Text style={styles.tutorialCalloutText}>{t('tutorial.step3Callout')}</Text>
-          </View>
-        )}
       </ScrollView>
 
       {/* Forge button */}
@@ -315,9 +313,6 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingHorizontal: spacing[16],
     paddingTop: 44,
-  },
-  topbarUnderTutorialBar: {
-    paddingTop: spacing[10],
   },
   relicCounter: {
     flexDirection: 'row',
@@ -642,7 +637,19 @@ const styles = StyleSheet.create({
   btnDisabledSmall: {
     opacity: 0.45,
   },
-  /* ── Tutorial contextual (.scratch/tutorial-walkthrough) ── */
+  /**
+   * Tutorial contextual (.scratch/tutorial-walkthrough) — o painel inteiro
+   * (barra + balão) é absolute, ancorado no `container`: flutua por cima da
+   * tela em vez de ocupar espaço no fluxo normal, senão empurra o
+   * topbar/lista de ofertas pra baixo.
+   */
+  tutorialPanel: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 30,
+  },
   tutorialBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -683,13 +690,12 @@ const styles = StyleSheet.create({
     boxShadow: '0 0 0 999px rgba(22,17,32,0.82)',
   },
   tutorialCallout: {
-    marginTop: spacing[16],
+    margin: spacing[12],
     padding: spacing[12],
     backgroundColor: 'rgba(224,165,62,0.08)',
     borderWidth: 1,
     borderColor: 'rgba(224,165,62,0.35)',
     borderRadius: radius[10],
-    zIndex: 5,
   },
   tutorialCalloutText: {
     fontFamily: fonts.body,
