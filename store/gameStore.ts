@@ -90,6 +90,7 @@ import {
 } from './shopFlow';
 
 import {
+  abandonGameScreenTutorialIfActive,
   createMemoryTutorialStorage,
   loadTutorialState,
   persistTutorialTransition,
@@ -217,6 +218,8 @@ export interface GameState {
 
   /** Confere se a seção GameScreen do tutorial deveria começar agora, e ativa se sim (idempotente). */
   readonly checkGameScreenTutorialTrigger: () => void;
+  /** O jogador saiu do GameScreen (Rodada terminou ou Run abandonada) com a seção 1-2 ainda ativa — conta como vista (idempotente). */
+  readonly tutorialGameScreenLeft: () => void;
   /** Confere se a seção Forja do tutorial deveria começar agora, e ativa se sim (idempotente). */
   readonly checkForgeTutorialTrigger: () => void;
   /** Passo 1: o jogador tocou numa carta da Mão. */
@@ -645,6 +648,13 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       const context = { runMode, roundNumber: run.roundNumber, phase: run.phase };
       if (!shouldStartGameScreenTutorial(tutorial, context)) return;
       set({ tutorial: startGameScreenTutorial(tutorial) });
+    },
+
+    tutorialGameScreenLeft: () => {
+      const { tutorial, tutorialStorage: storage } = get();
+      const next = abandonGameScreenTutorialIfActive(tutorial);
+      persistTutorialTransition(tutorial, next, storage);
+      set({ tutorial: next });
     },
 
     checkForgeTutorialTrigger: () => {

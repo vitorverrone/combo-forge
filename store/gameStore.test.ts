@@ -814,6 +814,28 @@ describe('tutorial contextual (delegação para o tutorialFlow — ticket 03)', 
     expect(storage.loadGameScreenSeen()).toBe(true);
   });
 
+  test('tutorialGameScreenLeft conclui a seção 1-2 (se ativa) e persiste — usado ao sair do GameScreen com a Rodada terminada ou a Run abandonada', () => {
+    const storage = createMemoryTutorialStorage();
+    const store = createGameStore({ tutorialStorage: storage });
+    store.getState().startRun();
+    store.getState().checkGameScreenTutorialTrigger();
+    expect(store.getState().tutorial.activeStep).toBe(1);
+
+    store.getState().tutorialGameScreenLeft();
+
+    expect(store.getState().tutorial.activeStep).toBeNull();
+    expect(store.getState().tutorial.gameScreenSeen).toBe(true);
+    expect(storage.loadGameScreenSeen()).toBe(true);
+  });
+
+  test('tutorialGameScreenLeft não faz nada se nenhuma seção 1-2 estava ativa', () => {
+    const storage = createMemoryTutorialStorage();
+    const store = createGameStore({ tutorialStorage: storage });
+    store.getState().tutorialGameScreenLeft();
+    expect(store.getState().tutorial.activeStep).toBeNull();
+    expect(storage.loadGameScreenSeen()).toBe(false);
+  });
+
   test('checkForgeTutorialTrigger ativa o passo 3 na fase forging de uma Run normal', () => {
     const store = createGameStore();
     store.getState().startRun();
