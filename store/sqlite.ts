@@ -22,6 +22,8 @@ import {
   ShopStorage,
 } from '../engine';
 
+import { TutorialStorage } from './tutorialFlow';
+
 /** Banco dedicado do Combo Forge (o KV store cria uma tabela própria). */
 const DATABASE_NAME = 'combo-forge.db';
 const DDA_KEY = 'combo-forge:dda';
@@ -30,6 +32,8 @@ const DAILY_ATTEMPTS_KEY = 'combo-forge:daily-attempts';
 const DAILY_DEVICE_ID_KEY = 'combo-forge:daily-device-id';
 const DAILY_DISPLAY_NAME_KEY = 'combo-forge:daily-display-name';
 const SHOP_KEY = 'combo-forge:shop';
+const TUTORIAL_GAMESCREEN_SEEN_KEY = 'combo-forge:tutorial-gamescreen-seen';
+const TUTORIAL_FORGE_SEEN_KEY = 'combo-forge:tutorial-forge-seen';
 
 const kv = new SQLiteStorage(DATABASE_NAME);
 
@@ -84,17 +88,33 @@ export function createSqliteDailyChallengeStorage(): DailyChallengeStorage {
   };
 }
 
-/** Persistência completa do app (DDA + meta + diário + loja). */
+/**
+ * Port de storage do tutorial contextual sobre SQLite (duas flags "já
+ * visto" — mesmo padrão booleano de hasSeenOnboarding/completeOnboarding
+ * em OnboardingOverlay.tsx, não um blob JSON).
+ */
+export function createSqliteTutorialStorage(): TutorialStorage {
+  return {
+    loadGameScreenSeen: () => kv.getItemSync(TUTORIAL_GAMESCREEN_SEEN_KEY) === 'true',
+    saveGameScreenSeen: () => kv.setItemSync(TUTORIAL_GAMESCREEN_SEEN_KEY, 'true'),
+    loadForgeSeen: () => kv.getItemSync(TUTORIAL_FORGE_SEEN_KEY) === 'true',
+    saveForgeSeen: () => kv.setItemSync(TUTORIAL_FORGE_SEEN_KEY, 'true'),
+  };
+}
+
+/** Persistência completa do app (DDA + meta + diário + loja + tutorial). */
 export function createSqlitePersistence(): {
   readonly ddaStorage: DdaStorage;
   readonly progressionStorage: ProgressionStorage;
   readonly dailyStorage: DailyChallengeStorage;
   readonly shopStorage: ShopStorage;
+  readonly tutorialStorage: TutorialStorage;
 } {
   return {
     ddaStorage: createSqliteDdaStorage(),
     progressionStorage: createSqliteProgressionStorage(),
     dailyStorage: createSqliteDailyChallengeStorage(),
     shopStorage: createSqliteShopStorage(),
+    tutorialStorage: createSqliteTutorialStorage(),
   };
 }
