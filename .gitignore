@@ -65,6 +65,7 @@ agent/
 .claude/
 skills-lock.json
 .codex/
+.omo/
 
 # Emulator screenshots
 emulator-screenshot*.png
