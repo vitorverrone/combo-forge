@@ -195,8 +195,10 @@
   "tutorial": {
     "stepOf": "Step {{step}} of {{total}}",
     "skip": "Skip tutorial",
+    "complete": "Done",
     "step1Callout": "Tap up to 5 cards from your Hand to form a Play. Start by tapping a card.",
-    "step2Callout": "Didn't like your pick? Clear deselects everything. Discard swaps the selected cards for new ones."
+    "step2Callout": "Didn't like your pick? Clear deselects everything. Discard swaps the selected cards for new ones.",
+    "step3Callout": "Choose a Relic (a permanent effect for the rest of the run) or a Card Effect (strengthens one specific card). Tap any offer to continue."
   },
   "patternReference": {
     "title": "Patterns",
@@ -325,6 +327,7 @@
     "playSelectedCards": "Play selected cards",
     "backToHome": "Back to home",
     "skipTutorial": "Skip tutorial",
+    "completeTutorial": "Complete tutorial",
     "openPatternReference": "View pattern reference",
     "startPlaying": "Start playing",
     "nextStep": "Next step",

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import {
@@ -24,6 +24,7 @@ import { SuitSymbol } from './SuitSymbol';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
+import { TOTAL_TUTORIAL_STEPS } from '../store/tutorialFlow';
 
 interface ForgeScreenProps {
   readonly run: RunState;
@@ -36,11 +37,21 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
   const [targetKey, setTargetKey] = useState<string | null>(null);
   const [cardEffectConfirmed, setCardEffectConfirmed] = useState(false);
 
+  const tutorial = useGameStore((state) => state.tutorial);
+  const checkForgeTutorialTrigger = useGameStore((state) => state.checkForgeTutorialTrigger);
+  const tutorialForgeOfferTouched = useGameStore((state) => state.tutorialForgeOfferTouched);
+  const tutorialSkipOrCompletePressed = useGameStore((state) => state.tutorialSkipOrCompletePressed);
+
+  useEffect(() => {
+    checkForgeTutorialTrigger();
+  }, [checkForgeTutorialTrigger]);
+
   const deck = useMemo(() => createDeck(), []);
   const active = activeOffer !== null ? run.forgeOffers[activeOffer] : undefined;
   const relicCount = activeRelics(run.startingRelic, run.relics).length;
 
   const handleOfferPress = (index: number) => {
+    tutorialForgeOfferTouched();
     if (activeOffer === index) {
       setActiveOffer(null);
       setTargetKey(null);
@@ -75,8 +86,29 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
 
   return (
     <View style={styles.container}>
-      {/* Topbar with relic counter */}
-      <View style={styles.topbar}>
+      {/* Barra do tutorial — último passo do tour (3/3), fica ACIMA do
+          topbar próprio da tela; "Concluir" em vez de "Pular tutorial"
+          porque não sobra mais nada pra pular. */}
+      {tutorial.activeStep === 3 && (
+        <View style={styles.tutorialBar}>
+          <Text style={styles.tutorialBarStep}>
+            {t('tutorial.stepOf', { step: tutorial.activeStep, total: TOTAL_TUTORIAL_STEPS })}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.completeTutorial')}
+            onPress={tutorialSkipOrCompletePressed}
+            style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
+          >
+            <Text style={styles.tutorialLinkText}>{t('tutorial.complete')}</Text>
+          </Pressable>
+        </View>
+      )}
+
+      {/* Topbar with relic counter — abre mão do próprio paddingTop de
+          clearance quando a barra do tutorial já está por cima ocupando
+          esse espaço, senão o respiro dobraria. */}
+      <View style={[styles.topbar, tutorial.activeStep === 3 && styles.topbarUnderTutorialBar]}>
         <View style={styles.relicCounter}>
           <Text style={styles.relicCounterLabel}>{t('forge.relics')}</Text>
           <Text style={styles.relicCounterValue}>{relicCount}/3</Text>
@@ -90,7 +122,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
         <Text style={styles.subtitle}>{t('forge.subtitle')}</Text>
 
         {/* Offers */}
-        <View style={styles.offerList}>
+        <View style={[styles.offerList, tutorial.activeStep === 3 && styles.tutorialSpotlight]}>
           {run.forgeOffers.map((offer, index) => (
             <OfferCard
               key={index}
@@ -102,6 +134,13 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
             />
           ))}
         </View>
+
+        {/* Tutorial passo 3 — recorte na lista de ofertas inteira */}
+        {tutorial.activeStep === 3 && (
+          <View style={styles.tutorialCallout}>
+            <Text style={styles.tutorialCalloutText}>{t('tutorial.step3Callout')}</Text>
+          </View>
+        )}
       </ScrollView>
 
       {/* Forge button */}
@@ -276,6 +315,9 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     paddingHorizontal: spacing[16],
     paddingTop: 44,
+  },
+  topbarUnderTutorialBar: {
+    paddingTop: spacing[10],
   },
   relicCounter: {
     flexDirection: 'row',
@@ -599,5 +641,62 @@ const styles = StyleSheet.create({
   },
   btnDisabledSmall: {
     opacity: 0.45,
+  },
+  /* ── Tutorial contextual (.scratch/tutorial-walkthrough) ── */
+  tutorialBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing[16],
+    paddingTop: 44,
+    paddingBottom: spacing[10],
+    backgroundColor: colors.surfaceElevated,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceBorder,
+  },
+  tutorialBarStep: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    color: colors.text,
+  },
+  tutorialLinkPressed: {
+    opacity: 0.7,
+  },
+  tutorialLinkText: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    color: colors.gold,
+  },
+  /**
+   * Recorte real do coach-mark: box-shadow gigante aplicado direto na lista
+   * de ofertas inteira, já presente no fluxo normal da tela (mesma técnica
+   * do ticket 04, validada em
+   * .scratch/tutorial-walkthrough/wireframes-tutorial.html, classe
+   * .tm-spotlight) — nunca uma camada calculada por coordenadas.
+   */
+  tutorialSpotlight: {
+    zIndex: 5,
+    boxShadow: '0 0 0 999px rgba(22,17,32,0.82)',
+  },
+  tutorialCallout: {
+    marginTop: spacing[16],
+    padding: spacing[12],
+    backgroundColor: 'rgba(224,165,62,0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(224,165,62,0.35)',
+    borderRadius: radius[10],
+    zIndex: 5,
+  },
+  tutorialCalloutText: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.gold,
+    textAlign: 'center',
+    lineHeight: 18,
   },
 });

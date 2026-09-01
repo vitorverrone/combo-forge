@@ -195,8 +195,10 @@
   "tutorial": {
     "stepOf": "Passo {{step}} de {{total}}",
     "skip": "Pular tutorial",
+    "complete": "Concluir",
     "step1Callout": "Toque em até 5 cartas da sua Mão para formar uma Jogada. Comece tocando numa carta.",
-    "step2Callout": "Não gostou da seleção? Limpar desmarca tudo. Descartar troca as cartas escolhidas por novas."
+    "step2Callout": "Não gostou da seleção? Limpar desmarca tudo. Descartar troca as cartas escolhidas por novas.",
+    "step3Callout": "Escolha uma Relíquia (efeito permanente pro resto da Run) ou um Efeito de Carta (fortalece uma carta específica). Toque em qualquer oferta para continuar."
   },
   "patternReference": {
     "title": "Padrões",
@@ -325,6 +327,7 @@
     "playSelectedCards": "Jogar cartas selecionadas",
     "backToHome": "Voltar ao início",
     "skipTutorial": "Pular tutorial",
+    "completeTutorial": "Concluir tutorial",
     "openPatternReference": "Ver referência de Padrões",
     "startPlaying": "Começar a jogar",
     "nextStep": "Próximo passo",
