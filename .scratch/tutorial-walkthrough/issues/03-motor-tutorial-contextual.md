@@ -4,7 +4,7 @@
 
 **Blocked by:** 01 (Remove a tentativa abandonada com react-joyride) — evita reconstruir em cima de campos que a limpeza remove (`hasSeenTutorial`/`markTutorialAsSeen`).
 
-**Status:** ready-for-human
+**Status:** done
 
 - [x] Novo módulo `store/tutorialFlow.ts`, mesmo padrão arquitetural de `store/dailyFlow.ts`/`store/shopFlow.ts`: um comando único (`runTutorialCommand(state, event)`) que recebe o estado do tutorial (qual passo está ativo — nenhum, 1, 2 ou 3 —, se a seção GameScreen já foi vista, se a seção Forja já foi vista) e um evento (`cardTouched`, `clearOrDiscardTouched`, `nextPressed`, `skipOrCompletePressed`, `forgeOfferTouched`), devolvendo o novo estado. Função pura, sem conhecimento de Zustand, telas ou navegação. Ganhou também `startGameScreenTutorial`/`startForgeTutorial` (ativam o passo 1/3) e `abandonGameScreenTutorialIfActive` (fecha a seção GameScreen se o jogador sair da tela com o passo 1/2 ainda ativo, contando como visto — evita que a seção fique "presa"; ainda não conectado a nenhuma tela, fica disponível pro ticket 04 usar).
 - [x] Os dois gatilhos são independentes: `shouldStartGameScreenTutorial` (Run normal, Rodada 1, fase `playing`, seção ainda não vista, nenhuma outra seção já ativa) e `shouldStartForgeTutorial` (Run normal, fase `forging`, seção ainda não vista, nenhuma outra seção já ativa) — nenhuma das duas depende da outra ter sido vista (coberto explicitamente nos testes).
