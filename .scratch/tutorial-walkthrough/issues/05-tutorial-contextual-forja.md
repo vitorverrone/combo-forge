@@ -4,13 +4,14 @@
 
 **Blocked by:** 03 (Motor do tutorial contextual).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `components/ForgeScreen.tsx`: consome `store/tutorialFlow.ts` pra saber se a seção Forja deve estar ativa (Run normal, fase `forging`, ainda não vista) — gatilho independente do estado da seção GameScreen (tickets 03/04).
-- [ ] Barra persistente no topo da tela enquanto a seção está ativa: "Passo 3 de 3" à esquerda, controle de saída à direita com o texto "Concluir" (não "Pular tutorial" — é o último passo, não sobra nada pra pular).
-- [ ] Recorte no véu cobrindo a lista de ofertas inteira (não uma oferta específica) + balão explicando a diferença entre Relíquia e Efeito de Carta. Avança ao tocar em qualquer uma das 3 ofertas.
-- [ ] Tocar "Concluir" encerra a seção imediatamente e marca como vista (não reaparece nas próximas vezes que o jogador chegar na Forja).
-- [ ] A seção nunca inicia durante uma Run do Desafio Diário.
-- [ ] Mesma técnica de recorte da ticket 04 (`box-shadow` no elemento real, não coordenadas calculadas).
-- [ ] `i18n/en.json` e `i18n/pt.json`: novas chaves pros textos da barra e do balão de instrução.
-- [ ] Validação manual via skill `run`: chegar na Forja pela 1ª vez numa Run nova, confirmar que "Concluir" funciona, confirmar que a Forja de uma 2ª Run não mostra a seção de novo, confirmar que o Desafio Diário nunca mostra a seção.
+- [x] `components/ForgeScreen.tsx`: consome `store/tutorialFlow.ts` pra saber se a seção Forja deve estar ativa (Run normal, fase `forging`, ainda não vista) — gatilho independente do estado da seção GameScreen (`shouldStartForgeTutorial` não checa `gameScreenSeen`, coberto pelos testes do ticket 03).
+- [x] Barra persistente no topo da tela enquanto a seção está ativa: "Passo 3 de 3" à esquerda, controle de saída à direita com o texto "Concluir" (chave `tutorial.complete`, distinta de `tutorial.skip` usada no ticket 04).
+- [x] Recorte no véu cobrindo a lista de ofertas inteira (wrapper `offerList`, não uma `OfferCard` específica) + balão explicando a diferença entre Relíquia e Efeito de Carta.
+- [x] Avança ao tocar em qualquer uma das 3 ofertas — `tutorialForgeOfferTouched()` disparado incondicionalmente no início de `handleOfferPress`, antes do branch por tipo/índice.
+- [x] Tocar "Concluir" encerra a seção imediatamente e marca como vista (`tutorialSkipOrCompletePressed` → persistido via `persistTutorialTransition`/SQLite, não só estado local).
+- [x] A seção nunca inicia durante uma Run do Desafio Diário — gate único em `shouldStartForgeTutorial` (`runMode === 'normal'`), sem duplicação nem bypass em `ForgeScreen.tsx`. Ao contrário do ticket 04, não precisou de um "abandon handler": não existe nenhum caminho pra sair da Forja sem tocar numa oferta primeiro (sem botão de abandonar/voltar nessa tela), então `activeStep === 3` nunca fica "preso".
+- [x] Mesma técnica de recorte do ticket 04 (`boxShadow` no elemento real — a lista de ofertas — não coordenadas calculadas), inclusive a mesma cor do véu (`rgba(22,17,32,0.82)`, idêntica à do GameScreen/OnboardingOverlay).
+- [x] `i18n/en.json` e `i18n/pt.json`: novas chaves `tutorial.complete`, `tutorial.step3Callout`, `a11y.completeTutorial`.
+- [ ] Validação manual via skill `run`: **não executada nesta sessão** — sem emulador/simulador ou navegador disponível no ambiente do agente. Fica pendente pro usuário, junto com a do ticket 04.
