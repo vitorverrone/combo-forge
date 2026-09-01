@@ -143,9 +143,6 @@ export interface GameState {
   /** True quando um intersticial deve ser exibido (Run end screens consomem). */
   readonly showInterstitial: boolean;
 
-  readonly hasSeenTutorial: boolean,
-  readonly markTutorialAsSeen: () => void;
-
   readonly chooseForger: (forger: ForgerId) => void;
   readonly startRun: () => void;
   /** Abre a tela do Desafio Diário. */
@@ -347,7 +344,6 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     progression: deps.initialProgression ?? DEFAULT_PROGRESSION,
     unlockChoice: null,
     recentUnlocks: [],
-    hasSeenTutorial: false,
     daily: {
       attempts: initialAttempts,
       deviceId,
@@ -382,10 +378,6 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     showInterstitial: false,
 
     dismissInterstitial: () => set({ showInterstitial: false }),
-
-    markTutorialAsSeen: () => {
-      set({ hasSeenTutorial: true });
-    },
 
     openShop: () => {
       set({ screen: 'shop' });
