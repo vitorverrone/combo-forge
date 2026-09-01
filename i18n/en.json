@@ -185,6 +185,11 @@
       "body": "Reach the round's target before your plays run out. The target grows every round. Winning rounds 1–5 opens the Forge.",
       "tip": "Tip: clear all 6 rounds to win the run."
     },
+    "relics": {
+      "title": "Relics & the Forge",
+      "body": "Win a round and choose between a Relic (a permanent effect for the rest of the run) or a Card Effect (strengthens one specific card).",
+      "tip": "Tip: Relics stay active until the run ends — choose wisely."
+    },
     "letsForge": "Let's Forge"
   },
   "patternReference": {

@@ -4,10 +4,10 @@
 
 **Blocked by:** 01 (Remove a tentativa abandonada com react-joyride) — mesmo arquivo (`OnboardingOverlay.tsx`) tocado por ambos.
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] `components/OnboardingOverlay.tsx`: novo passo `relics` adicionado a `STEP_KEYS`/`STEP_VISUALS`, seguindo exatamente o padrão já existente dos outros 4 passos — inserido antes do passo final atual (que continua com o CTA "Vamos Forjar").
-- [ ] Visual próprio do novo passo (mesmo padrão dos outros `StepVisual`): um ícone de Relíquia ao lado de uma carta com Efeito, lado a lado.
-- [ ] `i18n/en.json` e `i18n/pt.json`: novas chaves de título/corpo/dica pro passo, seguindo a mesma estrutura (`title`/`body`/`tip`) já usada pelos outros 4 passos.
-- [ ] Os dots de progresso do onboarding passam a refletir 5 passos (não 4) automaticamente, já que são derivados de `STEP_KEYS.length` — confirmar que nada mais no componente assume "4 passos" como valor fixo.
-- [ ] Validação manual via skill `run`: percorrer o onboarding completo em pt-br e em inglês, confirmar que o novo passo aparece na posição certa e que "Vamos Forjar" continua fechando o fluxo.
+- [x] `components/OnboardingOverlay.tsx`: novo passo `relics` adicionado a `STEP_KEYS`/`STEP_VISUALS`, seguindo exatamente o padrão já existente dos outros 4 passos — inserido antes do passo final atual (que continua com o CTA "Vamos Forjar"). **Achado do code-review (Spec review):** a primeira versão tinha adicionado `relics` no fim dos arrays (depois de `beatTarget`), o que fazia o novo passo virar o último e herdar o CTA "Vamos Forjar" — exatamente o inverso do pedido. Corrigido: `relics` entra entre `rideCombo` e `beatTarget`, que continua sendo o passo final de verdade.
+- [x] Visual próprio do novo passo (mesmo padrão dos outros `StepVisual`): um ícone de Relíquia (mesmo losango dourado já usado em `ForgeScreen`/`CollectionScreen`) ao lado de uma carta com Efeito (+2), lado a lado, cada um com um rótulo abaixo.
+- [x] `i18n/en.json` e `i18n/pt.json`: novas chaves de título/corpo/dica pro passo (`onboarding.relics.*`), seguindo a mesma estrutura (`title`/`body`/`tip`) já usada pelos outros 4 passos. Os rótulos "Relíquia"/"Efeito de Carta" do visual reaproveitam as chaves já existentes `forge.relic`/`forge.cardEffect` em vez de duplicar a tradução.
+- [x] Os dots de progresso do onboarding passam a refletir 5 passos (não 4) automaticamente, já que são derivados de `STEP_KEYS.length` — confirmado: nenhum outro ponto do componente assume "4 passos" como valor fixo (`isLast`, o contador "N/M" e os dots já derivam todos de `STEP_KEYS.length`).
+- [ ] Validação manual via skill `run`: percorrer o onboarding completo em pt-br e em inglês, confirmar que o novo passo aparece na posição certa e que "Vamos Forjar" continua fechando o fluxo. **Bloqueada neste ambiente pelo mesmo motivo já documentado nos tickets anteriores**: sem device/emulador com dev-client conectado ao Metro disponível nesta sessão. Mudança segue exatamente o padrão visual e de dados já usado pelos outros 4 passos (mesmos componentes, mesmos estilos, só novo conteúdo) — confiança alta pela leitura do componente e pelo typecheck/lint limpos. Confirmação visual real precisa de um dev-client build novo.
