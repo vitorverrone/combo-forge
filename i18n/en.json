@@ -192,6 +192,12 @@
     },
     "letsForge": "Let's Forge"
   },
+  "tutorial": {
+    "stepOf": "Step {{step}} of {{total}}",
+    "skip": "Skip tutorial",
+    "step1Callout": "Tap up to 5 cards from your Hand to form a Play. Start by tapping a card.",
+    "step2Callout": "Didn't like your pick? Clear deselects everything. Discard swaps the selected cards for new ones."
+  },
   "patternReference": {
     "title": "Patterns",
     "subtitle": "What each pattern needs and how many points it's worth."

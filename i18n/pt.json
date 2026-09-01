@@ -192,6 +192,12 @@
     },
     "letsForge": "Vamos Forjar"
   },
+  "tutorial": {
+    "stepOf": "Passo {{step}} de {{total}}",
+    "skip": "Pular tutorial",
+    "step1Callout": "Toque em até 5 cartas da sua Mão para formar uma Jogada. Comece tocando numa carta.",
+    "step2Callout": "Não gostou da seleção? Limpar desmarca tudo. Descartar troca as cartas escolhidas por novas."
+  },
   "patternReference": {
     "title": "Padrões",
     "subtitle": "Composição e bônus de cada Padrão."
