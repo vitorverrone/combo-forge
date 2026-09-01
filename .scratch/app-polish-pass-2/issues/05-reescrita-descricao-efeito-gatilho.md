@@ -4,7 +4,7 @@
 
 **Blocked by:** Nenhum — pode começar imediatamente.
 
-**Status:** ready-for-human
+**Status:** done
 
 - [x] `i18n/en.json`, chave `format.forgeEffect.trigger`: de `"Adds +{{bonus}} pts when played on play {{triggerPlay}} of a round"` para `"Adds +{{bonus}} pts on the {{triggerPlay}}th play of the round"`.
 - [x] `i18n/pt.json`, mesma chave: de `"Adiciona +{{bonus}} pts quando jogado na jogada {{triggerPlay}} de uma rodada"` para `"Adiciona +{{bonus}} pts quando jogado na {{triggerPlay}}ª jogada da rodada"`.
