@@ -13,7 +13,6 @@ import { TutorialView } from './TutorialView';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { selectionPreview, useGameStore } from '../store/gameStore';
-import { TOTAL_TUTORIAL_STEPS } from '../store/tutorialFlow';
 
 export function GameScreen() {
   const { t } = useTranslation();
@@ -63,38 +62,6 @@ export function GameScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Barra do tutorial — absolute, flutua por cima do topbar em vez de
-          ocupar espaço no fluxo normal. O balão de instrução de cada passo
-          agora vive junto do próprio elemento em evidência (TutorialView),
-          não mais aqui. */}
-      {(tutorial.activeStep === 1 || tutorial.activeStep === 2) && (
-        <View style={styles.tutorialBar}>
-          <Text style={styles.tutorialBarStep}>
-            {t('tutorial.stepOf', { step: tutorial.activeStep, total: TOTAL_TUTORIAL_STEPS })}
-          </Text>
-          <View style={styles.tutorialBarActions}>
-            {tutorial.activeStep === 2 && (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={t('a11y.nextStep')}
-                onPress={tutorialNextPressed}
-                style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
-              >
-                <Text style={styles.tutorialLinkText}>{t('common.next')}</Text>
-              </Pressable>
-            )}
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('a11y.skipTutorial')}
-              onPress={tutorialSkipOrCompletePressed}
-              style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
-            >
-              <Text style={styles.tutorialLinkText}>{t('tutorial.skip')}</Text>
-            </Pressable>
-          </View>
-        </View>
-      )}
-
       {/* Top bar */}
       <View style={styles.topbar}>
         <View style={styles.navGroup}>
@@ -177,7 +144,16 @@ export function GameScreen() {
             return (
               <View key={cardKey(card)}>
                 {index === 0 ? (
-                  <TutorialView step={1} text={t('tutorial.step1Callout')} spotlightRadius={radius[8]}>
+                  <TutorialView
+                    step={1}
+                    text={t('tutorial.step1Callout')}
+                    spotlightRadius={radius[8]}
+                    leftAction={{
+                      label: t('tutorial.skip'),
+                      accessibilityLabel: t('a11y.skipTutorial'),
+                      onPress: tutorialSkipOrCompletePressed,
+                    }}
+                  >
                     {cardElement}
                   </TutorialView>
                 ) : (
@@ -189,8 +165,22 @@ export function GameScreen() {
         </View>
 
         {/* Actions — inside scroll so they flow below the hand */}
-        <View style={styles.actions}>
-          <TutorialView step={2} text={t('tutorial.step2Callout')} calloutPosition="above">
+        <View style={[styles.actions, tutorial.activeStep === 2 && styles.actionsWithCalloutAbove]}>
+          <TutorialView
+            step={2}
+            text={t('tutorial.step2Callout')}
+            calloutPosition="above"
+            leftAction={{
+              label: t('tutorial.skip'),
+              accessibilityLabel: t('a11y.skipTutorial'),
+              onPress: tutorialSkipOrCompletePressed,
+            }}
+            rightAction={{
+              label: t('common.next'),
+              accessibilityLabel: t('a11y.nextStep'),
+              onPress: tutorialNextPressed,
+            }}
+          >
             <View style={styles.actionsSecondary}>
               <Pressable
                 accessibilityLabel={t('a11y.clearSelection')}
@@ -482,6 +472,15 @@ const styles = StyleSheet.create({
     paddingTop: spacing[10],
     paddingBottom: spacing[0],
   },
+  /**
+   * Passo 2 do tutorial: o balão (texto + linha de ações) flutua 'above',
+   * crescendo pra cima a partir do topo de actionsSecondary — respiro extra
+   * evita que ele encoste na Mão logo acima (achado em code review; valor a
+   * conferir num teste manual real).
+   */
+  actionsWithCalloutAbove: {
+    marginTop: 190,
+  },
   actionsSecondary: {
     flexDirection: 'row',
     gap: spacing[10],
@@ -626,48 +625,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.5,
     textTransform: 'uppercase',
-  },
-  /**
-   * Barra do tutorial contextual (.scratch/tutorial-walkthrough) — absolute,
-   * ancorada no `container`: flutua por cima do topbar em vez de ocupar
-   * espaço no fluxo normal, senão empurra o resto da tela pra baixo. O
-   * recorte + balão de cada passo agora vivem no próprio elemento em
-   * evidência (ver components/TutorialView.tsx).
-   */
-  tutorialBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing[16],
-    paddingVertical: spacing[10],
-    backgroundColor: colors.surfaceElevated,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceBorder,
-  },
-  tutorialBarStep: {
-    fontFamily: fonts.body,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    color: colors.text,
-  },
-  tutorialBarActions: {
-    flexDirection: 'row',
-    gap: spacing[16],
-  },
-  tutorialLinkPressed: {
-    opacity: 0.7,
-  },
-  tutorialLinkText: {
-    fontFamily: fonts.body,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    color: colors.gold,
   },
 });

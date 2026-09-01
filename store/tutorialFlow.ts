@@ -20,9 +20,6 @@ import { RunPhase } from '../engine';
 
 export type TutorialStep = 1 | 2 | 3;
 
-/** Total de passos do tour (2 na GameScreen + 1 na Forja) — usado pela UI na barra "Passo N de X". */
-export const TOTAL_TUTORIAL_STEPS = 3;
-
 export interface TutorialState {
   /** Passo ativo agora (null = nenhuma seção do tutorial no ar). */
   readonly activeStep: TutorialStep | null;

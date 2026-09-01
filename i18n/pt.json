@@ -193,7 +193,6 @@
     "letsForge": "Vamos Forjar"
   },
   "tutorial": {
-    "stepOf": "Passo {{step}} de {{total}}",
     "skip": "Pular tutorial",
     "complete": "Concluir",
     "step1Callout": "Toque em até 5 cartas da sua Mão para formar uma Jogada. Comece tocando numa carta.",
