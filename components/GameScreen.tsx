@@ -9,6 +9,7 @@ import { patternName } from './format';
 import { PatternReferenceModal } from './PatternReferenceModal';
 import { PhaseScreen } from './PhaseScreen';
 import { RelicRow } from './RelicRow';
+import { TutorialView } from './TutorialView';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { selectionPreview, useGameStore } from '../store/gameStore';
@@ -62,40 +63,34 @@ export function GameScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Painel do tutorial — absolute, flutua por cima do resto da tela em
-          vez de ocupar espaço no fluxo normal (senão empurra topbar/mão/
-          ações pra baixo e some com o layout entre os passos). */}
+      {/* Barra do tutorial — absolute, flutua por cima do topbar em vez de
+          ocupar espaço no fluxo normal. O balão de instrução de cada passo
+          agora vive junto do próprio elemento em evidência (TutorialView),
+          não mais aqui. */}
       {(tutorial.activeStep === 1 || tutorial.activeStep === 2) && (
-        <View style={styles.tutorialPanel}>
-          <View style={styles.tutorialBar}>
-            <Text style={styles.tutorialBarStep}>
-              {t('tutorial.stepOf', { step: tutorial.activeStep, total: TOTAL_TUTORIAL_STEPS })}
-            </Text>
-            <View style={styles.tutorialBarActions}>
-              {tutorial.activeStep === 2 && (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={t('a11y.nextStep')}
-                  onPress={tutorialNextPressed}
-                  style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
-                >
-                  <Text style={styles.tutorialLinkText}>{t('common.next')}</Text>
-                </Pressable>
-              )}
+        <View style={styles.tutorialBar}>
+          <Text style={styles.tutorialBarStep}>
+            {t('tutorial.stepOf', { step: tutorial.activeStep, total: TOTAL_TUTORIAL_STEPS })}
+          </Text>
+          <View style={styles.tutorialBarActions}>
+            {tutorial.activeStep === 2 && (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel={t('a11y.skipTutorial')}
-                onPress={tutorialSkipOrCompletePressed}
+                accessibilityLabel={t('a11y.nextStep')}
+                onPress={tutorialNextPressed}
                 style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
               >
-                <Text style={styles.tutorialLinkText}>{t('tutorial.skip')}</Text>
+                <Text style={styles.tutorialLinkText}>{t('common.next')}</Text>
               </Pressable>
-            </View>
-          </View>
-          <View style={styles.tutorialCallout}>
-            <Text style={styles.tutorialCalloutText}>
-              {t(tutorial.activeStep === 1 ? 'tutorial.step1Callout' : 'tutorial.step2Callout')}
-            </Text>
+            )}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('a11y.skipTutorial')}
+              onPress={tutorialSkipOrCompletePressed}
+              style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
+            >
+              <Text style={styles.tutorialLinkText}>{t('tutorial.skip')}</Text>
+            </Pressable>
           </View>
         </View>
       )}
@@ -164,56 +159,69 @@ export function GameScreen() {
           )}
         </View>
 
-        {/* Card hand */}
+        {/* Card hand — a 1ª carta vira alvo do passo 1 do tutorial (TutorialView cuida do recorte + balão). */}
         <View style={styles.hand}>
-          {run.deck.hand.map((card, index) => (
-            <PlayingCard
-              key={cardKey(card)}
-              card={card}
-              forgedCards={run.forgedCards}
-              selected={selectedKeys.includes(cardKey(card))}
-              onPress={() => {
-                toggleCard(cardKey(card));
-                tutorialCardTouched();
-              }}
-              skin={deckSkin?.palette}
-              style={index === 0 && tutorial.activeStep === 1 ? styles.tutorialSpotlight : undefined}
-            />
-          ))}
+          {run.deck.hand.map((card, index) => {
+            const cardElement = (
+              <PlayingCard
+                card={card}
+                forgedCards={run.forgedCards}
+                selected={selectedKeys.includes(cardKey(card))}
+                onPress={() => {
+                  toggleCard(cardKey(card));
+                  tutorialCardTouched();
+                }}
+                skin={deckSkin?.palette}
+              />
+            );
+            return (
+              <View key={cardKey(card)}>
+                {index === 0 ? (
+                  <TutorialView step={1} text={t('tutorial.step1Callout')}>
+                    {cardElement}
+                  </TutorialView>
+                ) : (
+                  cardElement
+                )}
+              </View>
+            );
+          })}
         </View>
 
         {/* Actions — inside scroll so they flow below the hand */}
         <View style={styles.actions}>
-          <View style={[styles.actionsSecondary, tutorial.activeStep === 2 && styles.tutorialSpotlight]}>
-            <Pressable
-              accessibilityLabel={t('a11y.clearSelection')}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: selectedKeys.length === 0 }}
-              disabled={selectedKeys.length === 0}
-              onPress={() => {
-                clearSelection();
-                tutorialClearOrDiscardTouched();
-              }}
-              style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPressed]}
-            >
-              <Text style={[styles.btnSecondaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>{t('game.clear')}</Text>
-            </Pressable>
-            <Pressable
-              accessibilityLabel={t('a11y.discardSelectedCards')}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: selectedKeys.length === 0 || discardsRemaining <= 0 }}
-              disabled={selectedKeys.length === 0 || discardsRemaining <= 0}
-              onPress={() => {
-                discardSelection();
-                tutorialClearOrDiscardTouched();
-              }}
-              style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabled, pressed && styles.btnPressed]}
-            >
-              <Text style={[styles.btnSecondaryText, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>
-                {t('game.discard')} <Text style={[styles.hintBadge, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>· {discardsRemaining}</Text>
-              </Text>
-            </Pressable>
-          </View>
+          <TutorialView step={2} text={t('tutorial.step2Callout')} calloutPosition="above">
+            <View style={styles.actionsSecondary}>
+              <Pressable
+                accessibilityLabel={t('a11y.clearSelection')}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: selectedKeys.length === 0 }}
+                disabled={selectedKeys.length === 0}
+                onPress={() => {
+                  clearSelection();
+                  tutorialClearOrDiscardTouched();
+                }}
+                style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPressed]}
+              >
+                <Text style={[styles.btnSecondaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>{t('game.clear')}</Text>
+              </Pressable>
+              <Pressable
+                accessibilityLabel={t('a11y.discardSelectedCards')}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: selectedKeys.length === 0 || discardsRemaining <= 0 }}
+                disabled={selectedKeys.length === 0 || discardsRemaining <= 0}
+                onPress={() => {
+                  discardSelection();
+                  tutorialClearOrDiscardTouched();
+                }}
+                style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabled, pressed && styles.btnPressed]}
+              >
+                <Text style={[styles.btnSecondaryText, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>
+                  {t('game.discard')} <Text style={[styles.hintBadge, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>· {discardsRemaining}</Text>
+                </Text>
+              </Pressable>
+            </View>
+          </TutorialView>
           <Pressable
             accessibilityLabel={t('a11y.playSelectedCards')}
             accessibilityRole="button"
@@ -620,19 +628,18 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   /**
-   * Tutorial contextual (.scratch/tutorial-walkthrough) — o painel inteiro
-   * (barra + balão) é absolute, ancorado no `container`: flutua por cima da
-   * tela em vez de ocupar espaço no fluxo normal, senão empurra
-   * topbar/mão/ações pra baixo e o layout "pula" entre os passos 1 e 2.
+   * Barra do tutorial contextual (.scratch/tutorial-walkthrough) — absolute,
+   * ancorada no `container`: flutua por cima do topbar em vez de ocupar
+   * espaço no fluxo normal, senão empurra o resto da tela pra baixo. O
+   * recorte + balão de cada passo agora vivem no próprio elemento em
+   * evidência (ver components/TutorialView.tsx).
    */
-  tutorialPanel: {
+  tutorialBar: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     zIndex: 30,
-  },
-  tutorialBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -662,33 +669,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     color: colors.gold,
-  },
-  /**
-   * Recorte real do coach-mark: box-shadow gigante aplicado direto no
-   * elemento em evidência, já presente no fluxo normal da tela (mesma
-   * técnica validada em .scratch/tutorial-walkthrough/wireframes-tutorial.html,
-   * classe .tm-spotlight) — nunca uma camada calculada por coordenadas.
-   * zIndex garante que o recorte pinte por cima dos irmãos seguintes
-   * (ex.: a 1ª carta precisa cobrir as Ações, que vêm depois dela no fluxo).
-   */
-  tutorialSpotlight: {
-    zIndex: 5,
-    boxShadow: '0 0 0 999px rgba(22,17,32,0.82)',
-  },
-  tutorialCallout: {
-    margin: spacing[12],
-    padding: spacing[12],
-    backgroundColor: 'rgba(224,165,62,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(224,165,62,0.35)',
-    borderRadius: radius[10],
-  },
-  tutorialCalloutText: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.gold,
-    textAlign: 'center',
-    lineHeight: 18,
   },
 });
