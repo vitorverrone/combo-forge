@@ -21,6 +21,7 @@ import {
   suitName,
 } from './format';
 import { SuitSymbol } from './SuitSymbol';
+import { TutorialView } from './TutorialView';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -86,29 +87,24 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
 
   return (
     <View style={styles.container}>
-      {/* Painel do tutorial — último passo do tour (3/3); absolute, ancorado
+      {/* Barra do tutorial — último passo do tour (3/3); absolute, ancorada
           em `container`, flutua por cima em vez de ocupar espaço no fluxo
-          normal (senão empurra o topbar/lista de ofertas pra baixo).
-          "Concluir" em vez de "Pular tutorial" porque não sobra mais nada
-          pra pular. */}
+          normal. "Concluir" em vez de "Pular tutorial" porque não sobra mais
+          nada pra pular. O balão de instrução agora vive junto da própria
+          lista de ofertas (TutorialView), não mais aqui. */}
       {tutorial.activeStep === 3 && (
-        <View style={styles.tutorialPanel}>
-          <View style={styles.tutorialBar}>
-            <Text style={styles.tutorialBarStep}>
-              {t('tutorial.stepOf', { step: tutorial.activeStep, total: TOTAL_TUTORIAL_STEPS })}
-            </Text>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel={t('a11y.completeTutorial')}
-              onPress={tutorialSkipOrCompletePressed}
-              style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
-            >
-              <Text style={styles.tutorialLinkText}>{t('tutorial.complete')}</Text>
-            </Pressable>
-          </View>
-          <View style={styles.tutorialCallout}>
-            <Text style={styles.tutorialCalloutText}>{t('tutorial.step3Callout')}</Text>
-          </View>
+        <View style={styles.tutorialBar}>
+          <Text style={styles.tutorialBarStep}>
+            {t('tutorial.stepOf', { step: tutorial.activeStep, total: TOTAL_TUTORIAL_STEPS })}
+          </Text>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={t('a11y.completeTutorial')}
+            onPress={tutorialSkipOrCompletePressed}
+            style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
+          >
+            <Text style={styles.tutorialLinkText}>{t('tutorial.complete')}</Text>
+          </Pressable>
         </View>
       )}
 
@@ -120,25 +116,27 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, tutorial.activeStep === 3 && styles.scrollWithCallout]}>
         {/* Screen header */}
         <Text style={styles.eyebrow}>{t('forge.roundCleared', { number: run.roundNumber })}</Text>
         <Text style={styles.title}>{t('forge.title')}</Text>
         <Text style={styles.subtitle}>{t('forge.subtitle')}</Text>
 
-        {/* Offers */}
-        <View style={[styles.offerList, tutorial.activeStep === 3 && styles.tutorialSpotlight]}>
-          {run.forgeOffers.map((offer, index) => (
-            <OfferCard
-              key={index}
-              offer={offer}
-              selected={activeOffer === index}
-              deck={deck}
-              forgedCards={run.forgedCards}
-              onPress={() => handleOfferPress(index)}
-            />
-          ))}
-        </View>
+        {/* Offers — a lista inteira vira alvo do passo 3 do tutorial (TutorialView cuida do recorte + balão). */}
+        <TutorialView step={3} text={t('tutorial.step3Callout')}>
+          <View style={styles.offerList}>
+            {run.forgeOffers.map((offer, index) => (
+              <OfferCard
+                key={index}
+                offer={offer}
+                selected={activeOffer === index}
+                deck={deck}
+                forgedCards={run.forgedCards}
+                onPress={() => handleOfferPress(index)}
+              />
+            ))}
+          </View>
+        </TutorialView>
       </ScrollView>
 
       {/* Forge button */}
@@ -343,6 +341,15 @@ const styles = StyleSheet.create({
   scroll: {
     paddingHorizontal: spacing[16],
     paddingBottom: 70,
+  },
+  /**
+   * Passo 3 do tutorial: o balão fica absolute logo abaixo da lista de
+   * ofertas (último item do scroll), então não conta pra altura medida do
+   * conteúdo — sem esse respiro extra, a parte de baixo do balão fica fora
+   * da área rolável (achado em code review, não em teste manual).
+   */
+  scrollWithCallout: {
+    paddingBottom: 170,
   },
   /* ── Header ── */
   eyebrow: {
@@ -638,19 +645,18 @@ const styles = StyleSheet.create({
     opacity: 0.45,
   },
   /**
-   * Tutorial contextual (.scratch/tutorial-walkthrough) — o painel inteiro
-   * (barra + balão) é absolute, ancorado no `container`: flutua por cima da
-   * tela em vez de ocupar espaço no fluxo normal, senão empurra o
-   * topbar/lista de ofertas pra baixo.
+   * Barra do tutorial contextual (.scratch/tutorial-walkthrough) — absolute,
+   * ancorada no `container`: flutua por cima do topbar em vez de ocupar
+   * espaço no fluxo normal, senão empurra o resto da tela pra baixo. O
+   * recorte + balão do passo 3 agora vivem na própria lista de ofertas (ver
+   * components/TutorialView.tsx).
    */
-  tutorialPanel: {
+  tutorialBar: {
     position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     zIndex: 30,
-  },
-  tutorialBar: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -677,32 +683,5 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.5,
     color: colors.gold,
-  },
-  /**
-   * Recorte real do coach-mark: box-shadow gigante aplicado direto na lista
-   * de ofertas inteira, já presente no fluxo normal da tela (mesma técnica
-   * do ticket 04, validada em
-   * .scratch/tutorial-walkthrough/wireframes-tutorial.html, classe
-   * .tm-spotlight) — nunca uma camada calculada por coordenadas.
-   */
-  tutorialSpotlight: {
-    zIndex: 5,
-    boxShadow: '0 0 0 999px rgba(22,17,32,0.82)',
-  },
-  tutorialCallout: {
-    margin: spacing[12],
-    padding: spacing[12],
-    backgroundColor: 'rgba(224,165,62,0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(224,165,62,0.35)',
-    borderRadius: radius[10],
-  },
-  tutorialCalloutText: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.gold,
-    textAlign: 'center',
-    lineHeight: 18,
   },
 });
