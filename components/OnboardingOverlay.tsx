@@ -51,6 +51,7 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
     visual: STEP_VISUALS[step],
   };
   const isLast = step === STEP_KEYS.length - 1;
+  const isFirst = step === 0;
 
   return (
     <Modal transparent visible animationType="fade">
@@ -63,13 +64,18 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
                 <View key={i} style={[styles.dot, i <= step && styles.dotOn]} />
               ))}
             </View>
-            <Text style={styles.counter}>{step + 1}/{STEP_KEYS.length}</Text>
+            <Pressable accessibilityRole="button"
+              accessibilityLabel={t('a11y.startPlaying')} style={styles.closeButton} onPress={onComplete}>
+              <Text style={styles.counter}>X</Text>
+            </Pressable>
           </View>
 
           {/* Scrollable content: visual + title/body/tip. Bounded height so a
               tall visual (the 7-Pattern list) scrolls instead of overlapping
               the actions below, on any screen size. */}
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
+            <Text style={styles.title}>{current.title}</Text>
+
             {current.visual === 'pattern' ? (
               <View style={styles.patternVisual}>
                 <PatternList />
@@ -80,7 +86,6 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
               </View>
             )}
 
-            <Text style={styles.title}>{current.title}</Text>
             <Text style={styles.body}>{current.body}</Text>
 
             {/* Tip box */}
@@ -94,10 +99,11 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={t('a11y.skipTutorial')}
-              onPress={onComplete}
+              onPress={() => (setStep(step - 1))}
+              disabled={isFirst}
               style={({ pressed }) => [styles.skipBtn, pressed && styles.btnPressed]}
             >
-              <Text style={styles.skipBtnText}>{t('common.skip')}</Text>
+              <Text style={styles.skipBtnText}>{t('common.previous')}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -157,6 +163,16 @@ function StepVisual({ kind }: { kind: Exclude<Step['visual'], 'pattern'> }) {
 }
 
 const styles = StyleSheet.create({
+  closeButton: {
+    width: 32,
+    height: 32,
+    borderRadius: radius[12],
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(22,17,32,0.82)',
@@ -337,6 +353,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     color: colors.text,
     textAlign: 'center',
+    paddingTop: spacing[8]
   },
   body: {
     fontSize: 14,
