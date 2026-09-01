@@ -177,7 +177,7 @@ export function GameScreen() {
             return (
               <View key={cardKey(card)}>
                 {index === 0 ? (
-                  <TutorialView step={1} text={t('tutorial.step1Callout')}>
+                  <TutorialView step={1} text={t('tutorial.step1Callout')} spotlightRadius={radius[8]}>
                     {cardElement}
                   </TutorialView>
                 ) : (

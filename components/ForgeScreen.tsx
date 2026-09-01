@@ -116,7 +116,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView contentContainerStyle={[styles.scroll, tutorial.activeStep === 3 && styles.scrollWithCallout]}>
         {/* Screen header */}
         <Text style={styles.eyebrow}>{t('forge.roundCleared', { number: run.roundNumber })}</Text>
         <Text style={styles.title}>{t('forge.title')}</Text>
@@ -341,6 +341,15 @@ const styles = StyleSheet.create({
   scroll: {
     paddingHorizontal: spacing[16],
     paddingBottom: 70,
+  },
+  /**
+   * Passo 3 do tutorial: o balão fica absolute logo abaixo da lista de
+   * ofertas (último item do scroll), então não conta pra altura medida do
+   * conteúdo — sem esse respiro extra, a parte de baixo do balão fica fora
+   * da área rolável (achado em code review, não em teste manual).
+   */
+  scrollWithCallout: {
+    paddingBottom: 170,
   },
   /* ── Header ── */
   eyebrow: {

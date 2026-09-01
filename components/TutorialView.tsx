@@ -6,6 +6,9 @@ import { fonts } from './typography';
 import { TutorialStep } from '../store/tutorialFlow';
 import { useGameStore } from '../store/gameStore';
 
+/** Largura fixa do balão — independente da largura do elemento envolvido, senão um alvo estreito (ex.: uma única carta) espremeria o texto numa coluna ilegível. */
+const CALLOUT_WIDTH = 240;
+
 interface TutorialViewProps {
   /** Passo do tour que esse elemento representa — só fica em evidência quando é o passo ativo. */
   readonly step: TutorialStep;
@@ -18,6 +21,13 @@ interface TutorialViewProps {
    * logo abaixo dos botões Limpar/Descartar no passo 2).
    */
   readonly calloutPosition?: 'below' | 'above';
+  /**
+   * Raio de borda do recorte, pra acompanhar o raio do elemento real por
+   * baixo (ex.: radius[8] da PlayingCard) — sem isso, o véu escurecido fica
+   * quadrado ao redor de um alvo com cantos arredondados, deixando frestas
+   * sem recorte nos 4 cantos. Padrão 0 (alvo sem cantos arredondados).
+   */
+  readonly spotlightRadius?: number;
   readonly children: ReactNode;
 }
 
@@ -29,13 +39,15 @@ interface TutorialViewProps {
  * no wireframe, nunca coordenadas calculadas) e mostra um balão de instrução
  * flutuando ao lado, absolute e ancorado neste wrapper — não empurra o resto
  * da tela nem faz o layout "pular" ao trocar de passo (achado em teste
- * manual na versão anterior, que renderizava o balão inline).
+ * manual na versão anterior, que renderizava o balão inline), e com largura
+ * fixa (não a largura do wrapper) pra não espremer o texto quando o alvo é
+ * estreito (achado num 2º teste manual, na versão anterior a esta).
  */
-export function TutorialView({ step, text, calloutPosition = 'below', children }: TutorialViewProps) {
+export function TutorialView({ step, text, calloutPosition = 'below', spotlightRadius = 0, children }: TutorialViewProps) {
   const active = useGameStore((state) => state.tutorial.activeStep === step);
 
   return (
-    <View style={[styles.wrapper, active && styles.spotlight]}>
+    <View style={[styles.wrapper, active && [styles.spotlight, { borderRadius: spotlightRadius }]]}>
       {children}
       {active && (
         <View style={[styles.callout, calloutPosition === 'below' ? styles.calloutBelow : styles.calloutAbove]}>
@@ -57,7 +69,7 @@ const styles = StyleSheet.create({
   callout: {
     position: 'absolute',
     left: 0,
-    right: 0,
+    width: CALLOUT_WIDTH,
     zIndex: 6,
     padding: spacing[12],
     backgroundColor: 'rgba(224,165,62,0.08)',
