@@ -193,7 +193,6 @@
     "letsForge": "Let's Forge"
   },
   "tutorial": {
-    "stepOf": "Step {{step}} of {{total}}",
     "skip": "Skip tutorial",
     "complete": "Done",
     "step1Callout": "Tap up to 5 cards from your Hand to form a Play. Start by tapping a card.",

@@ -25,7 +25,6 @@ import { TutorialView } from './TutorialView';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
-import { TOTAL_TUTORIAL_STEPS } from '../store/tutorialFlow';
 
 interface ForgeScreenProps {
   readonly run: RunState;
@@ -87,27 +86,6 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
 
   return (
     <View style={styles.container}>
-      {/* Barra do tutorial — último passo do tour (3/3); absolute, ancorada
-          em `container`, flutua por cima em vez de ocupar espaço no fluxo
-          normal. "Concluir" em vez de "Pular tutorial" porque não sobra mais
-          nada pra pular. O balão de instrução agora vive junto da própria
-          lista de ofertas (TutorialView), não mais aqui. */}
-      {tutorial.activeStep === 3 && (
-        <View style={styles.tutorialBar}>
-          <Text style={styles.tutorialBarStep}>
-            {t('tutorial.stepOf', { step: tutorial.activeStep, total: TOTAL_TUTORIAL_STEPS })}
-          </Text>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={t('a11y.completeTutorial')}
-            onPress={tutorialSkipOrCompletePressed}
-            style={({ pressed }) => [pressed && styles.tutorialLinkPressed]}
-          >
-            <Text style={styles.tutorialLinkText}>{t('tutorial.complete')}</Text>
-          </Pressable>
-        </View>
-      )}
-
       {/* Topbar with relic counter */}
       <View style={styles.topbar}>
         <View style={styles.relicCounter}>
@@ -123,7 +101,15 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
         <Text style={styles.subtitle}>{t('forge.subtitle')}</Text>
 
         {/* Offers — a lista inteira vira alvo do passo 3 do tutorial (TutorialView cuida do recorte + balão). */}
-        <TutorialView step={3} text={t('tutorial.step3Callout')}>
+        <TutorialView
+          step={3}
+          text={t('tutorial.step3Callout')}
+          rightAction={{
+            label: t('tutorial.complete'),
+            accessibilityLabel: t('a11y.completeTutorial'),
+            onPress: tutorialSkipOrCompletePressed,
+          }}
+        >
           <View style={styles.offerList}>
             {run.forgeOffers.map((offer, index) => (
               <OfferCard
@@ -643,45 +629,5 @@ const styles = StyleSheet.create({
   },
   btnDisabledSmall: {
     opacity: 0.45,
-  },
-  /**
-   * Barra do tutorial contextual (.scratch/tutorial-walkthrough) — absolute,
-   * ancorada no `container`: flutua por cima do topbar em vez de ocupar
-   * espaço no fluxo normal, senão empurra o resto da tela pra baixo. O
-   * recorte + balão do passo 3 agora vivem na própria lista de ofertas (ver
-   * components/TutorialView.tsx).
-   */
-  tutorialBar: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 30,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing[16],
-    paddingTop: 44,
-    paddingBottom: spacing[10],
-    backgroundColor: colors.surfaceElevated,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.surfaceBorder,
-  },
-  tutorialBarStep: {
-    fontFamily: fonts.body,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    color: colors.text,
-  },
-  tutorialLinkPressed: {
-    opacity: 0.7,
-  },
-  tutorialLinkText: {
-    fontFamily: fonts.body,
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-    color: colors.gold,
   },
 });
