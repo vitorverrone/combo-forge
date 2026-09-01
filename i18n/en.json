@@ -216,7 +216,7 @@
       "valueBonus": "Adds +{{amount}} to the card's value",
       "multiplier": "Multiplies the card's value by ×{{multiplier}}",
       "wildcard": "Counts as any value and suit to form patterns",
-      "trigger": "Adds +{{bonus}} pts when played on play {{triggerPlay}} of a round"
+      "trigger": "Adds +{{bonus}} pts on the {{triggerPlay}}th play of the round"
     },
     "relic": {
       "suit": "{{suit}} cards ×{{multiplier}}",
