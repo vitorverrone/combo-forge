@@ -17,8 +17,8 @@ interface Step {
 }
 
 // Steps are defined via i18n keys — the visual type maps to each step.
-const STEP_KEYS = ['selectCards', 'scorePattern', 'rideCombo', 'beatTarget', 'relics'] as const;
-const STEP_VISUALS: readonly Step['visual'][] = ['cards', 'pattern', 'combo', 'target', 'relics'];
+const STEP_KEYS = ['selectCards', 'scorePattern', 'rideCombo', 'relics', 'beatTarget'] as const;
+const STEP_VISUALS: readonly Step['visual'][] = ['cards', 'pattern', 'combo', 'relics', 'target'];
 
 export function hasSeenOnboarding(): boolean {
   return kv.getItemSync(STORAGE_KEY) === 'true';
