@@ -185,6 +185,11 @@
       "body": "Alcance o alvo da rodada antes que suas jogadas acabem. O alvo cresce a cada rodada. Ganhar rodadas 1–5 abre a Forja.",
       "tip": "Dica: passe todas as 6 rodadas para ganhar a run."
     },
+    "relics": {
+      "title": "Relíquias e a Forja",
+      "body": "Ao vencer uma rodada, escolha entre uma Relíquia (efeito permanente pro resto da run) ou um Efeito de Carta (fortalece uma carta específica).",
+      "tip": "Dica: Relíquias ficam ativas até o fim da run — escolha com cuidado."
+    },
     "letsForge": "Vamos Forjar"
   },
   "patternReference": {

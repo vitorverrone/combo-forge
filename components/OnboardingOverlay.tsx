@@ -13,12 +13,12 @@ interface Step {
   readonly title: string;
   readonly body: string;
   readonly tip: string;
-  readonly visual: 'cards' | 'pattern' | 'combo' | 'target';
+  readonly visual: 'cards' | 'pattern' | 'combo' | 'target' | 'relics';
 }
 
 // Steps are defined via i18n keys — the visual type maps to each step.
-const STEP_KEYS = ['selectCards', 'scorePattern', 'rideCombo', 'beatTarget'] as const;
-const STEP_VISUALS: readonly Step['visual'][] = ['cards', 'pattern', 'combo', 'target'];
+const STEP_KEYS = ['selectCards', 'scorePattern', 'rideCombo', 'beatTarget', 'relics'] as const;
+const STEP_VISUALS: readonly Step['visual'][] = ['cards', 'pattern', 'combo', 'target', 'relics'];
 
 export function hasSeenOnboarding(): boolean {
   return kv.getItemSync(STORAGE_KEY) === 'true';
@@ -116,6 +116,7 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
 
 /** Step-specific visual illustrations (excludes 'pattern' — that step renders PatternList directly). */
 function StepVisual({ kind }: { kind: Exclude<Step['visual'], 'pattern'> }) {
+  const { t } = useTranslation();
   switch (kind) {
     case 'cards':
       return (
@@ -151,6 +152,21 @@ function StepVisual({ kind }: { kind: Exclude<Step['visual'], 'pattern'> }) {
             <View style={styles.vFill} />
           </View>
           <Text style={styles.vTargetLabel}>255 <Text style={styles.vTargetDim}>/ 300</Text></Text>
+        </View>
+      );
+    case 'relics':
+      return (
+        <View style={styles.vRelics}>
+          <View style={styles.vRelicItem}>
+            <View style={styles.vRelicGem} />
+            <Text style={styles.vRelicLabel}>{t('forge.relic')}</Text>
+          </View>
+          <View style={styles.vRelicItem}>
+            <View style={styles.vRelicCard}>
+              <Text style={styles.vRelicCardText}>+2</Text>
+            </View>
+            <Text style={styles.vRelicLabel}>{t('forge.cardEffect')}</Text>
+          </View>
         </View>
       );
   }
@@ -329,6 +345,44 @@ const styles = StyleSheet.create({
   vTargetDim: {
     color: colors.textDim,
     fontWeight: '600',
+  },
+  /* ── Relics visual (passo relics) ── */
+  vRelics: {
+    flexDirection: 'row',
+    gap: spacing[20],
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vRelicItem: {
+    alignItems: 'center',
+    gap: spacing[8],
+  },
+  vRelicGem: {
+    width: 22,
+    height: 22,
+    borderRadius: radius[5],
+    backgroundColor: colors.gold,
+    transform: [{ rotate: '45deg' }],
+  },
+  vRelicCard: {
+    width: 44,
+    height: 60,
+    borderRadius: radius[7],
+    backgroundColor: colors.cardFace,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vRelicCardText: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: colors.cardInk,
+  },
+  vRelicLabel: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    color: colors.textDim,
+    textTransform: 'uppercase',
   },
   /* ── Content ── */
   title: {
