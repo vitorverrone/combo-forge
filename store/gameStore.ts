@@ -89,6 +89,19 @@ import {
   ShopState,
 } from './shopFlow';
 
+import {
+  createMemoryTutorialStorage,
+  loadTutorialState,
+  persistTutorialTransition,
+  runTutorialCommand,
+  shouldStartForgeTutorial,
+  shouldStartGameScreenTutorial,
+  startForgeTutorial,
+  startGameScreenTutorial,
+  TutorialState,
+  TutorialStorage,
+} from './tutorialFlow';
+
 export type { ShopState } from './shopFlow';
 
 export type Screen = 'start' | 'game' | 'profile' | 'collection' | 'daily' | 'shop';
@@ -142,6 +155,9 @@ export interface GameState {
   readonly interstitialRunsSinceAd: number;
   /** True quando um intersticial deve ser exibido (Run end screens consomem). */
   readonly showInterstitial: boolean;
+  /** Tutorial contextual em coach-mark (.scratch/tutorial-walkthrough): qual passo está ativo, o que já foi visto. */
+  readonly tutorial: TutorialState;
+  readonly tutorialStorage: TutorialStorage;
 
   readonly chooseForger: (forger: ForgerId) => void;
   readonly startRun: () => void;
@@ -198,6 +214,21 @@ export interface GameState {
   readonly openProfile: () => void;
   readonly openCollection: () => void;
   readonly backToStart: () => void;
+
+  /** Confere se a seção GameScreen do tutorial deveria começar agora, e ativa se sim (idempotente). */
+  readonly checkGameScreenTutorialTrigger: () => void;
+  /** Confere se a seção Forja do tutorial deveria começar agora, e ativa se sim (idempotente). */
+  readonly checkForgeTutorialTrigger: () => void;
+  /** Passo 1: o jogador tocou numa carta da Mão. */
+  readonly tutorialCardTouched: () => void;
+  /** Passo 2: o jogador tocou em Limpar ou Descartar. */
+  readonly tutorialClearOrDiscardTouched: () => void;
+  /** Passo 2: o jogador tocou no botão "Próximo" (avança sem limpar/descartar). */
+  readonly tutorialNextPressed: () => void;
+  /** Passo 3: o jogador tocou numa oferta da Forja. */
+  readonly tutorialForgeOfferTouched: () => void;
+  /** "Pular tutorial" (passos 1-2) ou "Concluir" (passo 3). */
+  readonly tutorialSkipOrCompletePressed: () => void;
 }
 
 export interface GameStoreDeps {
@@ -222,6 +253,8 @@ export interface GameStoreDeps {
   readonly shopProvider?: ShopProvider;
   /** Estado inicial da loja (padrão: vazio; injetável em testes). */
   readonly initialShop?: PersistedShop;
+  /** Port de persistência do tutorial contextual (padrão: memória, p/ testes). */
+  readonly tutorialStorage?: TutorialStorage;
 }
 
 /** Seleção resolvida em cartas da Mão, na ordem da Mão. */
@@ -308,6 +341,7 @@ function applyDailyResult(result: DailyFlowResult): Partial<GameState> {
 export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
   const ddaStorage = deps.ddaStorage ?? createMemoryDdaStorage();
   const progressionStorage = deps.progressionStorage ?? createMemoryProgressionStorage();
+  const tutorialStorage = deps.tutorialStorage ?? createMemoryTutorialStorage();
   const dailyStorage = deps.dailyStorage ?? createMemoryDailyChallengeStorage();
   const dailyBackend = deps.dailyBackend ?? createUnavailableDailyBackend();
   const adProvider = deps.adProvider ?? createDevAdProvider();
@@ -376,6 +410,8 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     adsRemoved: initialShop.adsRemoved,
     interstitialRunsSinceAd: 0,
     showInterstitial: false,
+    tutorial: loadTutorialState(tutorialStorage),
+    tutorialStorage,
 
     dismissInterstitial: () => set({ showInterstitial: false }),
 
@@ -602,6 +638,53 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
 
     backToStart: () =>
       set({ screen: 'start', runMode: 'normal', run: null, selectedKeys: [], lastEvents: [], rng: null }),
+
+    checkGameScreenTutorialTrigger: () => {
+      const { run, runMode, tutorial } = get();
+      if (run === null) return;
+      const context = { runMode, roundNumber: run.roundNumber, phase: run.phase };
+      if (!shouldStartGameScreenTutorial(tutorial, context)) return;
+      set({ tutorial: startGameScreenTutorial(tutorial) });
+    },
+
+    checkForgeTutorialTrigger: () => {
+      const { run, runMode, tutorial } = get();
+      if (run === null) return;
+      if (!shouldStartForgeTutorial(tutorial, { runMode, phase: run.phase })) return;
+      set({ tutorial: startForgeTutorial(tutorial) });
+    },
+
+    tutorialCardTouched: () => {
+      set({ tutorial: runTutorialCommand(get().tutorial, { type: 'cardTouched' }) });
+    },
+
+    tutorialClearOrDiscardTouched: () => {
+      const { tutorial, tutorialStorage: storage } = get();
+      const next = runTutorialCommand(tutorial, { type: 'clearOrDiscardTouched' });
+      persistTutorialTransition(tutorial, next, storage);
+      set({ tutorial: next });
+    },
+
+    tutorialNextPressed: () => {
+      const { tutorial, tutorialStorage: storage } = get();
+      const next = runTutorialCommand(tutorial, { type: 'nextPressed' });
+      persistTutorialTransition(tutorial, next, storage);
+      set({ tutorial: next });
+    },
+
+    tutorialForgeOfferTouched: () => {
+      const { tutorial, tutorialStorage: storage } = get();
+      const next = runTutorialCommand(tutorial, { type: 'forgeOfferTouched' });
+      persistTutorialTransition(tutorial, next, storage);
+      set({ tutorial: next });
+    },
+
+    tutorialSkipOrCompletePressed: () => {
+      const { tutorial, tutorialStorage: storage } = get();
+      const next = runTutorialCommand(tutorial, { type: 'skipOrCompletePressed' });
+      persistTutorialTransition(tutorial, next, storage);
+      set({ tutorial: next });
+    },
   }));
 }
 

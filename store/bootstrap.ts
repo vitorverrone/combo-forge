@@ -21,10 +21,11 @@ import { createAppShopProvider } from '../services/revenuecat';
 
 import { gameStore } from './gameStore';
 import { createSqlitePersistence } from './sqlite';
+import { loadTutorialState } from './tutorialFlow';
 
 export function initializeSqlitePersistence(): void {
   try {
-    const { ddaStorage, progressionStorage, dailyStorage, shopStorage } =
+    const { ddaStorage, progressionStorage, dailyStorage, shopStorage, tutorialStorage } =
       createSqlitePersistence();
     const saved = progressionStorage.load();
     const savedAttempts = dailyStorage.loadAttempts();
@@ -47,6 +48,8 @@ export function initializeSqlitePersistence(): void {
       shopStorage,
       shopProvider: createAppShopProvider(),
       progression: saved ?? DEFAULT_PROGRESSION,
+      tutorialStorage,
+      tutorial: loadTutorialState(tutorialStorage),
       daily: {
         ...gameStore.getState().daily,
         deviceId,
