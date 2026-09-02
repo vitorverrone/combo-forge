@@ -3,15 +3,14 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { BannerAd, BannerAdSize, TestIds } from 'react-native-google-mobile-ads';
 
 import { shouldShowBanner } from '../engine';
-import { bannerAdUnitId } from '../services/ads';
+import { adsAreLive, bannerAdUnitId } from '../services/ads';
 import { useGameStore } from '../store/gameStore';
 import { colors } from './theme';
 
 export function AdBanner() {
   const insets = useSafeAreaInsets();
   const adsRemoved = useGameStore((state) => state.adsRemoved);
-  const unitId =
-    process.env.NODE_ENV === 'production' ? bannerAdUnitId() : TestIds.ADAPTIVE_BANNER;
+  const unitId = adsAreLive() ? bannerAdUnitId() : TestIds.ADAPTIVE_BANNER;
 
   if (!shouldShowBanner(adsRemoved, unitId)) return null;
 
