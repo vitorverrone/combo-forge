@@ -56,22 +56,26 @@ export function TutorialCallout({ callout }: TutorialCalloutProps) {
   );
 }
 
-/** Largura fixa — independente da largura do elemento envolvido, senão um alvo estreito (ex.: uma única carta) espremeria o texto numa coluna ilegível. */
-const CALLOUT_WIDTH = 240;
-
 const styles = StyleSheet.create({
   callout: {
-    width: CALLOUT_WIDTH,
+    // Largura fixa (com teto de 90% pra telas estreitas) — independente da
+    // largura do elemento envolvido, senão um alvo estreito (ex.: uma única
+    // carta) espremeria o texto numa coluna ilegível.
+    width: 320,
+    maxWidth: '90%',
     padding: spacing[12],
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: 'rgba(224,165,62,0.35)',
     borderRadius: radius[10],
+    position: 'absolute',
   },
   calloutBelow: {
+    top: '100%',
     marginTop: spacing[12],
   },
   calloutAbove: {
+    bottom: '100%',
     marginBottom: spacing[12],
   },
   calloutText: {
