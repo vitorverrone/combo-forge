@@ -10,9 +10,9 @@
  * própria variável, e cada plataforma a sua (o EAS injeta env por ambiente,
  * não por plataforma), selecionada em runtime via Platform.OS. Sem o env do
  * formato/plataforma atual, devolve o provider dev (anúncio sempre concluído)
- * — o jogo funciona integralmente sem anúncios (nunca são obrigatórios). Em
- * desenvolvimento o SDK usa o TestId oficial de cada formato (não gasta
- * impressões reais).
+ * — o jogo funciona integralmente sem anúncios (nunca são obrigatórios). Sem
+ * EXPO_PUBLIC_ADMOB_LIVE_ADS=true o SDK usa o TestId oficial de cada formato
+ * (não gasta impressões reais), independente do profile de build.
  *
  * O módulo nativo não existe no Expo Go/web/testes: o import é dinâmico e
  * qualquer falha resolve false — o anúncio nunca bloqueia nem quebra o
@@ -31,6 +31,17 @@ const INTERSTITIAL_UNIT_IOS = process.env.EXPO_PUBLIC_ADMOB_INTERSTITIAL_AD_UNIT
 
 const BANNER_UNIT_ANDROID = process.env.EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_ANDROID;
 const BANNER_UNIT_IOS = process.env.EXPO_PUBLIC_ADMOB_BANNER_AD_UNIT_ID_IOS;
+
+/**
+ * Liga anúncios reais explicitamente (independente do profile de build) —
+ * default é anúncio de TESTE mesmo em build "production" do EAS. O teste
+ * fechado do Play Console usa o profile production (obrigatório pro .aab +
+ * submit), mas não deve servir anúncio real: exigiria marcar cada tester
+ * como test device no AdMob (mínimo 12 no teste fechado) pra não arriscar
+ * suspensão da conta por clique acidental. Ligar só antes do lançamento
+ * público de fato: EXPO_PUBLIC_ADMOB_LIVE_ADS=true (ver .env.example).
+ */
+const LIVE_ADS = process.env.EXPO_PUBLIC_ADMOB_LIVE_ADS === 'true';
 
 /** Ad unit de recompensado da plataforma atual (Android é o padrão; iOS exige variável própria). */
 function rewardedAdUnitId(): string | undefined {
@@ -54,6 +65,11 @@ export function isAdMobConfigured(): boolean {
  */
 export function bannerAdUnitId(): string | undefined {
   return Platform.OS === 'ios' ? BANNER_UNIT_IOS : BANNER_UNIT_ANDROID;
+}
+
+/** EXPO_PUBLIC_ADMOB_LIVE_ADS=true? Controla anúncio real vs. TestId em todos os formatos. */
+export function adsAreLive(): boolean {
+  return LIVE_ADS;
 }
 
 /**
@@ -86,12 +102,9 @@ async function requestAdMobRewarded(adUnitId: string | undefined): Promise<boole
       TestIds,
     } = await import('react-native-google-mobile-ads');
     await MobileAds().initialize();
-    // Em dev usa o TestId oficial (não exibe impressão real de produção).
-    // Sem env configurado → TestId também (sem anúncio real, mas exibe o de teste).
-    const unitId =
-      process.env.NODE_ENV === 'production' && adUnitId
-        ? adUnitId
-        : TestIds.REWARDED;
+    // LIVE_ADS desligado (padrão) usa o TestId oficial mesmo em build
+    // production — sem env configurado → TestId também.
+    const unitId = LIVE_ADS && adUnitId ? adUnitId : TestIds.REWARDED;
     const rewarded = RewardedAd.createForAdRequest(unitId, {
       requestNonPersonalizedAdsOnly: true,
     });
@@ -151,11 +164,9 @@ async function requestAdMobInterstitial(adUnitId: string | undefined): Promise<b
       TestIds,
     } = await import('react-native-google-mobile-ads');
     await MobileAds().initialize();
-    // Em dev usa o TestId oficial; sem env configurado → TestId também.
-    const unitId =
-      process.env.NODE_ENV === 'production' && adUnitId
-        ? adUnitId
-        : TestIds.INTERSTITIAL;
+    // LIVE_ADS desligado (padrão) usa o TestId oficial mesmo em build
+    // production — sem env configurado → TestId também.
+    const unitId = LIVE_ADS && adUnitId ? adUnitId : TestIds.INTERSTITIAL;
     const interstitial = InterstitialAd.createForAdRequest(unitId, {
       requestNonPersonalizedAdsOnly: true,
     });
