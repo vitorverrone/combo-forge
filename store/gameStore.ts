@@ -218,20 +218,24 @@ export interface GameState {
 
   /** Confere se a seção GameScreen do tutorial deveria começar agora, e ativa se sim (idempotente). */
   readonly checkGameScreenTutorialTrigger: () => void;
-  /** O jogador saiu do GameScreen (Rodada terminou ou Run abandonada) com a seção 1-2 ainda ativa — conta como vista (idempotente). */
+  /** O jogador saiu do GameScreen (Rodada terminou ou Run abandonada) com a seção ainda ativa — conta como vista (idempotente). */
   readonly tutorialGameScreenLeft: () => void;
   /** Confere se a seção Forja do tutorial deveria começar agora, e ativa se sim (idempotente). */
   readonly checkForgeTutorialTrigger: () => void;
-  /** Passo 1: o jogador tocou numa carta da Mão. */
+  /** Passo 1 da GameScreen: o jogador tocou numa carta da Mão. */
   readonly tutorialCardTouched: () => void;
-  /** Passo 2: o jogador tocou em Limpar ou Descartar. */
+  /** Passo 2 da GameScreen: o jogador tocou em Limpar ou Descartar. */
   readonly tutorialClearOrDiscardTouched: () => void;
-  /** Passo 2: o jogador tocou no botão "Próximo" (avança sem limpar/descartar). */
+  /** Passo 2 da GameScreen: o jogador tocou no botão "Próximo" (avança sem limpar/descartar). */
   readonly tutorialNextPressed: () => void;
-  /** Passo 3: o jogador tocou numa oferta da Forja. */
+  /** Passo 3 da GameScreen: o jogador tocou no "?" de referência de Padrões. */
+  readonly tutorialPatternReferenceTouched: () => void;
+  /** "Pular tutorial" da seção GameScreen — conclui a partir de qualquer um dos 3 passos, nunca mexe na seção Forja. */
+  readonly tutorialGameScreenSkipPressed: () => void;
+  /** O jogador tocou numa oferta da Forja. */
   readonly tutorialForgeOfferTouched: () => void;
-  /** "Pular tutorial" (passos 1-2) ou "Concluir" (passo 3). */
-  readonly tutorialSkipOrCompletePressed: () => void;
+  /** "Concluir" da seção Forja — mesmo efeito de tocar numa oferta, nunca mexe na seção GameScreen. */
+  readonly tutorialForgeCompletePressed: () => void;
 }
 
 export interface GameStoreDeps {
@@ -682,6 +686,20 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       set({ tutorial: next });
     },
 
+    tutorialPatternReferenceTouched: () => {
+      const { tutorial, tutorialStorage: storage } = get();
+      const next = runTutorialCommand(tutorial, { type: 'patternReferenceTouched' });
+      persistTutorialTransition(tutorial, next, storage);
+      set({ tutorial: next });
+    },
+
+    tutorialGameScreenSkipPressed: () => {
+      const { tutorial, tutorialStorage: storage } = get();
+      const next = runTutorialCommand(tutorial, { type: 'gameScreenSkipPressed' });
+      persistTutorialTransition(tutorial, next, storage);
+      set({ tutorial: next });
+    },
+
     tutorialForgeOfferTouched: () => {
       const { tutorial, tutorialStorage: storage } = get();
       const next = runTutorialCommand(tutorial, { type: 'forgeOfferTouched' });
@@ -689,9 +707,9 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       set({ tutorial: next });
     },
 
-    tutorialSkipOrCompletePressed: () => {
+    tutorialForgeCompletePressed: () => {
       const { tutorial, tutorialStorage: storage } = get();
-      const next = runTutorialCommand(tutorial, { type: 'skipOrCompletePressed' });
+      const next = runTutorialCommand(tutorial, { type: 'forgeCompletePressed' });
       persistTutorialTransition(tutorial, next, storage);
       set({ tutorial: next });
     },

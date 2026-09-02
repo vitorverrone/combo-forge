@@ -6,18 +6,18 @@ import { activeRelics, cardKey, cosmeticItemById, currentMultiplier } from '../e
 import { useTranslation } from '../i18n';
 import { PlayingCard } from './PlayingCard';
 import { patternName } from './format';
-import { PatternReferenceModal } from './PatternReferenceModal';
 import { PhaseScreen } from './PhaseScreen';
 import { RelicRow } from './RelicRow';
-import { TutorialView } from './TutorialView';
+import { TutorialView } from './tutorial';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { selectionPreview, useGameStore } from '../store/gameStore';
+import { OnboardingOverlay } from './OnboardingOverlay';
 
 export function GameScreen() {
   const { t } = useTranslation();
   const [showAbandon, setShowAbandon] = useState(false);
-  const [showPatternReference, setShowPatternReference] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const run = useGameStore((state) => state.run);
   const runMode = useGameStore((state) => state.runMode);
   const selectedKeys = useGameStore((state) => state.selectedKeys);
@@ -30,13 +30,18 @@ export function GameScreen() {
   const deckSkin =
     shopOwned.equippedDeckSkin === null ? undefined : cosmeticItemById(shopOwned.equippedDeckSkin);
 
-  const tutorial = useGameStore((state) => state.tutorial);
+  const gameScreenActiveStep = useGameStore((state) => state.tutorial.gameScreenActiveStep);
   const checkGameScreenTutorialTrigger = useGameStore((state) => state.checkGameScreenTutorialTrigger);
   const tutorialCardTouched = useGameStore((state) => state.tutorialCardTouched);
   const tutorialClearOrDiscardTouched = useGameStore((state) => state.tutorialClearOrDiscardTouched);
   const tutorialNextPressed = useGameStore((state) => state.tutorialNextPressed);
-  const tutorialSkipOrCompletePressed = useGameStore((state) => state.tutorialSkipOrCompletePressed);
+  const tutorialPatternReferenceTouched = useGameStore((state) => state.tutorialPatternReferenceTouched);
+  const tutorialGameScreenSkipPressed = useGameStore((state) => state.tutorialGameScreenSkipPressed);
   const tutorialGameScreenLeft = useGameStore((state) => state.tutorialGameScreenLeft);
+
+  const hideOnboarding = () => {
+    setShowOnboarding(false);
+  };
 
   useEffect(() => {
     const phase = run?.phase;
@@ -61,206 +66,222 @@ export function GameScreen() {
   const progress = run.target > 0 ? Math.min(run.score / run.target, 1) : 0;
 
   return (
-    <View style={styles.container}>
-      {/* Top bar */}
-      <View style={styles.topbar}>
-        <View style={styles.navGroup}>
-          <Pressable
-            accessibilityLabel={t('a11y.abandonRun')}
-            accessibilityRole="button"
-            onPress={() => setShowAbandon(true)}
-            style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
-          >
-            <Text style={styles.navBtnText}>←</Text>
-          </Pressable>
-          <Pressable
-            accessibilityLabel={t('a11y.openPatternReference')}
-            accessibilityRole="button"
-            onPress={() => setShowPatternReference(true)}
-            style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
-          >
-            <Text style={styles.navBtnText}>?</Text>
-          </Pressable>
-        </View>
-        <View style={styles.roundLabelWrap}>
-          <Text style={styles.roundLabel}>{t('game.round', { number: run.roundNumber })}</Text>
-          {runMode === 'daily' && <Text style={styles.dailyBadge}>{t('game.daily')}</Text>}
-        </View>
-        <View style={styles.scoreBlock}>
-          <Text style={styles.scoreValue}>{run.score}</Text>
-          <Text style={styles.scoreSep}>/</Text>
-          <Text style={styles.scoreTarget}>{run.target}</Text>
-        </View>
-        {/* Progress bar */}
-        <View style={styles.progressTrack}>
-          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-        </View>
-      </View>
-
-      <ScrollView contentContainerStyle={styles.scroll}>
-        {/* HUD row: Plays + Combo only */}
-        <View style={styles.hudRow}>
-          <View style={styles.hudBox}>
-            <Text style={styles.hudLabel}>{t('game.plays')}</Text>
-            <Text style={styles.hudValue}>{run.playsRemaining}</Text>
-          </View>
-          <View style={styles.hudBox}>
-            <Text style={styles.hudLabel}>{t('game.combo')}</Text>
-            <Text style={[styles.hudValue, { color: colors.gold }]}>×{multiplier}</Text>
-          </View>
-
-          {/* Relics */}
-          <RelicRow relics={relics} />
-        </View>
-
-        {/* Pattern preview — inline, no container */}
-        <View style={styles.patternPreview}>
-          {preview !== null ? (
-            <>
-              <Text style={styles.patternName}>{patternName(preview.pattern.kind)}</Text>
-              <Text style={styles.patternPoints}>
-                {t('game.base')} {preview.baseValue} · <Text style={styles.patternPointsBold}>{preview.baseValue * multiplier} {t('game.pts')}</Text> {t('game.previewSuffix', { multiplier })}
-              </Text>
-            </>
-          ) : (<Text style={styles.patternHint}>{t('game.patternHint')}</Text>
-          )}
-        </View>
-
-        {/* Card hand — a 1ª carta vira alvo do passo 1 do tutorial (TutorialView cuida do recorte + balão). */}
-        <View style={styles.hand}>
-          {run.deck.hand.map((card, index) => {
-            const cardElement = (
-              <PlayingCard
-                card={card}
-                forgedCards={run.forgedCards}
-                selected={selectedKeys.includes(cardKey(card))}
-                onPress={() => {
-                  toggleCard(cardKey(card));
-                  tutorialCardTouched();
-                }}
-                skin={deckSkin?.palette}
-              />
-            );
-            return (
-              <View key={cardKey(card)}>
-                {index === 0 ? (
-                  <TutorialView
-                    step={1}
-                    text={t('tutorial.step1Callout')}
-                    spotlightRadius={radius[8]}
-                    leftAction={{
-                      label: t('tutorial.skip'),
-                      accessibilityLabel: t('a11y.skipTutorial'),
-                      onPress: tutorialSkipOrCompletePressed,
-                    }}
-                  >
-                    {cardElement}
-                  </TutorialView>
-                ) : (
-                  cardElement
-                )}
-              </View>
-            );
-          })}
-        </View>
-
-        {/* Actions — inside scroll so they flow below the hand */}
-        <View style={[styles.actions, tutorial.activeStep === 2 && styles.actionsWithCalloutAbove]}>
-          <TutorialView
-            step={2}
-            text={t('tutorial.step2Callout')}
-            calloutPosition="above"
-            leftAction={{
-              label: t('tutorial.skip'),
-              accessibilityLabel: t('a11y.skipTutorial'),
-              onPress: tutorialSkipOrCompletePressed,
-            }}
-            rightAction={{
-              label: t('common.next'),
-              accessibilityLabel: t('a11y.nextStep'),
-              onPress: tutorialNextPressed,
-            }}
-          >
-            <View style={styles.actionsSecondary}>
+    <>
+      <OnboardingOverlay visible={showOnboarding} onComplete={hideOnboarding} />
+      <View style={styles.container}>
+        {/* Top bar */}
+        <View style={styles.topbar}>
+          <View style={styles.navGroup}>
+            <Pressable
+              accessibilityLabel={t('a11y.abandonRun')}
+              accessibilityRole="button"
+              onPress={() => setShowAbandon(true)}
+              style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
+            >
+              <Text style={styles.navBtnText}>←</Text>
+            </Pressable>
+            <TutorialView
+              active={gameScreenActiveStep === 3}
+              text={t('tutorial.step3Callout')}
+              spotlightRadius={radius[10]}
+              leftAction={{
+                label: t('tutorial.skip'),
+                accessibilityLabel: t('a11y.skipTutorial'),
+                onPress: tutorialGameScreenSkipPressed,
+              }}
+            >
               <Pressable
-                accessibilityLabel={t('a11y.clearSelection')}
+                accessibilityLabel={t('a11y.openOnboarding')}
                 accessibilityRole="button"
-                accessibilityState={{ disabled: selectedKeys.length === 0 }}
-                disabled={selectedKeys.length === 0}
                 onPress={() => {
-                  clearSelection();
-                  tutorialClearOrDiscardTouched();
+                  setShowOnboarding(true);
+                  tutorialPatternReferenceTouched();
                 }}
-                style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPressed]}
+                style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
               >
-                <Text style={[styles.btnSecondaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>{t('game.clear')}</Text>
+                <Text style={styles.navBtnText}>?</Text>
               </Pressable>
-              <Pressable
-                accessibilityLabel={t('a11y.discardSelectedCards')}
-                accessibilityRole="button"
-                accessibilityState={{ disabled: selectedKeys.length === 0 || discardsRemaining <= 0 }}
-                disabled={selectedKeys.length === 0 || discardsRemaining <= 0}
-                onPress={() => {
-                  discardSelection();
-                  tutorialClearOrDiscardTouched();
-                }}
-                style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabled, pressed && styles.btnPressed]}
-              >
-                <Text style={[styles.btnSecondaryText, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>
-                  {t('game.discard')} <Text style={[styles.hintBadge, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>· {discardsRemaining}</Text>
+            </TutorialView>
+          </View>
+          <View style={styles.roundLabelWrap}>
+            <Text style={styles.roundLabel}>{t('game.round', { number: run.roundNumber })}</Text>
+            {runMode === 'daily' && <Text style={styles.dailyBadge}>{t('game.daily')}</Text>}
+          </View>
+          <View style={styles.scoreBlock}>
+            <Text style={styles.scoreValue}>{run.score}</Text>
+            <Text style={styles.scoreSep}>/</Text>
+            <Text style={styles.scoreTarget}>{run.target}</Text>
+          </View>
+          {/* Progress bar */}
+          <View style={styles.progressTrack}>
+            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+          </View>
+        </View>
+
+        <ScrollView contentContainerStyle={styles.scroll}>
+          {/* HUD row: Plays + Combo only */}
+          <View style={styles.hudRow}>
+            <View style={styles.hudBox}>
+              <Text style={styles.hudLabel}>{t('game.plays')}</Text>
+              <Text style={styles.hudValue}>{run.playsRemaining}</Text>
+            </View>
+            <View style={styles.hudBox}>
+              <Text style={styles.hudLabel}>{t('game.combo')}</Text>
+              <Text style={[styles.hudValue, { color: colors.gold }]}>×{multiplier}</Text>
+            </View>
+
+            {/* Relics */}
+            <RelicRow relics={relics} />
+          </View>
+
+          {/* Pattern preview — inline, no container */}
+          <View style={styles.patternPreview}>
+            {preview !== null ? (
+              <>
+                <Text style={styles.patternName}>{patternName(preview.pattern.kind)}</Text>
+                <Text style={styles.patternPoints}>
+                  {t('game.base')} {preview.baseValue} · <Text style={styles.patternPointsBold}>{preview.baseValue * multiplier} {t('game.pts')}</Text> {t('game.previewSuffix', { multiplier })}
                 </Text>
-              </Pressable>
-            </View>
-          </TutorialView>
-          <Pressable
-            accessibilityLabel={t('a11y.playSelectedCards')}
-            accessibilityRole="button"
-            accessibilityState={{ disabled: selectedKeys.length === 0 }}
-            disabled={selectedKeys.length === 0}
-            onPress={playSelection}
-            style={({ pressed }) => [styles.btn, styles.btnPrimary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPrimaryPressed]}
-          >
-            <Text style={[styles.btnPrimaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>{t('game.play')}</Text>
-          </Pressable>
-        </View>
-      </ScrollView>
+              </>
+            ) : (<Text style={styles.patternHint}>{t('game.patternHint')}</Text>
+            )}
+          </View>
 
-      {/* Abandon run modal */}
-      {showAbandon && (
-        <View style={styles.overlay}>
-          <View style={styles.overlayCard}>
-            <Text style={styles.overlayTitle}>{t('game.abandonTitle')}</Text>
-            <Text style={styles.overlaySub}>{t('game.abandonSub')}</Text>
-            <View style={styles.overlayActions}>
-              <Pressable
-                accessibilityLabel={t('game.keepPlaying')}
-                accessibilityRole="button"
-                onPress={() => setShowAbandon(false)}
-                style={({ pressed }) => [styles.overlayBtn, styles.overlayBtnPrimary, pressed && styles.btnPressed]}
-              >
-                <Text style={styles.overlayBtnPrimaryText}>{t('game.keepPlaying')}</Text>
-              </Pressable>
-              <Pressable
-                accessibilityLabel={t('a11y.abandonRun')}
-                accessibilityRole="button"
-                onPress={() => {
-                  // backToStart zera `run` no mesmo set() — o efeito que observa
-                  // run.phase não roda mais depois disso, então a seção 1-2 do
-                  // tutorial (se ainda ativa) precisa ser marcada como vista aqui.
-                  tutorialGameScreenLeft();
-                  backToStart();
-                }}
-                style={({ pressed }) => [styles.overlayBtn, styles.overlayBtnDanger, pressed && styles.btnPressed]}
-              >
-                <Text style={styles.overlayBtnDangerText}>{t('game.abandon')}</Text>
-              </Pressable>
+          {/* Card hand — a 1ª carta vira alvo do passo 1 do tutorial (TutorialView cuida do recorte + balão). */}
+          <View style={styles.hand}>
+            {run.deck.hand.map((card, index) => {
+              const cardElement = (
+                <PlayingCard
+                  card={card}
+                  forgedCards={run.forgedCards}
+                  selected={selectedKeys.includes(cardKey(card))}
+                  onPress={() => {
+                    toggleCard(cardKey(card));
+                    tutorialCardTouched();
+                  }}
+                  skin={deckSkin?.palette}
+                />
+              );
+              return (
+                <View key={cardKey(card)}>
+                  {index === 0 ? (
+                    <TutorialView
+                      active={gameScreenActiveStep === 1}
+                      text={t('tutorial.step1Callout')}
+                      spotlightRadius={radius[8]}
+                      leftAction={{
+                        label: t('tutorial.skip'),
+                        accessibilityLabel: t('a11y.skipTutorial'),
+                        onPress: tutorialGameScreenSkipPressed,
+                      }}
+                    >
+                      {cardElement}
+                    </TutorialView>
+                  ) : (
+                    cardElement
+                  )}
+                </View>
+              );
+            })}
+          </View>
+
+          {/* Actions — inside scroll so they flow below the hand */}
+          <View style={[styles.actions, gameScreenActiveStep === 2 && styles.actionsWithCalloutAbove]}>
+            <TutorialView
+              active={gameScreenActiveStep === 2}
+              text={t('tutorial.step2Callout')}
+              calloutPosition="above"
+              leftAction={{
+                label: t('tutorial.skip'),
+                accessibilityLabel: t('a11y.skipTutorial'),
+                onPress: tutorialGameScreenSkipPressed,
+              }}
+              rightAction={{
+                label: t('common.next'),
+                accessibilityLabel: t('a11y.nextStep'),
+                onPress: tutorialNextPressed,
+              }}
+            >
+              <View style={styles.actionsSecondary}>
+                <Pressable
+                  accessibilityLabel={t('a11y.clearSelection')}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: selectedKeys.length === 0 }}
+                  disabled={selectedKeys.length === 0}
+                  onPress={() => {
+                    clearSelection();
+                    tutorialClearOrDiscardTouched();
+                  }}
+                  style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPressed]}
+                >
+                  <Text style={[styles.btnSecondaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>{t('game.clear')}</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityLabel={t('a11y.discardSelectedCards')}
+                  accessibilityRole="button"
+                  accessibilityState={{ disabled: selectedKeys.length === 0 || discardsRemaining <= 0 }}
+                  disabled={selectedKeys.length === 0 || discardsRemaining <= 0}
+                  onPress={() => {
+                    discardSelection();
+                    tutorialClearOrDiscardTouched();
+                  }}
+                  style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabled, pressed && styles.btnPressed]}
+                >
+                  <Text style={[styles.btnSecondaryText, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>
+                    {t('game.discard')} <Text style={[styles.hintBadge, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>· {discardsRemaining}</Text>
+                  </Text>
+                </Pressable>
+              </View>
+            </TutorialView>
+            <Pressable
+              accessibilityLabel={t('a11y.playSelectedCards')}
+              accessibilityRole="button"
+              accessibilityState={{ disabled: selectedKeys.length === 0 }}
+              disabled={selectedKeys.length === 0}
+              onPress={playSelection}
+              style={({ pressed }) => [styles.btn, styles.btnPrimary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPrimaryPressed]}
+            >
+              <Text style={[styles.btnPrimaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>{t('game.play')}</Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+
+        {/* Abandon run modal */}
+        {showAbandon && (
+          <View style={styles.overlay}>
+            <View style={styles.overlayCard}>
+              <Text style={styles.overlayTitle}>{t('game.abandonTitle')}</Text>
+              <Text style={styles.overlaySub}>{t('game.abandonSub')}</Text>
+              <View style={styles.overlayActions}>
+                <Pressable
+                  accessibilityLabel={t('game.keepPlaying')}
+                  accessibilityRole="button"
+                  onPress={() => setShowAbandon(false)}
+                  style={({ pressed }) => [styles.overlayBtn, styles.overlayBtnPrimary, pressed && styles.btnPressed]}
+                >
+                  <Text style={styles.overlayBtnPrimaryText}>{t('game.keepPlaying')}</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityLabel={t('a11y.abandonRun')}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    // backToStart zera `run` no mesmo set() — o efeito que observa
+                    // run.phase não roda mais depois disso, então a seção 1-2 do
+                    // tutorial (se ainda ativa) precisa ser marcada como vista aqui.
+                    tutorialGameScreenLeft();
+                    backToStart();
+                  }}
+                  style={({ pressed }) => [styles.overlayBtn, styles.overlayBtnDanger, pressed && styles.btnPressed]}
+                >
+                  <Text style={styles.overlayBtnDangerText}>{t('game.abandon')}</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
-      )}
+        )}
+      </View>
+    </>
 
-      <PatternReferenceModal visible={showPatternReference} onClose={() => setShowPatternReference(false)} />
-    </View>
   );
 }
 
@@ -554,8 +575,8 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   overlayCard: {
-    width: '100%',
-    maxWidth: 280,
+    width: 320,
+    maxWidth: '90%',
     backgroundColor: colors.surfaceElevated,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,

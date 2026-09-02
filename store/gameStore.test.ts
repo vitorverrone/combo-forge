@@ -779,20 +779,22 @@ describe('tutorial contextual (delegação para o tutorialFlow — ticket 03)', 
   // Smoke tests: provam que as ações do store delegam para o módulo profundo
   // (store/tutorialFlow.ts). O comportamento completo do reducer é testado
   // no seam do módulo (store/tutorialFlow.test.ts) — aqui só o caminho
-  // store → módulo.
+  // store → módulo. As duas seções (GameScreen/Forja) usam campos
+  // independentes (gameScreenActiveStep/forgeActiveStep) — nunca um único
+  // contador compartilhado.
   test('checkGameScreenTutorialTrigger ativa o passo 1 numa Run normal na Rodada 1', () => {
     const store = createGameStore();
     store.getState().startRun();
-    expect(store.getState().tutorial.activeStep).toBeNull();
+    expect(store.getState().tutorial.gameScreenActiveStep).toBeNull();
     store.getState().checkGameScreenTutorialTrigger();
-    expect(store.getState().tutorial.activeStep).toBe(1);
+    expect(store.getState().tutorial.gameScreenActiveStep).toBe(1);
   });
 
   test('checkGameScreenTutorialTrigger não ativa nada no Desafio Diário', async () => {
     const store = createGameStore({ dailyBackend: makeFakeDailyBackend() });
     await store.getState().startDailyChallenge();
     store.getState().checkGameScreenTutorialTrigger();
-    expect(store.getState().tutorial.activeStep).toBeNull();
+    expect(store.getState().tutorial.gameScreenActiveStep).toBeNull();
   });
 
   test('tutorialCardTouched avança do passo 1 pro passo 2', () => {
@@ -800,48 +802,60 @@ describe('tutorial contextual (delegação para o tutorialFlow — ticket 03)', 
     store.getState().startRun();
     store.getState().checkGameScreenTutorialTrigger();
     store.getState().tutorialCardTouched();
-    expect(store.getState().tutorial.activeStep).toBe(2);
+    expect(store.getState().tutorial.gameScreenActiveStep).toBe(2);
   });
 
-  test('tutorialSkipOrCompletePressed conclui a seção e persiste no storage injetado', () => {
+  test('tutorialPatternReferenceTouched conclui a seção GameScreen a partir do passo 3', () => {
+    const store = createGameStore();
+    store.getState().startRun();
+    store.getState().checkGameScreenTutorialTrigger();
+    store.getState().tutorialCardTouched();
+    store.getState().tutorialNextPressed();
+    expect(store.getState().tutorial.gameScreenActiveStep).toBe(3);
+    store.getState().tutorialPatternReferenceTouched();
+    expect(store.getState().tutorial.gameScreenActiveStep).toBeNull();
+    expect(store.getState().tutorial.gameScreenSeen).toBe(true);
+  });
+
+  test('tutorialGameScreenSkipPressed conclui a seção e persiste no storage injetado', () => {
     const storage = createMemoryTutorialStorage();
     const store = createGameStore({ tutorialStorage: storage });
     store.getState().startRun();
     store.getState().checkGameScreenTutorialTrigger();
-    store.getState().tutorialSkipOrCompletePressed();
-    expect(store.getState().tutorial.activeStep).toBeNull();
+    store.getState().tutorialGameScreenSkipPressed();
+    expect(store.getState().tutorial.gameScreenActiveStep).toBeNull();
     expect(store.getState().tutorial.gameScreenSeen).toBe(true);
     expect(storage.loadGameScreenSeen()).toBe(true);
   });
 
-  test('tutorialGameScreenLeft conclui a seção 1-2 (se ativa) e persiste — usado ao sair do GameScreen com a Rodada terminada ou a Run abandonada', () => {
+  test('tutorialGameScreenLeft conclui a seção (se ativa) e persiste — usado ao sair do GameScreen com a Rodada terminada ou a Run abandonada', () => {
     const storage = createMemoryTutorialStorage();
     const store = createGameStore({ tutorialStorage: storage });
     store.getState().startRun();
     store.getState().checkGameScreenTutorialTrigger();
-    expect(store.getState().tutorial.activeStep).toBe(1);
+    expect(store.getState().tutorial.gameScreenActiveStep).toBe(1);
 
     store.getState().tutorialGameScreenLeft();
 
-    expect(store.getState().tutorial.activeStep).toBeNull();
+    expect(store.getState().tutorial.gameScreenActiveStep).toBeNull();
     expect(store.getState().tutorial.gameScreenSeen).toBe(true);
     expect(storage.loadGameScreenSeen()).toBe(true);
   });
 
-  test('tutorialGameScreenLeft não faz nada se nenhuma seção 1-2 estava ativa', () => {
+  test('tutorialGameScreenLeft não faz nada se nenhuma seção estava ativa', () => {
     const storage = createMemoryTutorialStorage();
     const store = createGameStore({ tutorialStorage: storage });
     store.getState().tutorialGameScreenLeft();
-    expect(store.getState().tutorial.activeStep).toBeNull();
+    expect(store.getState().tutorial.gameScreenActiveStep).toBeNull();
     expect(storage.loadGameScreenSeen()).toBe(false);
   });
 
-  test('checkForgeTutorialTrigger ativa o passo 3 na fase forging de uma Run normal', () => {
+  test('checkForgeTutorialTrigger ativa o passo da Forja na fase forging de uma Run normal', () => {
     const store = createGameStore();
     store.getState().startRun();
     store.setState({ run: { ...store.getState().run!, phase: 'forging' } });
     store.getState().checkForgeTutorialTrigger();
-    expect(store.getState().tutorial.activeStep).toBe(3);
+    expect(store.getState().tutorial.forgeActiveStep).toBe(1);
   });
 
   test('tutorialForgeOfferTouched conclui a seção Forja', () => {
@@ -850,8 +864,31 @@ describe('tutorial contextual (delegação para o tutorialFlow — ticket 03)', 
     store.setState({ run: { ...store.getState().run!, phase: 'forging' } });
     store.getState().checkForgeTutorialTrigger();
     store.getState().tutorialForgeOfferTouched();
-    expect(store.getState().tutorial.activeStep).toBeNull();
+    expect(store.getState().tutorial.forgeActiveStep).toBeNull();
     expect(store.getState().tutorial.forgeSeen).toBe(true);
+  });
+
+  test('tutorialForgeCompletePressed ("Concluir") produz o mesmo efeito que tocar numa oferta', () => {
+    const store = createGameStore();
+    store.getState().startRun();
+    store.setState({ run: { ...store.getState().run!, phase: 'forging' } });
+    store.getState().checkForgeTutorialTrigger();
+    store.getState().tutorialForgeCompletePressed();
+    expect(store.getState().tutorial.forgeActiveStep).toBeNull();
+    expect(store.getState().tutorial.forgeSeen).toBe(true);
+  });
+
+  test('pular a seção GameScreen não afeta a seção Forja — as duas são independentes', () => {
+    const store = createGameStore();
+    store.getState().startRun();
+    store.getState().checkGameScreenTutorialTrigger();
+    store.setState({ tutorial: { ...store.getState().tutorial, forgeActiveStep: 1 } });
+
+    store.getState().tutorialGameScreenSkipPressed();
+
+    expect(store.getState().tutorial.gameScreenSeen).toBe(true);
+    expect(store.getState().tutorial.forgeSeen).toBe(false);
+    expect(store.getState().tutorial.forgeActiveStep).toBe(1);
   });
 });
 

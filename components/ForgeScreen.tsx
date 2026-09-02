@@ -21,7 +21,7 @@ import {
   suitName,
 } from './format';
 import { SuitSymbol } from './SuitSymbol';
-import { TutorialView } from './TutorialView';
+import { TutorialView } from './tutorial';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -37,10 +37,10 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
   const [targetKey, setTargetKey] = useState<string | null>(null);
   const [cardEffectConfirmed, setCardEffectConfirmed] = useState(false);
 
-  const tutorial = useGameStore((state) => state.tutorial);
+  const forgeActiveStep = useGameStore((state) => state.tutorial.forgeActiveStep);
   const checkForgeTutorialTrigger = useGameStore((state) => state.checkForgeTutorialTrigger);
   const tutorialForgeOfferTouched = useGameStore((state) => state.tutorialForgeOfferTouched);
-  const tutorialSkipOrCompletePressed = useGameStore((state) => state.tutorialSkipOrCompletePressed);
+  const tutorialForgeCompletePressed = useGameStore((state) => state.tutorialForgeCompletePressed);
 
   useEffect(() => {
     checkForgeTutorialTrigger();
@@ -90,24 +90,24 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
       <View style={styles.topbar}>
         <View style={styles.relicCounter}>
           <Text style={styles.relicCounterLabel}>{t('forge.relics')}</Text>
-          <Text style={styles.relicCounterValue}>{relicCount}/3</Text>
+          <Text style={styles.relicCounterValue}>{relicCount} / 3</Text>
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={[styles.scroll, tutorial.activeStep === 3 && styles.scrollWithCallout]}>
+      <ScrollView contentContainerStyle={[styles.scroll, forgeActiveStep === 1 && styles.scrollWithCallout]}>
         {/* Screen header */}
         <Text style={styles.eyebrow}>{t('forge.roundCleared', { number: run.roundNumber })}</Text>
         <Text style={styles.title}>{t('forge.title')}</Text>
         <Text style={styles.subtitle}>{t('forge.subtitle')}</Text>
 
-        {/* Offers — a lista inteira vira alvo do passo 3 do tutorial (TutorialView cuida do recorte + balão). */}
+        {/* Offers — a lista inteira vira alvo do passo da Forja (TutorialView cuida do recorte + balão). Seção independente da GameScreen — ver store/tutorialFlow.ts. */}
         <TutorialView
-          step={3}
-          text={t('tutorial.step3Callout')}
+          active={forgeActiveStep === 1}
+          text={t('tutorial.forgeCallout')}
           rightAction={{
             label: t('tutorial.complete'),
             accessibilityLabel: t('a11y.completeTutorial'),
-            onPress: tutorialSkipOrCompletePressed,
+            onPress: tutorialForgeCompletePressed,
           }}
         >
           <View style={styles.offerList}>
