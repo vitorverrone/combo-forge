@@ -329,7 +329,8 @@ const styles = StyleSheet.create({
     paddingBottom: 70,
   },
   /**
-   * Passo 3 do tutorial: o balão fica absolute logo abaixo da lista de
+   * Passo da Forja (seção independente da GameScreen — ver
+   * store/tutorialFlow.ts): o balão fica absolute logo abaixo da lista de
    * ofertas (último item do scroll), então não conta pra altura medida do
    * conteúdo — sem esse respiro extra, a parte de baixo do balão fica fora
    * da área rolável (achado em code review, não em teste manual). Inclui

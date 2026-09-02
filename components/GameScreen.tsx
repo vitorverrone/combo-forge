@@ -49,9 +49,10 @@ export function GameScreen() {
     if (phase === 'playing') {
       checkGameScreenTutorialTrigger();
     } else {
-      // Rodada terminou (vencida/perdida) com a seção 1-2 ainda ativa: conta
-      // como vista, senão ela ficaria "presa" e reapareceria na Rodada 2 ou
-      // até numa Run do Desafio Diário seguinte.
+      // Rodada terminou (vencida/perdida) com a seção da GameScreen (algum
+      // dos 3 passos) ainda ativa: conta como vista, senão ela ficaria
+      // "presa" e reapareceria na Rodada 2 ou até numa Run do Desafio Diário
+      // seguinte.
       tutorialGameScreenLeft();
     }
   }, [checkGameScreenTutorialTrigger, tutorialGameScreenLeft, run?.phase, run?.roundNumber, runMode]);
@@ -266,8 +267,9 @@ export function GameScreen() {
                   accessibilityRole="button"
                   onPress={() => {
                     // backToStart zera `run` no mesmo set() — o efeito que observa
-                    // run.phase não roda mais depois disso, então a seção 1-2 do
-                    // tutorial (se ainda ativa) precisa ser marcada como vista aqui.
+                    // run.phase não roda mais depois disso, então a seção da
+                    // GameScreen do tutorial (se ainda ativa) precisa ser marcada
+                    // como vista aqui.
                     tutorialGameScreenLeft();
                     backToStart();
                   }}

@@ -12,7 +12,6 @@
     "equipped": "Equipped",
     "unlock": "Unlock",
     "decideLater": "Decide Later",
-    "skip": "Skip",
     "next": "Next",
     "previous": "Previous",
     "cancel": "Cancel",
@@ -200,10 +199,6 @@
     "step2Callout": "Didn't like your pick? Clear deselects everything. Discard swaps the selected cards for new ones.",
     "step3Callout": "Have you had any questions? Tap the icon to open the tips.",
     "forgeCallout": "Choose a Relic (a permanent effect for the rest of the run) or a Card Effect (strengthens one specific card). Tap any offer to continue."
-  },
-  "patternReference": {
-    "title": "Patterns",
-    "subtitle": "What each pattern needs and how many points it's worth."
   },
   "unlockChoice": {
     "milestoneReached": "Milestone reached",
