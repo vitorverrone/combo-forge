@@ -197,7 +197,8 @@
     "complete": "Concluir",
     "step1Callout": "Toque em até 5 cartas da sua Mão para formar uma Jogada. Comece tocando numa carta.",
     "step2Callout": "Não gostou da seleção? Limpar desmarca tudo. Descartar troca as cartas escolhidas por novas.",
-    "step3Callout": "Ficou com alguma dúvida? Toque no ícone para abrir as dicas.",
+    "step3Callout": "Suas reliquias ativas aparecem aqui, quando quiser basta clicar e um modal com mais detalhes vai aparecer",
+    "step4Callout": "Ficou com alguma dúvida? Toque no ícone para abrir as dicas.",
     "forgeCallout": "Escolha uma Relíquia (efeito permanente pro resto da Run) ou um Efeito de Carta (fortalece uma carta específica). Toque em qualquer oferta para continuar."
   },
   "unlockChoice": {
@@ -317,6 +318,7 @@
     "openProfile": "Abrir perfil",
     "openShop": "Abrir loja",
     "openCollection": "Abrir coleção",
+    "openActiveRelics": "Abrir relíquias ativas",
     "abandonRun": "Abandonar run",
     "clearSelection": "Limpar seleção",
     "discardSelectedCards": "Descartar cartas selecionadas",

@@ -31,7 +31,7 @@ export function RelicIcon({ relic, open, onPress, onDismiss }: RelicIconProps) {
         return () => clearTimeout(timer);
     }, [open, onDismiss]);
 
-    const glyphColor = relic.effect.kind === 'suit' && isRedSuit(relic.effect.suit) ? colors.red : colors.gold;
+    const glyphColor = relicGlyphColor(relic);
 
     return (
         <View style={[styles.tile, open && styles.tileOpen]}>
@@ -56,8 +56,13 @@ export function RelicIcon({ relic, open, onPress, onDismiss }: RelicIconProps) {
     );
 }
 
+/** Cor do glifo — vermelho pra relíquias de naipe vermelho, dourado nas demais. */
+export function relicGlyphColor(relic: Relic): string {
+    return relic.effect.kind === 'suit' && isRedSuit(relic.effect.suit) ? colors.red : colors.gold;
+}
+
 /** Retorno declarado + switch exaustivo — ver relics.ts::scoreModifiers. */
-function RelicGlyph({ relic, color }: { relic: Relic; color: string }): ReactElement {
+export function RelicGlyph({ relic, color }: { relic: Relic; color: string }): ReactElement {
     switch (relic.effect.kind) {
         case 'suit':
             return <SuitSymbol suit={relic.effect.suit} color={color} size={20} />;

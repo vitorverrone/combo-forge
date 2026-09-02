@@ -214,6 +214,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 10 },
+    maxHeight: '85%'
   },
   /* ── Top row: dots + counter ── */
   closeBtn: {
@@ -261,7 +262,7 @@ const styles = StyleSheet.create({
    * quando não cabe, em vez de sobrepor o título/corpo do passo.
    */
   scrollBody: {
-    maxHeight: 340,
+    height: 'auto',
   },
   /* ── Visual area ── */
   visual: {

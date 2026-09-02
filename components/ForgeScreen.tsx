@@ -370,10 +370,10 @@ const styles = StyleSheet.create({
     marginTop: spacing[8],
     maxWidth: 290,
     alignSelf: 'center',
+    marginBottom: spacing[20],
   },
   /* ── Offers ── */
   offerList: {
-    marginTop: spacing[20],
     gap: spacing[10],
   },
   offer: {

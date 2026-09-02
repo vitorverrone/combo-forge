@@ -30,7 +30,7 @@ function TutorialOverlay() {
   if (layout === null) return null;
 
   return (
-    <>
+    <View pointerEvents="box-none" style={styles.overlayRoot}>
       <TutorialSpotlightMask x={layout.x} y={layout.y} width={layout.width} height={layout.height} radius={layout.radius} />
       <TutorialTouchBlocker x={layout.x} y={layout.y} width={layout.width} height={layout.height} />
       <View
@@ -39,13 +39,31 @@ function TutorialOverlay() {
       >
         <TutorialCallout callout={layout.callout} />
       </View>
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  /**
+   * zIndex sozinho só reordena entre irmãos do mesmo pai — não é garantia
+   * confiável no Android quando várias views absolutas de partes diferentes
+   * da árvore competem (é o caso aqui: o HUD do GameScreen, bem lá embaixo
+   * na árvore, ficou aparecendo por cima deste overlay apesar de ele ser
+   * desenhado por último). `elevation` é o que decide a ordem de composição
+   * de fato no Android — some com o próprio zIndex nesse envelope evita que
+   * qualquer conteúdo da tela real "vaze" por cima do recorte/balão.
+   */
+  overlayRoot: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    zIndex: 9999,
+    elevation: 9999,
   },
   calloutAnchor: {
     position: 'absolute',

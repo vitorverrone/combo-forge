@@ -1,10 +1,16 @@
 /**
  * Motor do tutorial contextual em coach-mark (.scratch/tutorial-walkthrough)
  * — guiado por spotlight durante a jogatina real, gatilhado pela ação do
- * jogador em vez de um botão fixo de "próximo": 3 passos na GameScreen
- * (selecionar carta; Limpar/Descartar, com um botão "Próximo" adicional só
- * nesse passo; tocar no "?" de referência de Padrões) e 1 passo na Forja
- * (tocar numa oferta pra ver a diferença entre Relíquia e Efeito de Carta).
+ * jogador em vez de um botão fixo de "próximo".
+ *
+ * Cada seção (GameScreen, Forja) é uma SEQUÊNCIA de passos declarada em
+ * `GAME_SCREEN_STEPS`/`FORGE_STEPS` logo abaixo — cada passo lista os
+ * eventos que o avançam pro próximo (ou concluem a seção, se for o último
+ * da lista). Adicionar um passo novo é só acrescentar uma entrada na lista
+ * certa (+ o evento novo em `TutorialEvent`, se o gatilho ainda não existir)
+ * — `runTutorialCommand` nunca precisa mudar, porque ele não sabe quantos
+ * passos cada seção tem, só sabe avançar "o passo ativo, se o evento bater
+ * com o que esse passo espera".
  *
  * As duas seções são estados completamente independentes — cada uma com seu
  * próprio campo de "passo ativo" e sua própria flag "já visto"
@@ -24,8 +30,9 @@
 
 import { RunPhase } from '../engine';
 
-export type GameScreenTutorialStep = 1 | 2 | 3;
-export type ForgeTutorialStep = 1;
+/** 1-based — o passo N existe só se a seção tiver pelo menos N entradas na lista de passos. */
+export type GameScreenTutorialStep = number;
+export type ForgeTutorialStep = number;
 
 export interface TutorialState {
   /** Passo ativo agora na seção GameScreen (null = seção não está no ar). */
@@ -52,36 +59,76 @@ export type TutorialEvent =
   | { readonly type: 'forgeOfferTouched' }
   | { readonly type: 'forgeCompletePressed' };
 
+interface TutorialStepDefinition {
+  /** Eventos que avançam ESTE passo pro próximo (ou concluem a seção, se for o último da lista). */
+  readonly advanceOn: readonly TutorialEvent['type'][];
+}
+
+/**
+ * Passos da seção GameScreen, em ordem: 1) selecionar carta; 2) Limpar/
+ * Descartar (ou o botão "Próximo" desse passo); 3) relíquias ativas (botão
+ * "Próximo"); 4) tocar no "?" de referência de Padrões, que conclui a seção.
+ */
+const GAME_SCREEN_STEPS: readonly TutorialStepDefinition[] = [
+  { advanceOn: ['cardTouched'] },
+  { advanceOn: ['clearOrDiscardTouched', 'nextPressed'] },
+  { advanceOn: ['nextPressed'] },
+  { advanceOn: ['patternReferenceTouched'] },
+];
+
+/** Passos da seção Forja: 1) tocar numa oferta ou no botão "Concluir", que conclui a seção. */
+const FORGE_STEPS: readonly TutorialStepDefinition[] = [
+  { advanceOn: ['forgeOfferTouched', 'forgeCompletePressed'] },
+];
+
+/**
+ * Avança o passo ativo de UMA seção, se o evento bater com o que esse passo
+ * espera. Sem passo ativo, ou evento que não se aplica ao passo atual: nada
+ * muda. Passo ativo era o último da lista: a seção conclui (activeStep volta
+ * a null, seen vira true).
+ */
+function advanceSection(
+  steps: readonly TutorialStepDefinition[],
+  activeStep: number | null,
+  eventType: TutorialEvent['type'],
+): { readonly activeStep: number | null; readonly seen: boolean } {
+  if (activeStep === null) return { activeStep: null, seen: false };
+  const current = steps[activeStep - 1];
+  if (current === undefined || !current.advanceOn.includes(eventType)) {
+    return { activeStep, seen: false };
+  }
+  const nextStep = activeStep + 1;
+  return nextStep > steps.length ? { activeStep: null, seen: true } : { activeStep: nextStep, seen: false };
+}
+
 /**
  * Avança ou encerra o passo ativo conforme o evento. Cada evento só enxerga
  * e só altera o campo da SUA seção — um evento da GameScreen nunca lê nem
- * escreve `forgeActiveStep`/`forgeSeen`, e vice-versa. Eventos que não se
- * aplicam ao passo atual daquela seção não fazem nada — devolvem o mesmo
- * estado.
+ * escreve `forgeActiveStep`/`forgeSeen`, e vice-versa (cada seção usa sua
+ * própria lista de passos: um evento só afeta a seção em cuja lista ele
+ * aparece). Eventos que não se aplicam ao passo atual daquela seção não
+ * fazem nada — devolvem o mesmo estado. `gameScreenSkipPressed` é o único
+ * evento fora do modelo "avança o passo atual": ele conclui a seção
+ * GameScreen a partir de QUALQUER passo ativo, não só do último.
  */
 export function runTutorialCommand(state: TutorialState, event: TutorialEvent): TutorialState {
-  switch (event.type) {
-    case 'cardTouched':
-      return state.gameScreenActiveStep === 1 ? { ...state, gameScreenActiveStep: 2 } : state;
-    case 'clearOrDiscardTouched':
-    case 'nextPressed':
-      return state.gameScreenActiveStep === 2 ? { ...state, gameScreenActiveStep: 3 } : state;
-    case 'patternReferenceTouched':
-      return state.gameScreenActiveStep === 3 ? completeGameScreen(state) : state;
-    case 'gameScreenSkipPressed':
-      return state.gameScreenActiveStep !== null ? completeGameScreen(state) : state;
-    case 'forgeOfferTouched':
-    case 'forgeCompletePressed':
-      return state.forgeActiveStep === 1 ? completeForge(state) : state;
+  if (event.type === 'gameScreenSkipPressed') {
+    return state.gameScreenActiveStep !== null ? completeGameScreen(state) : state;
   }
+
+  const gameScreen = advanceSection(GAME_SCREEN_STEPS, state.gameScreenActiveStep, event.type);
+  const forge = advanceSection(FORGE_STEPS, state.forgeActiveStep, event.type);
+
+  return {
+    gameScreenActiveStep: gameScreen.activeStep,
+    gameScreenSeen: state.gameScreenSeen || gameScreen.seen,
+    forgeActiveStep: forge.activeStep,
+    forgeSeen: state.forgeSeen || forge.seen,
+  };
 }
 
 function completeGameScreen(state: TutorialState): TutorialState {
   return { ...state, gameScreenActiveStep: null, gameScreenSeen: true };
-}
-
-function completeForge(state: TutorialState): TutorialState {
-  return { ...state, forgeActiveStep: null, forgeSeen: true };
 }
 
 /** Inicia a seção GameScreen (passo 1) — chamar só depois de `shouldStartGameScreenTutorial` confirmar. */

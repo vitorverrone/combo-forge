@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useRef } from 'react';
-import { View } from 'react-native';
+import { StyleProp, TextStyle, View } from 'react-native';
 
 import { useTutorialLayout } from './TutorialLayoutContext';
 import { TutorialAction } from './types';
@@ -35,6 +35,7 @@ interface TutorialViewProps {
   /** Controle no canto direito (ex.: "Próximo" ou "Concluir"). Omitir quando esse alvo não tem ação alternativa. */
   readonly rightAction?: TutorialAction;
   readonly children: ReactNode;
+  readonly style?: StyleProp<TextStyle>;
 }
 
 /**
@@ -53,6 +54,7 @@ export function TutorialView({
   leftAction,
   rightAction,
   children,
+  style
 }: TutorialViewProps) {
   const { setLayout } = useTutorialLayout();
   const viewRef = useRef<View>(null);
@@ -79,5 +81,5 @@ export function TutorialView({
     };
   }, [active, spotlightRadius, text, calloutPosition, leftAction, rightAction, setLayout]);
 
-  return <View ref={viewRef}>{children}</View>;
+  return <View ref={viewRef} style={[style]}>{children}</View>;
 }
