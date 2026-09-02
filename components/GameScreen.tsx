@@ -187,7 +187,7 @@ export function GameScreen() {
           </View>
 
           {/* Actions — inside scroll so they flow below the hand */}
-          <View style={[styles.actions, gameScreenActiveStep === 2 && styles.actionsWithCalloutAbove]}>
+          <View style={[styles.actions]}>
             <TutorialView
               active={gameScreenActiveStep === 2}
               text={t('tutorial.step2Callout')}
@@ -494,15 +494,6 @@ const styles = StyleSheet.create({
     marginTop: 100,
     paddingTop: spacing[10],
     paddingBottom: spacing[0],
-  },
-  /**
-   * Passo 2 do tutorial: o balão (texto + linha de ações) flutua 'above',
-   * crescendo pra cima a partir do topo de actionsSecondary — respiro extra
-   * evita que ele encoste na Mão logo acima (achado em code review; valor a
-   * conferir num teste manual real).
-   */
-  actionsWithCalloutAbove: {
-    marginTop: 190,
   },
   actionsSecondary: {
     flexDirection: 'row',
