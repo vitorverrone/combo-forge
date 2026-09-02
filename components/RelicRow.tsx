@@ -41,7 +41,7 @@ export function RelicRow({ relics, compact = false }: RelicRowProps) {
 
   return (
     <View style={styles.overlay}>
-      <Text style={styles.overlayLabel}>{t('runWon.activeRelics').toUpperCase()}</Text>
+      {/* <Text style={styles.overlayLabel}>{t('runWon.activeRelics').toUpperCase()}</Text> */}
       <View style={styles.overlayList}>
         {relics.map((relic) => (
           <RelicIcon
@@ -61,7 +61,8 @@ const styles = StyleSheet.create({
   /* Full display — used on game screen above the hand */
   overlay: {
     marginTop: spacing[8],
-    width: '100%'
+    flex: 1,
+    flexShrink: 0
   },
   overlayLabel: {
     color: colors.textDim,
@@ -75,7 +76,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start',
     gap: spacing[8],
-    flexWrap: 'wrap',
     marginTop: spacing[8]
   },
   /* Compact display — used on forge, round summary screens */

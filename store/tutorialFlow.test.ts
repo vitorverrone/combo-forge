@@ -12,7 +12,7 @@ import {
   TutorialState,
 } from './tutorialFlow';
 
-const atGameScreenStep = (step: 1 | 2 | 3 | null, overrides: Partial<TutorialState> = {}): TutorialState => ({
+const atGameScreenStep = (step: number | null, overrides: Partial<TutorialState> = {}): TutorialState => ({
   ...DEFAULT_TUTORIAL_STATE,
   gameScreenActiveStep: step,
   ...overrides,
@@ -39,7 +39,7 @@ describe('runTutorialCommand — passo 1 (seleção de carta)', () => {
 });
 
 describe('runTutorialCommand — passo 2 (Limpar/Descartar + Próximo)', () => {
-  test('clearOrDiscardTouched avança do passo 2 pro passo 3 (referência de Padrões)', () => {
+  test('clearOrDiscardTouched avança do passo 2 pro passo 3 (relíquias ativas)', () => {
     const next = runTutorialCommand(atGameScreenStep(2), { type: 'clearOrDiscardTouched' });
     expect(next.gameScreenActiveStep).toBe(3);
     expect(next.gameScreenSeen).toBe(false);
@@ -50,31 +50,47 @@ describe('runTutorialCommand — passo 2 (Limpar/Descartar + Próximo)', () => {
     expect(next.gameScreenActiveStep).toBe(3);
   });
 
-  test('clearOrDiscardTouched e nextPressed não fazem nada fora do passo 2', () => {
+  test('clearOrDiscardTouched não faz nada fora do passo 2 (nextPressed também avança o passo 3, testado abaixo)', () => {
     expect(runTutorialCommand(atGameScreenStep(1), { type: 'clearOrDiscardTouched' }).gameScreenActiveStep).toBe(1);
     expect(runTutorialCommand(atGameScreenStep(3), { type: 'clearOrDiscardTouched' }).gameScreenActiveStep).toBe(3);
     expect(runTutorialCommand(atGameScreenStep(1), { type: 'nextPressed' }).gameScreenActiveStep).toBe(1);
-    expect(runTutorialCommand(atGameScreenStep(3), { type: 'nextPressed' }).gameScreenActiveStep).toBe(3);
   });
 });
 
-describe('runTutorialCommand — passo 3 (referência de Padrões, o "?")', () => {
-  test('patternReferenceTouched conclui a seção GameScreen a partir do passo 3', () => {
-    const next = runTutorialCommand(atGameScreenStep(3), { type: 'patternReferenceTouched' });
+describe('runTutorialCommand — passo 3 (relíquias ativas + Próximo)', () => {
+  test('nextPressed avança do passo 3 pro passo 4 (referência de Padrões)', () => {
+    const next = runTutorialCommand(atGameScreenStep(3), { type: 'nextPressed' });
+    expect(next.gameScreenActiveStep).toBe(4);
+    expect(next.gameScreenSeen).toBe(false);
+  });
+
+  test('clearOrDiscardTouched não faz nada no passo 3 — só nextPressed avança esse passo', () => {
+    expect(runTutorialCommand(atGameScreenStep(3), { type: 'clearOrDiscardTouched' }).gameScreenActiveStep).toBe(3);
+  });
+
+  test('nextPressed não faz nada no passo 4 (já é o último — quem conclui de lá é patternReferenceTouched)', () => {
+    expect(runTutorialCommand(atGameScreenStep(4), { type: 'nextPressed' }).gameScreenActiveStep).toBe(4);
+  });
+});
+
+describe('runTutorialCommand — passo 4 (referência de Padrões, o "?")', () => {
+  test('patternReferenceTouched conclui a seção GameScreen a partir do passo 4', () => {
+    const next = runTutorialCommand(atGameScreenStep(4), { type: 'patternReferenceTouched' });
     expect(next.gameScreenActiveStep).toBeNull();
     expect(next.gameScreenSeen).toBe(true);
   });
 
-  test('patternReferenceTouched não faz nada fora do passo 3', () => {
+  test('patternReferenceTouched não faz nada fora do passo 4', () => {
     expect(runTutorialCommand(atGameScreenStep(1), { type: 'patternReferenceTouched' }).gameScreenSeen).toBe(false);
     expect(runTutorialCommand(atGameScreenStep(2), { type: 'patternReferenceTouched' }).gameScreenSeen).toBe(false);
+    expect(runTutorialCommand(atGameScreenStep(3), { type: 'patternReferenceTouched' }).gameScreenSeen).toBe(false);
     expect(runTutorialCommand(atGameScreenStep(null), { type: 'patternReferenceTouched' }).gameScreenSeen).toBe(false);
   });
 });
 
 describe('runTutorialCommand — gameScreenSkipPressed ("Pular tutorial")', () => {
-  test('conclui a seção GameScreen a partir de qualquer um dos 3 passos', () => {
-    for (const step of [1, 2, 3] as const) {
+  test('conclui a seção GameScreen a partir de qualquer um dos 4 passos', () => {
+    for (const step of [1, 2, 3, 4] as const) {
       expect(runTutorialCommand(atGameScreenStep(step), { type: 'gameScreenSkipPressed' })).toEqual(
         atGameScreenStep(null, { gameScreenSeen: true }),
       );
@@ -128,7 +144,7 @@ describe('runTutorialCommand — passo da Forja', () => {
 
 describe('independência entre as duas seções — o ponto central deste módulo', () => {
   test('pular a seção GameScreen em qualquer passo nunca marca a Forja como vista nem mexe no passo ativo dela', () => {
-    for (const step of [1, 2, 3] as const) {
+    for (const step of [1, 2, 3, 4] as const) {
       const state: TutorialState = { ...DEFAULT_TUTORIAL_STATE, gameScreenActiveStep: step, forgeActiveStep: 1 };
       const next = runTutorialCommand(state, { type: 'gameScreenSkipPressed' });
       expect(next.forgeSeen).toBe(false);
@@ -165,8 +181,8 @@ describe('startGameScreenTutorial / startForgeTutorial', () => {
 });
 
 describe('abandonGameScreenTutorialIfActive', () => {
-  test('conclui a seção GameScreen se qualquer um dos 3 passos estava ativo', () => {
-    for (const step of [1, 2, 3] as const) {
+  test('conclui a seção GameScreen se qualquer um dos 4 passos estava ativo', () => {
+    for (const step of [1, 2, 3, 4] as const) {
       expect(abandonGameScreenTutorialIfActive(atGameScreenStep(step)).gameScreenSeen).toBe(true);
       expect(abandonGameScreenTutorialIfActive(atGameScreenStep(step)).gameScreenActiveStep).toBeNull();
     }

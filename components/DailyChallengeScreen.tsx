@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import Svg, { Rect, Line } from 'react-native-svg';
 
 import {
@@ -15,6 +15,7 @@ import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
 import { DisplayNameModal } from './DisplayNameModal';
 import TopButton from './TopButton';
+import { useState } from 'react';
 
 /**
  * Tela do Desafio Diário (ticket 13): mesma Run para todos (seed do dia,
@@ -34,6 +35,7 @@ export function DailyChallengeScreen() {
   const watchAdForExtraAttempt = useGameStore((state) => state.watchAdForExtraAttempt);
   const setDisplayName = useGameStore((state) => state.setDisplayName);
   const backToStart = useGameStore((state) => state.backToStart);
+  const [showAdLoading, setShowAdLoading] = useState(false);
 
   // Rollover para o dia atual (fronteira UTC, igual ao backend).
   const today = utcDateIso();
@@ -94,27 +96,30 @@ export function DailyChallengeScreen() {
             accessibilityRole="button"
             accessibilityState={{ disabled: daily.adLoading }}
             disabled={daily.adLoading}
-            onPress={() => void watchAdForExtraAttempt()}
+            onPress={() => { void watchAdForExtraAttempt(); setShowAdLoading(true) }}
             style={({ pressed }) => [styles.btnPressedSecondary, pressed && styles.btnPressed]}
           >
-            <Svg
-              width={15}
-              height={15}
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke={colors.gold}
-              strokeWidth={2}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              style={{ marginRight: spacing[8] }}
-            >
-              <Rect x={2} y={3} width={20} height={14} rx={2} />
-              <Line x1={8} y1={21} x2={16} y2={21} />
-              <Line x1={12} y1={17} x2={12} y2={21} />
-            </Svg>
-            <Text style={styles.btnSecondaryText}>
-              {daily.adLoading ? t('daily.watchAdLoading') : t('daily.watchAd')}
-            </Text>
+
+            {showAdLoading ? <ActivityIndicator color={colors.text} /> : <>
+              <Svg
+                width={15}
+                height={15}
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke={colors.gold}
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{ marginRight: spacing[8] }}
+              >
+                <Rect x={2} y={3} width={20} height={14} rx={2} />
+                <Line x1={8} y1={21} x2={16} y2={21} />
+                <Line x1={12} y1={17} x2={12} y2={21} />
+              </Svg>
+              <Text style={styles.btnSecondaryText}>
+                {daily.adLoading ? t('daily.watchAdLoading') : t('daily.watchAd')}
+              </Text>
+            </>}
           </Pressable>
         )}
 

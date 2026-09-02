@@ -805,13 +805,15 @@ describe('tutorial contextual (delegação para o tutorialFlow — ticket 03)', 
     expect(store.getState().tutorial.gameScreenActiveStep).toBe(2);
   });
 
-  test('tutorialPatternReferenceTouched conclui a seção GameScreen a partir do passo 3', () => {
+  test('tutorialPatternReferenceTouched conclui a seção GameScreen a partir do passo 4', () => {
     const store = createGameStore();
     store.getState().startRun();
     store.getState().checkGameScreenTutorialTrigger();
     store.getState().tutorialCardTouched();
     store.getState().tutorialNextPressed();
     expect(store.getState().tutorial.gameScreenActiveStep).toBe(3);
+    store.getState().tutorialNextPressed();
+    expect(store.getState().tutorial.gameScreenActiveStep).toBe(4);
     store.getState().tutorialPatternReferenceTouched();
     expect(store.getState().tutorial.gameScreenActiveStep).toBeNull();
     expect(store.getState().tutorial.gameScreenSeen).toBe(true);

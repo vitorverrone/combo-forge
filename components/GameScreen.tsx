@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { activeRelics, cardKey, cosmeticItemById, currentMultiplier } from '../engine';
 
 import { useTranslation } from '../i18n';
 import { PlayingCard } from './PlayingCard';
-import { patternName } from './format';
+import { patternName, relicDescription } from './format';
 import { PhaseScreen } from './PhaseScreen';
-import { RelicRow } from './RelicRow';
+import { RelicGlyph, relicGlyphColor } from './RelicIcon';
 import { TutorialView } from './tutorial';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
@@ -18,6 +18,7 @@ export function GameScreen() {
   const { t } = useTranslation();
   const [showAbandon, setShowAbandon] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showRelics, setShowRelics] = useState(false);
   const run = useGameStore((state) => state.run);
   const runMode = useGameStore((state) => state.runMode);
   const selectedKeys = useGameStore((state) => state.selectedKeys);
@@ -82,8 +83,8 @@ export function GameScreen() {
               <Text style={styles.navBtnText}>←</Text>
             </Pressable>
             <TutorialView
-              active={gameScreenActiveStep === 3}
-              text={t('tutorial.step3Callout')}
+              active={gameScreenActiveStep === 4}
+              text={t('tutorial.step4Callout')}
               spotlightRadius={radius[10]}
               leftAction={{
                 label: t('tutorial.skip'),
@@ -117,133 +118,158 @@ export function GameScreen() {
           <View style={styles.progressTrack}>
             <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
           </View>
+          {/* HUD row: Plays + Combo only */}
+          <View style={{ width: '100%' }}>
+            <View style={styles.hudRow}>
+              <View style={styles.hudBox}>
+                <Text style={styles.hudLabel}>{t('game.plays')}</Text>
+                <Text style={styles.hudValue}>{run.playsRemaining}</Text>
+              </View>
+              <View style={styles.hudBox}>
+                <Text style={styles.hudLabel}>{t('game.combo')}</Text>
+                <Text style={[styles.hudValue, { color: colors.gold }]}>×{multiplier}</Text>
+              </View>
+              <TutorialView
+                active={gameScreenActiveStep === 3}
+                text={t('tutorial.step3Callout')}
+                spotlightRadius={radius[10]}
+                leftAction={{
+                  label: t('tutorial.skip'),
+                  accessibilityLabel: t('a11y.skipTutorial'),
+                  onPress: tutorialGameScreenSkipPressed,
+                }}
+                rightAction={{
+                  label: t('common.next'),
+                  accessibilityLabel: t('a11y.nextStep'),
+                  onPress: tutorialNextPressed,
+                }}
+                style={styles.hudBox}
+              >
+                <Pressable
+                  accessibilityLabel={t('a11y.openActiveRelics')}
+                  accessibilityRole="button"
+                  onPress={() => setShowRelics(true)}
+                  style={styles.hudBoxStep}
+                >
+                  <Text style={styles.hudLabel}>{t('forge.relics').toUpperCase()}</Text>
+                  <Text style={[styles.hudValue, { color: colors.gold }]}>{relics.length}</Text>
+                </Pressable>
+              </TutorialView>
+            </View>
+          </View>
+
+
         </View>
 
         <ScrollView contentContainerStyle={styles.scroll}>
-          {/* HUD row: Plays + Combo only */}
-          <View style={styles.hudRow}>
-            <View style={styles.hudBox}>
-              <Text style={styles.hudLabel}>{t('game.plays')}</Text>
-              <Text style={styles.hudValue}>{run.playsRemaining}</Text>
-            </View>
-            <View style={styles.hudBox}>
-              <Text style={styles.hudLabel}>{t('game.combo')}</Text>
-              <Text style={[styles.hudValue, { color: colors.gold }]}>×{multiplier}</Text>
-            </View>
-
-            {/* Relics */}
-            <RelicRow relics={relics} />
-          </View>
-
-          {/* Pattern preview — inline, no container */}
-          <View style={styles.patternPreview}>
-            {preview !== null ? (
-              <>
-                <Text style={styles.patternName}>{patternName(preview.pattern.kind)}</Text>
-                <Text style={styles.patternPoints}>
-                  {t('game.base')} {preview.baseValue} · <Text style={styles.patternPointsBold}>{preview.baseValue * multiplier} {t('game.pts')}</Text> {t('game.previewSuffix', { multiplier })}
-                </Text>
-              </>
-            ) : (<Text style={styles.patternHint}>{t('game.patternHint')}</Text>
-            )}
-          </View>
-
-          {/* Card hand — a 1ª carta vira alvo do passo 1 do tutorial (TutorialView cuida do recorte + balão). */}
-          <View style={styles.hand}>
-            {run.deck.hand.map((card, index) => {
-              const cardElement = (
-                <PlayingCard
-                  card={card}
-                  forgedCards={run.forgedCards}
-                  selected={selectedKeys.includes(cardKey(card))}
-                  onPress={() => {
-                    toggleCard(cardKey(card));
-                    tutorialCardTouched();
-                  }}
-                  skin={deckSkin?.palette}
-                />
-              );
-              return (
-                <View key={cardKey(card)}>
-                  {index === 0 ? (
-                    <TutorialView
-                      active={gameScreenActiveStep === 1}
-                      text={t('tutorial.step1Callout')}
-                      spotlightRadius={radius[8]}
-                      leftAction={{
-                        label: t('tutorial.skip'),
-                        accessibilityLabel: t('a11y.skipTutorial'),
-                        onPress: tutorialGameScreenSkipPressed,
-                      }}
-                    >
-                      {cardElement}
-                    </TutorialView>
-                  ) : (
-                    cardElement
-                  )}
-                </View>
-              );
-            })}
-          </View>
-
-          {/* Actions — inside scroll so they flow below the hand */}
-          <View style={[styles.actions]}>
-            <TutorialView
-              active={gameScreenActiveStep === 2}
-              text={t('tutorial.step2Callout')}
-              calloutPosition="above"
-              leftAction={{
-                label: t('tutorial.skip'),
-                accessibilityLabel: t('a11y.skipTutorial'),
-                onPress: tutorialGameScreenSkipPressed,
-              }}
-              rightAction={{
-                label: t('common.next'),
-                accessibilityLabel: t('a11y.nextStep'),
-                onPress: tutorialNextPressed,
-              }}
-            >
-              <View style={styles.actionsSecondary}>
-                <Pressable
-                  accessibilityLabel={t('a11y.clearSelection')}
-                  accessibilityRole="button"
-                  accessibilityState={{ disabled: selectedKeys.length === 0 }}
-                  disabled={selectedKeys.length === 0}
-                  onPress={() => {
-                    clearSelection();
-                    tutorialClearOrDiscardTouched();
-                  }}
-                  style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPressed]}
-                >
-                  <Text style={[styles.btnSecondaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>{t('game.clear')}</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityLabel={t('a11y.discardSelectedCards')}
-                  accessibilityRole="button"
-                  accessibilityState={{ disabled: selectedKeys.length === 0 || discardsRemaining <= 0 }}
-                  disabled={selectedKeys.length === 0 || discardsRemaining <= 0}
-                  onPress={() => {
-                    discardSelection();
-                    tutorialClearOrDiscardTouched();
-                  }}
-                  style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabled, pressed && styles.btnPressed]}
-                >
-                  <Text style={[styles.btnSecondaryText, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>
-                    {t('game.discard')} <Text style={[styles.hintBadge, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>· {discardsRemaining}</Text>
-                  </Text>
-                </Pressable>
+          <View style={styles.scrollViewWrapper}>
+            <View style={styles.patternCards}>
+              {/* Pattern preview — inline, no container */}
+              <View style={styles.patternPreview}>
+                {preview !== null ? (
+                  <>
+                    <Text style={styles.patternName}>{patternName(preview.pattern.kind)}</Text>
+                    <Text style={styles.patternPoints}>
+                      {t('game.base')} {preview.baseValue} · <Text style={styles.patternPointsBold}>{preview.baseValue * multiplier} {t('game.pts')}</Text> {t('game.previewSuffix', { multiplier })}
+                    </Text>
+                  </>
+                ) : (<Text style={styles.patternHint}>{t('game.patternHint')}</Text>
+                )}
               </View>
-            </TutorialView>
-            <Pressable
-              accessibilityLabel={t('a11y.playSelectedCards')}
-              accessibilityRole="button"
-              accessibilityState={{ disabled: selectedKeys.length === 0 }}
-              disabled={selectedKeys.length === 0}
-              onPress={playSelection}
-              style={({ pressed }) => [styles.btn, styles.btnPrimary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPrimaryPressed]}
-            >
-              <Text style={[styles.btnPrimaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>{t('game.play')}</Text>
-            </Pressable>
+
+              {/* Card hand — a 1ª carta vira alvo do passo 1 do tutorial (TutorialView cuida do recorte + balão). */}
+              <View style={styles.hand}>
+                {run.deck.hand.map((card, index) => {
+                  const cardElement = (
+                    <PlayingCard
+                      card={card}
+                      forgedCards={run.forgedCards}
+                      selected={selectedKeys.includes(cardKey(card))}
+                      onPress={() => {
+                        toggleCard(cardKey(card));
+                        tutorialCardTouched();
+                      }}
+                      skin={deckSkin?.palette}
+                    />
+                  );
+                  return (
+                    <View key={cardKey(card)}>
+                      {index === 0 ? (
+                        <TutorialView
+                          active={gameScreenActiveStep === 1}
+                          text={t('tutorial.step1Callout')}
+                          spotlightRadius={radius[8]}
+                        >
+                          {cardElement}
+                        </TutorialView>
+                      ) : (
+                        cardElement
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+            </View>
+
+            {/* Actions — inside scroll so they flow below the hand */}
+            <View style={[styles.actions]}>
+              <TutorialView
+                active={gameScreenActiveStep === 2}
+                text={t('tutorial.step2Callout')}
+                calloutPosition="above"
+                leftAction={{
+                  label: t('tutorial.skip'),
+                  accessibilityLabel: t('a11y.skipTutorial'),
+                  onPress: tutorialGameScreenSkipPressed,
+                }}
+                rightAction={{
+                  label: t('common.next'),
+                  accessibilityLabel: t('a11y.nextStep'),
+                  onPress: tutorialNextPressed,
+                }}
+              >
+                <View style={styles.actionsSecondary}>
+                  <Pressable
+                    accessibilityLabel={t('a11y.clearSelection')}
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: selectedKeys.length === 0 }}
+                    disabled={selectedKeys.length === 0}
+                    onPress={() => {
+                      clearSelection();
+                      tutorialClearOrDiscardTouched();
+                    }}
+                    style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPressed]}
+                  >
+                    <Text style={[styles.btnSecondaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>{t('game.clear')}</Text>
+                  </Pressable>
+                  <Pressable
+                    accessibilityLabel={t('a11y.discardSelectedCards')}
+                    accessibilityRole="button"
+                    accessibilityState={{ disabled: selectedKeys.length === 0 || discardsRemaining <= 0 }}
+                    disabled={selectedKeys.length === 0 || discardsRemaining <= 0}
+                    onPress={() => {
+                      discardSelection();
+                      tutorialClearOrDiscardTouched();
+                    }}
+                    style={({ pressed }) => [styles.btn, styles.btnFlex, styles.btnSecondary, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabled, pressed && styles.btnPressed]}
+                  >
+                    <Text style={[styles.btnSecondaryText, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>
+                      {t('game.discard')} <Text style={[styles.hintBadge, (selectedKeys.length === 0 || discardsRemaining <= 0) && styles.btnDisabledText]}>· {discardsRemaining}</Text>
+                    </Text>
+                  </Pressable>
+                </View>
+              </TutorialView>
+              <Pressable
+                accessibilityLabel={t('a11y.playSelectedCards')}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: selectedKeys.length === 0 }}
+                disabled={selectedKeys.length === 0}
+                onPress={playSelection}
+                style={({ pressed }) => [styles.btn, styles.btnPrimary, selectedKeys.length === 0 && styles.btnDisabled, pressed && styles.btnPrimaryPressed]}
+              >
+                <Text style={[styles.btnPrimaryText, selectedKeys.length === 0 && styles.btnDisabledText]}>{t('game.play')}</Text>
+              </Pressable>
+            </View>
           </View>
         </ScrollView>
 
@@ -280,6 +306,40 @@ export function GameScreen() {
               </View>
             </View>
           </View>
+        )}
+
+        {/* Active relics modal */}
+        {showRelics && (
+          <Modal transparent visible animationType="fade" onRequestClose={() => setShowRelics(false)}>
+            <View style={styles.relicsBackdrop}>
+              <View style={styles.relicsCard}>
+                <Text style={styles.relicsTitle}>{t('runWon.activeRelics')}</Text>
+                <ScrollView style={styles.relicsScroll}>
+                  <View style={styles.relicsList}>
+                    {relics.map((relic) => (
+                      <View key={relic.id} style={styles.relicsListRow}>
+                        <View style={styles.relicsListBadge}>
+                          <RelicGlyph relic={relic} color={relicGlyphColor(relic)} />
+                        </View>
+                        <View style={styles.relicsListInfo}>
+                          <Text style={styles.relicsListTitle}>{relic.name}</Text>
+                          <Text style={styles.relicsListDesc}>{relicDescription(relic)}</Text>
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                </ScrollView>
+                <Pressable
+                  accessibilityLabel={t('common.close')}
+                  accessibilityRole="button"
+                  onPress={() => setShowRelics(false)}
+                  style={({ pressed }) => [styles.relicsCloseBtn, pressed && styles.btnPressed]}
+                >
+                  <Text style={styles.relicsCloseBtnText}>{t('common.close')}</Text>
+                </Pressable>
+              </View>
+            </View>
+          </Modal>
         )}
       </View>
     </>
@@ -337,8 +397,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 0,
     right: 0,
-    top: 0,
-    bottom: 0,
+    top: 8,
     textAlign: 'center'
   },
   roundLabel: {
@@ -398,7 +457,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
-    marginTop: spacing[14],
+    marginVertical: spacing[8],
     overflow: 'hidden',
     width: '100%'
   },
@@ -409,17 +468,21 @@ const styles = StyleSheet.create({
   },
   /* ── Scroll content ── */
   scroll: {
-    paddingHorizontal: spacing[16],
+    paddingHorizontal: spacing[8],
     paddingBottom: spacing[8],
     flex: 1,
-    justifyContent: 'space-between'
+  },
+  scrollViewWrapper: {
+    justifyContent: 'space-between',
+    flex: 1,
+    gap: spacing[16]
   },
   /* ── HUD ── */
   hudRow: {
     flexDirection: 'row',
     gap: spacing[10],
-    marginTop: spacing[8],
-    flexWrap: 'wrap',
+    marginTop: spacing[0],
+    alignItems: 'flex-start',
     zIndex: 10,
   },
   hudBox: {
@@ -430,6 +493,9 @@ const styles = StyleSheet.create({
     borderRadius: radius[10],
     paddingVertical: spacing[10],
     paddingHorizontal: spacing[10],
+    alignItems: 'center',
+  },
+  hudBoxStep: {
     alignItems: 'center',
   },
   hudLabel: {
@@ -448,6 +514,12 @@ const styles = StyleSheet.create({
     marginTop: spacing[4],
   },
   /* ── Pattern preview ── */
+  patternCards: {
+    flexDirection: 'column',
+    gap: spacing[16],
+    flex: 1,
+    justifyContent: 'center'
+  },
   patternPreview: {
     minHeight: 64,
     alignItems: 'center',
@@ -486,12 +558,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing[6],
     paddingTop: spacing[20],
-    paddingBottom: spacing[4],
   },
   /* ── Actions ── */
   actions: {
     paddingHorizontal: spacing[16],
-    marginTop: 100,
     paddingTop: spacing[10],
     paddingBottom: spacing[0],
   },
@@ -635,6 +705,99 @@ const styles = StyleSheet.create({
   overlayBtnDangerText: {
     fontFamily: fonts.heading,
     color: colors.danger,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  /* ── HUD box (pressable) ── */
+  hudBoxPressed: {
+    opacity: 0.8,
+  },
+  /* ── Active relics modal ── */
+  relicsBackdrop: {
+    flex: 1,
+    backgroundColor: colors.backdrop,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing[24],
+  },
+  relicsCard: {
+    width: 320,
+    maxWidth: '90%',
+    maxHeight: '70%',
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: radius[14],
+    padding: spacing[24],
+    shadowColor: '#000',
+    shadowOpacity: 0.4,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 3 },
+  },
+  relicsTitle: {
+    fontFamily: fonts.heading,
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  relicsScroll: {
+    marginTop: spacing[4],
+  },
+  relicsList: {
+    gap: spacing[12],
+    marginTop: spacing[12],
+  },
+  relicsListRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing[10],
+  },
+  relicsListBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: radius[12],
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  relicsListInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  relicsListTitle: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  relicsListDesc: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '400',
+    color: colors.textDim,
+    marginTop: spacing[2],
+    lineHeight: 16,
+  },
+  relicsCloseBtn: {
+    marginTop: spacing[16],
+    borderRadius: radius[12],
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing[14],
+  },
+  relicsCloseBtnText: {
+    fontFamily: fonts.heading,
+    color: colors.text,
     fontSize: 14,
     fontWeight: '700',
     letterSpacing: 1.5,

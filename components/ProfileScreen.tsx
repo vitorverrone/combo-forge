@@ -68,7 +68,7 @@ export function ProfileScreen() {
           </View>
         </View>
 
-        {/* Favorite cards — mini playing cards */}
+        {/* Favorite cards — mini playing cards
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>{t('profile.favoriteCards')}</Text>
         </View>
@@ -92,7 +92,7 @@ export function ProfileScreen() {
               );
             })}
           </View>
-        )}
+        )} */}
 
         {/* Milestones */}
         <View style={styles.sectionHeader}>
@@ -438,17 +438,18 @@ const styles = StyleSheet.create({
     borderRadius: radius[6],
     paddingVertical: spacing[4],
     paddingHorizontal: spacing[8],
+    color: colors.textDim,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder
   },
   milestoneBadgeDone: {
     backgroundColor: 'rgba(127,201,138,0.15)',
     color: colors.success,
-    borderWidth: 1,
     borderColor: colors.success,
   },
   milestoneBadgeReady: {
     backgroundColor: 'rgba(224,165,62,0.15)',
     color: colors.gold,
-    borderWidth: 1,
     borderColor: colors.gold,
   },
   /* ── Forgers note ── */

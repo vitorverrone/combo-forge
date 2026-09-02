@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, ScrollView } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -87,106 +87,110 @@ export function StartScreen() {
           </Pressable>
         </View>
 
-        {/* Center content */}
-        <View style={styles.homeContent}>
-          {/* Title block */}
-          <View style={styles.titleBlock}>
-            <Text style={styles.title}>{t('start.title')}</Text>
-            <Text style={styles.tagline}>{t('start.tagline')}</Text>
-          </View>
+        <ScrollView contentContainerStyle={styles.scrollContentStyle}>
+          {/* Center content */}
+          <View style={styles.homeContent}>
+            {/* Title block */}
+            <View style={styles.titleBlock}>
+              <Text style={styles.title}>{t('start.title')}</Text>
+              <Text style={styles.tagline}>{t('start.tagline')}</Text>
+            </View>
 
-          {/* Card fan */}
-          <View style={styles.cardFan}>
-            <Animated.View style={[styles.fanCardLeft, leftStyle]}>
-              <PlayingCard card={{ suit: 'spades', value: 1 }} />
-            </Animated.View>
+            {/* Card fan */}
+            <View style={styles.cardFan}>
+              <Animated.View style={[styles.fanCardLeft, leftStyle]}>
+                <PlayingCard card={{ suit: 'spades', value: 1 }} />
+              </Animated.View>
 
-            <Animated.View style={[styles.fanCardCenter]}>
-              <PlayingCard card={{ suit: 'hearts', value: 7 }} />
-            </Animated.View>
+              <Animated.View style={[styles.fanCardCenter]}>
+                <PlayingCard card={{ suit: 'hearts', value: 7 }} />
+              </Animated.View>
 
-            <Animated.View style={[styles.fanCardRight, rightStyle]}>
-              <PlayingCard card={{ suit: 'diamonds', value: 10 }} />
-            </Animated.View>
-          </View>
+              <Animated.View style={[styles.fanCardRight, rightStyle]}>
+                <PlayingCard card={{ suit: 'diamonds', value: 10 }} />
+              </Animated.View>
+            </View>
 
-          {/* Forger section */}
-          <Text style={styles.sectionLabel}>{t('start.forger')}</Text>
-          <View style={styles.forgerRow}>
-            {FORGERS.map((candidate) => {
-              const unlocked = isForgerUnlocked(unlocks, candidate.id);
-              const selected = candidate.id === forger;
-              const milestone = milestoneForForger(candidate.id);
-              return (
-                <Pressable
-                  key={candidate.id}
-                  accessibilityLabel={
-                    unlocked
-                      ? t('a11y.forgerOption', { name: forgerName(candidate.id) })
-                      : t('a11y.forgerOptionLocked', { name: forgerName(candidate.id) })
-                  }
-                  accessibilityRole="button"
-                  accessibilityState={{ disabled: !unlocked, selected }}
-                  disabled={!unlocked}
-                  onPress={() => chooseForger(candidate.id)}
-                  style={({ pressed }) => [
-                    styles.forgerChip,
-                    selected && styles.forgerChipSelected,
-                    !unlocked && styles.forgerChipLocked,
-                    pressed && styles.navBtnPressed,
-                  ]}
-                >
-                  <View style={[styles.forgerAvatar, !unlocked && styles.forgerAvatarLocked]}>
-                    <Text style={[styles.forgerAvatarText, !unlocked && styles.forgerAvatarTextLocked]}>
-                      {forgerName(candidate.id).charAt(0)}
-                    </Text>
-                  </View>
-                  <Text style={[styles.forgerChipName, !unlocked && styles.forgerChipNameLocked]}>
-                    {forgerName(candidate.id)}
-                  </Text>
-                  {!unlocked && milestone !== undefined && (
-                    <Text style={styles.forgerLock}>{milestoneDescription(milestone.id)}</Text>
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
+            {/* Forger section */}
+            <View>
+              <Text style={styles.sectionLabel}>{t('start.forger')}</Text>
+              <View style={styles.forgerRow}>
+                {FORGERS.map((candidate) => {
+                  const unlocked = isForgerUnlocked(unlocks, candidate.id);
+                  const selected = candidate.id === forger;
+                  const milestone = milestoneForForger(candidate.id);
+                  return (
+                    <Pressable
+                      key={candidate.id}
+                      accessibilityLabel={
+                        unlocked
+                          ? t('a11y.forgerOption', { name: forgerName(candidate.id) })
+                          : t('a11y.forgerOptionLocked', { name: forgerName(candidate.id) })
+                      }
+                      accessibilityRole="button"
+                      accessibilityState={{ disabled: !unlocked, selected }}
+                      disabled={!unlocked}
+                      onPress={() => chooseForger(candidate.id)}
+                      style={({ pressed }) => [
+                        styles.forgerChip,
+                        selected && styles.forgerChipSelected,
+                        !unlocked && styles.forgerChipLocked,
+                        pressed && styles.navBtnPressed,
+                      ]}
+                    >
+                      <View style={[styles.forgerAvatar, !unlocked && styles.forgerAvatarLocked]}>
+                        <Text style={[styles.forgerAvatarText, !unlocked && styles.forgerAvatarTextLocked]}>
+                          {forgerName(candidate.id).charAt(0)}
+                        </Text>
+                      </View>
+                      <Text style={[styles.forgerChipName, !unlocked && styles.forgerChipNameLocked]}>
+                        {forgerName(candidate.id)}
+                      </Text>
+                      {!unlocked && milestone !== undefined && (
+                        <Text style={styles.forgerLock}>{milestoneDescription(milestone.id)}</Text>
+                      )}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
 
-          {/* CTA stack */}
-          <View style={styles.ctaStack}>
-            <Pressable
-              accessibilityLabel={t('start.startRun')}
-              accessibilityRole="button"
-              onPress={startRun}
-              style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
-            >
-              <Text style={styles.btnPrimaryText}>{t('start.startRun')}</Text>
-            </Pressable>
-
-            <Pressable
-              accessibilityLabel={t('start.dailyChallenge')}
-              accessibilityRole="button"
-              onPress={openDaily}
-              style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnSecondaryPressed]}
-            >
-              <Text style={styles.btnSecondaryText}>{t('start.dailyChallenge')}</Text>
-              <Text style={styles.btnSecondaryHint}>
-                {t('start.attemptsUsed', { used: dailyAttempts.attemptsUsed, max: dailyAttempts.unlockedTotal })}
-              </Text>
-            </Pressable>
-
-            <View style={styles.bottomNav}>
+            {/* CTA stack */}
+            <View style={styles.ctaStack}>
               <Pressable
-                accessibilityLabel={t('a11y.openCollection')}
+                accessibilityLabel={t('start.startRun')}
                 accessibilityRole="button"
-                onPress={openCollection}
-                style={({ pressed }) => [styles.bottomNavBtn, pressed && styles.navBtnPressed]}
+                onPress={startRun}
+                style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
               >
-                <Text style={styles.bottomNavBtnText}>{t('start.collection')}</Text>
+                <Text style={styles.btnPrimaryText}>{t('start.startRun')}</Text>
               </Pressable>
+
+              <Pressable
+                accessibilityLabel={t('start.dailyChallenge')}
+                accessibilityRole="button"
+                onPress={openDaily}
+                style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnSecondaryPressed]}
+              >
+                <Text style={styles.btnSecondaryText}>{t('start.dailyChallenge')}</Text>
+                <Text style={styles.btnSecondaryHint}>
+                  {t('start.attemptsUsed', { used: dailyAttempts.attemptsUsed, max: dailyAttempts.unlockedTotal })}
+                </Text>
+              </Pressable>
+
+              <View style={styles.bottomNav}>
+                <Pressable
+                  accessibilityLabel={t('a11y.openCollection')}
+                  accessibilityRole="button"
+                  onPress={openCollection}
+                  style={({ pressed }) => [styles.bottomNavBtn, pressed && styles.navBtnPressed]}
+                >
+                  <Text style={styles.bottomNavBtnText}>{t('start.collection')}</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
-        </View>
+        </ScrollView>
       </View>
     </>
   );
@@ -244,9 +248,13 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   /* ── Home content ── */
+  scrollContentStyle: {
+    flex: 1,
+  },
   homeContent: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    display: 'flex'
   },
   titleBlock: {
     alignItems: 'center',
