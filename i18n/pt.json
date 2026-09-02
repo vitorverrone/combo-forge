@@ -12,8 +12,8 @@
     "equipped": "Equipado",
     "unlock": "Desbloquear",
     "decideLater": "Decidir Depois",
-    "skip": "Pular",
     "next": "Próximo",
+    "previous": "Anterior",
     "cancel": "Cancelar",
     "apply": "Aplicar",
     "home": "Início",
@@ -197,11 +197,8 @@
     "complete": "Concluir",
     "step1Callout": "Toque em até 5 cartas da sua Mão para formar uma Jogada. Comece tocando numa carta.",
     "step2Callout": "Não gostou da seleção? Limpar desmarca tudo. Descartar troca as cartas escolhidas por novas.",
-    "step3Callout": "Escolha uma Relíquia (efeito permanente pro resto da Run) ou um Efeito de Carta (fortalece uma carta específica). Toque em qualquer oferta para continuar."
-  },
-  "patternReference": {
-    "title": "Padrões",
-    "subtitle": "Composição e bônus de cada Padrão."
+    "step3Callout": "Ficou com alguma dúvida? Toque no ícone para abrir as dicas.",
+    "forgeCallout": "Escolha uma Relíquia (efeito permanente pro resto da Run) ou um Efeito de Carta (fortalece uma carta específica). Toque em qualquer oferta para continuar."
   },
   "unlockChoice": {
     "milestoneReached": "Marco alcançado",
@@ -327,7 +324,7 @@
     "backToHome": "Voltar ao início",
     "skipTutorial": "Pular tutorial",
     "completeTutorial": "Concluir tutorial",
-    "openPatternReference": "Ver referência de Padrões",
+    "openOnboarding": "Abrir tutorial",
     "startPlaying": "Começar a jogar",
     "nextStep": "Próximo passo",
     "confirmForge": "Confirmar forja",

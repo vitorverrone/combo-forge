@@ -18,6 +18,7 @@ import { UnlockChoiceModal } from './components/UnlockChoiceModal';
 import { colors } from './components/theme';
 import { initializeSqlitePersistence } from './store/bootstrap';
 import { useGameStore } from './store/gameStore';
+import { TutorialProvider } from './components/tutorial';
 
 // Persistência real (SQLite): injeta os ports de storage no store singleton e
 // carrega a meta-progressão salva entre sessões. Uma vez, na avaliação.
@@ -42,29 +43,31 @@ function AppShell() {
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        {
-          paddingTop: insets.top,
-          paddingLeft: insets.left,
-          paddingRight: insets.right
-        }
-      ]}
-    >
-      <View style={styles.screenWrapper}>
-        {screen === 'start' && <StartScreen />}
-        {screen === 'game' && <GameScreen />}
-        {screen === 'profile' && <ProfileScreen />}
-        {screen === 'collection' && <CollectionScreen />}
-        {screen === 'daily' && <DailyChallengeScreen />}
-        {screen === 'shop' && <ShopScreen />}
+    <TutorialProvider>
+      <View
+        style={[
+          styles.container,
+          {
+            paddingTop: insets.top,
+            paddingLeft: insets.left,
+            paddingRight: insets.right
+          }
+        ]}
+      >
+        <View style={styles.screenWrapper}>
+          {screen === 'start' && <StartScreen />}
+          {screen === 'game' && <GameScreen />}
+          {screen === 'profile' && <ProfileScreen />}
+          {screen === 'collection' && <CollectionScreen />}
+          {screen === 'daily' && <DailyChallengeScreen />}
+          {screen === 'shop' && <ShopScreen />}
+        </View>
+        <AdBanner />
+        <UnlockChoiceModal />
+        <GameFeedback />
+        <StatusBar style="light" />
       </View>
-      <AdBanner />
-      <UnlockChoiceModal />
-      <GameFeedback />
-      <StatusBar style="light" />
-    </View>
+    </TutorialProvider>
   );
 }
 

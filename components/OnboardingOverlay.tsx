@@ -41,6 +41,17 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
   const { t } = useTranslation();
   const [step, setStep] = useState(0);
 
+  // O componente fica montado o tempo todo (StartScreen/GameScreen só
+  // alternam `visible`) — sem isso, reabrir (ex.: pelo "?" da GameScreen)
+  // retomaria no passo onde ficou da última vez em vez de recomeçar do
+  // início. Ajustado durante a renderização (não num efeito) seguindo o
+  // padrão recomendado pelo React pra resetar estado quando uma prop muda.
+  const [wasVisible, setWasVisible] = useState(visible);
+  if (visible !== wasVisible) {
+    setWasVisible(visible);
+    if (visible) setStep(0);
+  }
+
   if (!visible) return null;
 
   const stepKey = STEP_KEYS[step];
@@ -51,6 +62,7 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
     visual: STEP_VISUALS[step],
   };
   const isLast = step === STEP_KEYS.length - 1;
+  const isFirst = step === 0;
 
   return (
     <Modal transparent visible animationType="fade">
@@ -63,13 +75,22 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
                 <View key={i} style={[styles.dot, i <= step && styles.dotOn]} />
               ))}
             </View>
-            <Text style={styles.counter}>{step + 1}/{STEP_KEYS.length}</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t('common.close')}
+              style={styles.closeBtn}
+              onPress={onComplete}
+            >
+              <Text style={styles.counter}>X</Text>
+            </Pressable>
           </View>
 
           {/* Scrollable content: visual + title/body/tip. Bounded height so a
               tall visual (the 7-Pattern list) scrolls instead of overlapping
               the actions below, on any screen size. */}
           <ScrollView style={styles.scrollBody} showsVerticalScrollIndicator={false}>
+            <Text style={styles.title}>{current.title}</Text>
+
             {current.visual === 'pattern' ? (
               <View style={styles.patternVisual}>
                 <PatternList />
@@ -80,7 +101,6 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
               </View>
             )}
 
-            <Text style={styles.title}>{current.title}</Text>
             <Text style={styles.body}>{current.body}</Text>
 
             {/* Tip box */}
@@ -93,11 +113,12 @@ export function OnboardingOverlay({ visible, onComplete }: Props) {
           <View style={styles.actions}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={t('a11y.skipTutorial')}
-              onPress={onComplete}
+              accessibilityLabel={t('common.previous')}
+              disabled={isFirst}
+              onPress={() => setStep(step - 1)}
               style={({ pressed }) => [styles.skipBtn, pressed && styles.btnPressed]}
             >
-              <Text style={styles.skipBtnText}>{t('common.skip')}</Text>
+              <Text style={styles.skipBtnText}>{t('common.previous')}</Text>
             </Pressable>
             <Pressable
               accessibilityRole="button"
@@ -195,6 +216,16 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
   },
   /* ── Top row: dots + counter ── */
+  closeBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radius[12],
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   topRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -391,6 +422,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     color: colors.text,
     textAlign: 'center',
+    marginTop: spacing[8]
   },
   body: {
     fontSize: 14,

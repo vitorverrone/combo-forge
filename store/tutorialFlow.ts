@@ -1,15 +1,21 @@
 /**
  * Motor do tutorial contextual em coach-mark (.scratch/tutorial-walkthrough)
- * — 3 passos guiados por spotlight durante a jogatina real, gatilhados pela
- * ação do jogador em vez de um botão fixo de "próximo": passos 1-2 na
- * GameScreen (selecionar carta; Limpar/Descartar, com um botão "Próximo"
- * adicional só nesse passo) e passo 3 na Forja (tocar numa oferta pra ver a
- * diferença entre Relíquia e Efeito de Carta).
+ * — guiado por spotlight durante a jogatina real, gatilhado pela ação do
+ * jogador em vez de um botão fixo de "próximo": 3 passos na GameScreen
+ * (selecionar carta; Limpar/Descartar, com um botão "Próximo" adicional só
+ * nesse passo; tocar no "?" de referência de Padrões) e 1 passo na Forja
+ * (tocar numa oferta pra ver a diferença entre Relíquia e Efeito de Carta).
  *
- * Dois gatilhos independentes, cada um com sua própria flag "já visto"
- * persistida: a seção da Forja pode disparar numa Run diferente da que
- * mostrou a seção da GameScreen (ex.: a 1ª Rodada foi perdida antes de
- * chegar na Forja) — nenhuma das duas depende da outra ter sido vista.
+ * As duas seções são estados completamente independentes — cada uma com seu
+ * próprio campo de "passo ativo" e sua própria flag "já visto"
+ * (`gameScreenActiveStep`/`gameScreenSeen` vs. `forgeActiveStep`/
+ * `forgeSeen`), não um único contador de passo compartilhado entre as duas.
+ * Isso não é só uma escolha de nomenclatura: garante, ao nível do reducer,
+ * que um evento de uma seção (ex.: pular a GameScreen) nunca consegue
+ * concluir ou interferir na outra — a Forja pode disparar numa Run diferente
+ * da que mostrou a GameScreen (ex.: a 1ª Rodada foi perdida antes de chegar
+ * na Forja), e o jogador pular a GameScreen não deveria impedir a Forja de
+ * aparecer depois.
  *
  * Módulo puro: nenhum conhecimento de Zustand, telas ou navegação — as
  * telas (tickets 04/05) consomem o estado e despacham os eventos; o store
@@ -18,17 +24,21 @@
 
 import { RunPhase } from '../engine';
 
-export type TutorialStep = 1 | 2 | 3;
+export type GameScreenTutorialStep = 1 | 2 | 3;
+export type ForgeTutorialStep = 1;
 
 export interface TutorialState {
-  /** Passo ativo agora (null = nenhuma seção do tutorial no ar). */
-  readonly activeStep: TutorialStep | null;
+  /** Passo ativo agora na seção GameScreen (null = seção não está no ar). */
+  readonly gameScreenActiveStep: GameScreenTutorialStep | null;
+  /** Passo ativo agora na seção Forja (null = seção não está no ar). Independente do campo acima. */
+  readonly forgeActiveStep: ForgeTutorialStep | null;
   readonly gameScreenSeen: boolean;
   readonly forgeSeen: boolean;
 }
 
 export const DEFAULT_TUTORIAL_STATE: TutorialState = {
-  activeStep: null,
+  gameScreenActiveStep: null,
+  forgeActiveStep: null,
   gameScreenSeen: false,
   forgeSeen: false,
 };
@@ -37,56 +47,62 @@ export type TutorialEvent =
   | { readonly type: 'cardTouched' }
   | { readonly type: 'clearOrDiscardTouched' }
   | { readonly type: 'nextPressed' }
-  | { readonly type: 'skipOrCompletePressed' }
-  | { readonly type: 'forgeOfferTouched' };
+  | { readonly type: 'patternReferenceTouched' }
+  | { readonly type: 'gameScreenSkipPressed' }
+  | { readonly type: 'forgeOfferTouched' }
+  | { readonly type: 'forgeCompletePressed' };
 
 /**
- * Avança ou encerra o passo ativo conforme o evento. Eventos que não se
- * aplicam ao passo atual (ex.: `forgeOfferTouched` fora do passo 3) não
- * fazem nada — devolvem o mesmo estado.
+ * Avança ou encerra o passo ativo conforme o evento. Cada evento só enxerga
+ * e só altera o campo da SUA seção — um evento da GameScreen nunca lê nem
+ * escreve `forgeActiveStep`/`forgeSeen`, e vice-versa. Eventos que não se
+ * aplicam ao passo atual daquela seção não fazem nada — devolvem o mesmo
+ * estado.
  */
 export function runTutorialCommand(state: TutorialState, event: TutorialEvent): TutorialState {
   switch (event.type) {
     case 'cardTouched':
-      return state.activeStep === 1 ? { ...state, activeStep: 2 } : state;
+      return state.gameScreenActiveStep === 1 ? { ...state, gameScreenActiveStep: 2 } : state;
     case 'clearOrDiscardTouched':
     case 'nextPressed':
-      return state.activeStep === 2 ? completeGameScreen(state) : state;
+      return state.gameScreenActiveStep === 2 ? { ...state, gameScreenActiveStep: 3 } : state;
+    case 'patternReferenceTouched':
+      return state.gameScreenActiveStep === 3 ? completeGameScreen(state) : state;
+    case 'gameScreenSkipPressed':
+      return state.gameScreenActiveStep !== null ? completeGameScreen(state) : state;
     case 'forgeOfferTouched':
-      return state.activeStep === 3 ? completeForge(state) : state;
-    case 'skipOrCompletePressed':
-      if (state.activeStep === 1 || state.activeStep === 2) return completeGameScreen(state);
-      if (state.activeStep === 3) return completeForge(state);
-      return state;
+    case 'forgeCompletePressed':
+      return state.forgeActiveStep === 1 ? completeForge(state) : state;
   }
 }
 
 function completeGameScreen(state: TutorialState): TutorialState {
-  return { ...state, activeStep: null, gameScreenSeen: true };
+  return { ...state, gameScreenActiveStep: null, gameScreenSeen: true };
 }
 
 function completeForge(state: TutorialState): TutorialState {
-  return { ...state, activeStep: null, forgeSeen: true };
+  return { ...state, forgeActiveStep: null, forgeSeen: true };
 }
 
 /** Inicia a seção GameScreen (passo 1) — chamar só depois de `shouldStartGameScreenTutorial` confirmar. */
 export function startGameScreenTutorial(state: TutorialState): TutorialState {
-  return { ...state, activeStep: 1 };
+  return { ...state, gameScreenActiveStep: 1 };
 }
 
-/** Inicia a seção Forja (passo 3) — chamar só depois de `shouldStartForgeTutorial` confirmar. */
+/** Inicia a seção Forja (passo 1, próprio — não relacionado ao passo 1 da GameScreen) — chamar só depois de `shouldStartForgeTutorial` confirmar. */
 export function startForgeTutorial(state: TutorialState): TutorialState {
-  return { ...state, activeStep: 3 };
+  return { ...state, forgeActiveStep: 1 };
 }
 
 /**
  * O jogador saiu da tela de jogo (Rodada vencida ou perdida) com a seção
- * GameScreen ainda ativa (passo 1 ou 2, nunca dispensada) — conta como
- * vista: ele já interagiu o suficiente pra terminar a Rodada. Evita que a
- * seção fique "presa" ativa numa tela que não está mais em foco.
+ * GameScreen ainda ativa (qualquer um dos 3 passos, nunca dispensada) —
+ * conta como vista: ele já interagiu o suficiente pra terminar a Rodada.
+ * Evita que a seção fique "presa" ativa numa tela que não está mais em
+ * foco. Não toca na seção Forja.
  */
 export function abandonGameScreenTutorialIfActive(state: TutorialState): TutorialState {
-  return state.activeStep === 1 || state.activeStep === 2 ? completeGameScreen(state) : state;
+  return state.gameScreenActiveStep !== null ? completeGameScreen(state) : state;
 }
 
 export interface GameScreenTutorialContext {
@@ -97,7 +113,8 @@ export interface GameScreenTutorialContext {
 
 /**
  * A seção GameScreen deveria começar agora? Run normal, Rodada 1, fase
- * 'playing', ainda não vista, e nenhuma outra seção já ativa.
+ * 'playing', ainda não vista, e a seção GameScreen ainda não está ativa.
+ * Não depende do estado da seção Forja.
  */
 export function shouldStartGameScreenTutorial(
   state: TutorialState,
@@ -108,7 +125,7 @@ export function shouldStartGameScreenTutorial(
     context.roundNumber === 1 &&
     context.phase === 'playing' &&
     !state.gameScreenSeen &&
-    state.activeStep === null
+    state.gameScreenActiveStep === null
   );
 }
 
@@ -119,7 +136,9 @@ export interface ForgeTutorialContext {
 
 /**
  * A seção Forja deveria começar agora? Run normal, fase 'forging', ainda
- * não vista, e nenhuma outra seção já ativa.
+ * não vista, e a seção Forja ainda não está ativa. Não depende do estado da
+ * seção GameScreen — pular ou nunca ter visto a GameScreen não impede a
+ * Forja de disparar.
  */
 export function shouldStartForgeTutorial(
   state: TutorialState,
@@ -129,7 +148,7 @@ export function shouldStartForgeTutorial(
     context.runMode === 'normal' &&
     context.phase === 'forging' &&
     !state.forgeSeen &&
-    state.activeStep === null
+    state.forgeActiveStep === null
   );
 }
 
@@ -169,10 +188,11 @@ export function createMemoryTutorialStorage(initial?: {
   };
 }
 
-/** Carrega o estado inicial do tutorial a partir do storage (nenhum passo ativo no boot). */
+/** Carrega o estado inicial do tutorial a partir do storage (nenhum passo ativo em nenhuma seção no boot). */
 export function loadTutorialState(storage: TutorialStorage): TutorialState {
   return {
-    activeStep: null,
+    gameScreenActiveStep: null,
+    forgeActiveStep: null,
     gameScreenSeen: storage.loadGameScreenSeen(),
     forgeSeen: storage.loadForgeSeen(),
   };
