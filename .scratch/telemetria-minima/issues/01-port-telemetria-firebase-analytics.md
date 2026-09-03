@@ -4,7 +4,7 @@
 
 **Blocked by:** Nenhum — pode começar imediatamente.
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [x] `TelemetryProvider` existe em `engine/` com um método `logEvent(name, params)` genérico e `setUserId(deviceId)`; `createDevTelemetryProvider()` é uma implementação no-op pura, usada por padrão em testes e no `gameStore`.
 - [~] `@react-native-firebase/app` e `@react-native-firebase/analytics` instalados e configurados via config plugin do Expo (mesmo padrão de `react-native-google-mobile-ads`/`react-native-purchases` — exige EAS dev client), com o `google-services.json` do projeto Firebase Android. **Parcial:** os dois pacotes estão instalados (`package.json`), mas o config plugin e o `googleServicesFile` **não** entraram em `app.json` — não existe projeto Firebase real nem `google-services.json` ainda, e registrar o plugin sem o arquivo quebraria `expo prebuild`/`eas build` de todo mundo. Passos restantes documentados em `docs/release-checklist.md` (seção 8, nova) — bloqueados em ação humana (criar o projeto no console do Firebase).
