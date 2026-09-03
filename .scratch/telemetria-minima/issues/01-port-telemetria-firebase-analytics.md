@@ -6,10 +6,10 @@
 
 **Status:** ready-for-agent
 
-- [ ] `TelemetryProvider` existe em `engine/` com um método `logEvent(name, params)` genérico e `setUserId(deviceId)`; `createDevTelemetryProvider()` é uma implementação no-op pura, usada por padrão em testes e no `gameStore`.
-- [ ] `@react-native-firebase/app` e `@react-native-firebase/analytics` instalados e configurados via config plugin do Expo (mesmo padrão de `react-native-google-mobile-ads`/`react-native-purchases` — exige EAS dev client), com o `google-services.json` do projeto Firebase Android.
-- [ ] `createAppTelemetryProvider()` existe em `services/firebaseAnalytics.ts`, implementando o port sobre o SDK real do Firebase Analytics.
-- [ ] `gameStore` tem um novo campo `telemetry: TelemetryProvider`, com `createDevTelemetryProvider()` como padrão (mesmo padrão de `adProvider`/`dailyBackend`/`shopProvider`).
-- [ ] `store/bootstrap.ts` substitui o campo pelo `createAppTelemetryProvider()` e chama `telemetry.setUserId(deviceId)` no mesmo ponto onde o `deviceId` já é resolvido (carregado do storage ou criado via `createDeviceId()`).
-- [ ] `npm test` e `npm run typecheck` continuam verdes — nenhum teste existente passa a tocar o Firebase real.
-- [ ] Build de dev instalado num device/emulador não crasha com o SDK do Firebase integrado.
+- [x] `TelemetryProvider` existe em `engine/` com um método `logEvent(name, params)` genérico e `setUserId(deviceId)`; `createDevTelemetryProvider()` é uma implementação no-op pura, usada por padrão em testes e no `gameStore`.
+- [~] `@react-native-firebase/app` e `@react-native-firebase/analytics` instalados e configurados via config plugin do Expo (mesmo padrão de `react-native-google-mobile-ads`/`react-native-purchases` — exige EAS dev client), com o `google-services.json` do projeto Firebase Android. **Parcial:** os dois pacotes estão instalados (`package.json`), mas o config plugin e o `googleServicesFile` **não** entraram em `app.json` — não existe projeto Firebase real nem `google-services.json` ainda, e registrar o plugin sem o arquivo quebraria `expo prebuild`/`eas build` de todo mundo. Passos restantes documentados em `docs/release-checklist.md` (seção 8, nova) — bloqueados em ação humana (criar o projeto no console do Firebase).
+- [x] `createAppTelemetryProvider()` existe em `services/firebaseAnalytics.ts`, implementando o port sobre o SDK real do Firebase Analytics.
+- [x] `gameStore` tem um novo campo `telemetry: TelemetryProvider`, com `createDevTelemetryProvider()` como padrão (mesmo padrão de `adProvider`/`dailyBackend`/`shopProvider`).
+- [x] `store/bootstrap.ts` substitui o campo pelo `createAppTelemetryProvider()` e chama `telemetry.setUserId(deviceId)` no mesmo ponto onde o `deviceId` já é resolvido (carregado do storage ou criado via `createDeviceId()`).
+- [x] `npm test` e `npm run typecheck` continuam verdes — nenhum teste existente passa a tocar o Firebase real (416 testes, `tsc --noEmit` limpo).
+- [ ] Build de dev instalado num device/emulador não crasha com o SDK do Firebase integrado. **Bloqueado, não pendente**: sem projeto Firebase real, `createAppTelemetryProvider()` sempre degrada pro `catch` (mesmo padrão de `services/ads.ts` sem ad unit configurado) — o app builda e roda normalmente, só sem nenhum evento chegando no Firebase. Retomar quando o item acima (`docs/release-checklist.md` seção 8) for concluído.

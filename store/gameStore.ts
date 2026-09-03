@@ -72,6 +72,8 @@ import {
   PersistedShop,
   ShopProvider,
   ShopStorage,
+  createDevTelemetryProvider,
+  TelemetryProvider,
 } from '../engine';
 
 import {
@@ -143,6 +145,8 @@ export interface GameState {
   readonly dailyStorage: DailyChallengeStorage;
   readonly dailyBackend: DailyBackend;
   readonly adProvider: AdProvider;
+  /** Port de telemetria (ticket 01/ADR 0007) — no-op em dev/testes. */
+  readonly telemetry: TelemetryProvider;
   /** Loja cosmética (ticket 14) — itens só visuais, nunca poder. */
   readonly shop: ShopState;
   readonly shopStorage: ShopStorage;
@@ -252,6 +256,8 @@ export interface GameStoreDeps {
   readonly dailyBackend?: DailyBackend;
   /** Provider de anúncios recompensados (padrão: dev, assiste sempre). */
   readonly adProvider?: AdProvider;
+  /** Provider de telemetria (padrão: dev no-op; app injeta Firebase Analytics). */
+  readonly telemetry?: TelemetryProvider;
   /** Relógio injetável (padrão: Date.now; usado na fronteira de dia UTC). */
   readonly now?: () => Date;
   /** Port de persistência da loja (padrão: memória, p/ testes). */
@@ -352,6 +358,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
   const dailyStorage = deps.dailyStorage ?? createMemoryDailyChallengeStorage();
   const dailyBackend = deps.dailyBackend ?? createUnavailableDailyBackend();
   const adProvider = deps.adProvider ?? createDevAdProvider();
+  const telemetry = deps.telemetry ?? createDevTelemetryProvider();
   const nextSeed = deps.seed ?? (() => (Date.now() % 0xffffffff) >>> 0);
   const now = deps.now ?? (() => new Date());
 
@@ -404,6 +411,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     dailyStorage,
     dailyBackend,
     adProvider,
+    telemetry,
     shop: {
       owned: initialShop,
       offerings: [],

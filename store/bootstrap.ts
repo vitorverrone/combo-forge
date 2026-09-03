@@ -18,6 +18,7 @@ import {
 import { createAppAdProvider } from '../services/ads';
 import { createAppDailyBackend } from '../services/supabase';
 import { createAppShopProvider } from '../services/revenuecat';
+import { createAppTelemetryProvider } from '../services/firebaseAnalytics';
 
 import { gameStore } from './gameStore';
 import { createSqlitePersistence } from './sqlite';
@@ -37,6 +38,11 @@ export function initializeSqlitePersistence(): void {
     const savedDeviceId = dailyStorage.loadDeviceId();
     const deviceId = savedDeviceId ?? createDeviceId();
     if (deviceId !== savedDeviceId) dailyStorage.saveDeviceId(deviceId);
+    // Identidade de telemetria (ADR 0007): mesmo device_id anônimo do
+    // Desafio Diário, resolvido acima — permite cruzar um caso de ranking
+    // com o funil de retenção dele sem introduzir nenhum dado pessoal.
+    const telemetry = createAppTelemetryProvider();
+    void telemetry.setUserId(deviceId);
     // Loja persistida (comprados + equipados + remoção de anúncios), com
     // default aplicado a saves antigos sem o campo adsRemoved.
     const loadedShop = normalizeShopState(shopStorage.load());
@@ -45,6 +51,7 @@ export function initializeSqlitePersistence(): void {
       dailyStorage,
       dailyBackend: createAppDailyBackend(),
       adProvider: createAppAdProvider(),
+      telemetry,
       shopStorage,
       shopProvider: createAppShopProvider(),
       progression: saved ?? DEFAULT_PROGRESSION,

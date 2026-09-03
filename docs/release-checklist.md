@@ -82,6 +82,7 @@ fechado de 14 dias) rodando o quanto antes:
 | Google Play Console | ✅ **App já criado** (`com.combocardforge.app`), teste fechado publicado, 1 testador ativo | Recrutar até 12 testadores + aguardar 14 dias corridos |
 | Google Play Console — IAPs | ✅ **4 produtos únicos criados e ativos** (2026-08-28): Remove Ads, Royal Deck, Emerald Deck, Obsidian Deck | — |
 | App Store (iOS) | ⏳ Fora de escopo por enquanto (Test App ID no AdMob, sem app no ASC) | Retomar quando decidir publicar iOS |
+| Firebase Analytics (telemetria — ADR 0007 / ticket 01) | ⏳ Código pronto (`services/firebaseAnalytics.ts`), mas **sem projeto Firebase criado** — nenhum `google-services.json` existe ainda, então o SDK sempre degrada pra no-op | Criar o projeto no console do Firebase, adicionar o app Android (`com.combocardforge.app`), baixar `google-services.json` pra raiz do projeto, e só então adicionar o plugin `@react-native-firebase/app` + `googleServicesFile` no `app.json` |
 | EAS | ✅ Projeto vinculado, builds `preview` validados no emulador | `production` build só depois dos itens acima |
 | Identificadores `com.combocardforge.app` | ✅ Iguais em `app.json`, AdMob e Play Console | — |
 
@@ -431,6 +432,35 @@ versão anterior assumia "app em validação, não criado ainda").
 
 ---
 
+## 8. Firebase Analytics (telemetria — ADR 0007 / ticket 01)
+
+O código já está pronto — port `TelemetryProvider` (`engine/telemetry.ts`),
+implementação real em `services/firebaseAnalytics.ts` (API modular do
+`@react-native-firebase/analytics`, import dinâmico com degradação
+silenciosa pra no-op, mesmo padrão do AdMob) — mas o SDK nativo não tem
+como funcionar sem um projeto Firebase real:
+
+- [ ] Criar um projeto no [console do Firebase](https://console.firebase.google.com).
+- [ ] Adicionar um app Android com o package `com.combocardforge.app` (igual
+      ao AdMob/Play Console).
+- [ ] Baixar o `google-services.json` gerado e colocar na raiz do projeto
+      (mesmo nível de `app.json`; **não commitar** se contiver segredo —
+      confirmar política do arquivo antes do primeiro commit).
+- [ ] Adicionar `@react-native-firebase/app` ao array `plugins` do
+      `app.json` (com `googleServicesFile: "./google-services.json"` em
+      `android`) — **só depois** do arquivo acima existir; adicionar o
+      plugin sem o arquivo quebra o `expo prebuild`/`eas build` de todo
+      mundo.
+- [ ] Rebuild (`eas build`) e validar em device físico que eventos chegam
+      no DebugView do Firebase Analytics.
+- [ ] Data Safety form do Play Console (seção 6): declarar o Firebase
+      Analytics como SDK de analytics, junto com RevenueCat/Supabase.
+
+Sem esse projeto, `services/firebaseAnalytics.ts` sempre cai no `catch` —
+o app funciona integralmente, só sem nenhum evento chegando no Firebase.
+
+---
+
 ## Referências no código
 
 | Serviço | Fallback sem env | Onde |
@@ -438,6 +468,7 @@ versão anterior assumia "app em validação, não criado ainda").
 | Supabase | `createUnavailableDailyBackend` (Desafio indisponível) | `services/supabase.ts` |
 | RevenueCat | `createDevShopProvider` (compra simulada) | `services/revenuecat.ts` |
 | AdMob | `createDevAdProvider` (anúncio sempre ok) | `services/ads.ts` |
+| Firebase Analytics | Import dinâmico falha → no-op silencioso (sem `google-services.json`) | `services/firebaseAnalytics.ts`, `engine/telemetry.ts` |
 | Banner (visibilidade) | oculto sem ad unit ou com remoção comprada (`shouldShowBanner`) | `engine/adProvider.ts`, `components/AdBanner.tsx` |
 | Loja (orquestração) | — (fluxo com ports injetados) | `store/shopFlow.ts` |
 | Produtos da loja | `COSMETIC_CATALOG` (3 skins pagas + Classic grátis) | `engine/shop.ts` |
