@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Premortem — Lançamento do Combo Forge</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg-card: #12182b;
+    --bg-card-alt: #161d33;
+    --border: #232b45;
+    --text: #e8ecf7;
+    --text-dim: #9aa4c2;
+    --text-faint: #6b7494;
+    --accent-1: #ff6b6b;
+    --accent-2: #ffa94d;
+    --accent-3: #ffd43b;
+    --accent-4: #69db7c;
+    --accent-5: #4dabf7;
+    --accent-6: #9775fa;
+    --accent-7: #f783ac;
+    --accent-8: #66d9e8;
+    --danger: #ff6b6b;
+    --warn: #ffa94d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
+    line-height: 1.6;
+    padding: 0 0 60px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 40px 24px; }
+  header { text-align: center; margin-bottom: 40px; }
+  header .eyebrow {
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-size: 0.75rem;
+    color: var(--text-faint);
+    margin-bottom: 10px;
+  }
+  header h1 {
+    font-size: 2rem;
+    margin: 0 0 12px;
+    background: linear-gradient(135deg, var(--accent-1), var(--accent-3));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  header p.frame {
+    max-width: 640px;
+    margin: 0 auto;
+    color: var(--text-dim);
+    font-size: 0.95rem;
+  }
+
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+    margin: 28px 0 40px;
+  }
+  .stat {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 10px;
+    text-align: center;
+  }
+  .stat .n { font-size: 1.6rem; font-weight: 700; color: var(--accent-8); }
+  .stat .l { font-size: 0.72rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; }
+
+  .synthesis {
+    background: linear-gradient(160deg, var(--bg-card) 0%, var(--bg-card-alt) 100%);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 32px;
+    margin-bottom: 48px;
+  }
+  .synthesis h2 {
+    margin-top: 0;
+    font-size: 1.1rem;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .synth-block {
+    padding: 18px 0;
+    border-top: 1px solid var(--border);
+  }
+  .synth-block:first-of-type { border-top: none; padding-top: 6px; }
+  .synth-block .tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 10px;
+  }
+  .tag.likely { background: rgba(255,169,77,0.15); color: var(--accent-2); border: 1px solid rgba(255,169,77,0.4); }
+  .tag.danger { background: rgba(255,107,107,0.15); color: var(--accent-1); border: 1px solid rgba(255,107,107,0.4); }
+  .tag.hidden { background: rgba(151,117,250,0.15); color: var(--accent-6); border: 1px solid rgba(151,117,250,0.4); }
+  .synth-block h3 { margin: 0 0 8px; font-size: 1.05rem; }
+  .synth-block p { margin: 0; color: var(--text-dim); font-size: 0.94rem; }
+
+  .revised ol, .checklist ul { margin: 8px 0 0; padding-left: 22px; }
+  .revised li, .checklist li { margin-bottom: 8px; color: var(--text-dim); font-size: 0.92rem; }
+  .checklist li::marker { color: var(--accent-4); }
+
+  h2.section-title {
+    font-size: 1.3rem;
+    margin: 48px 0 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  h2.section-title .count {
+    font-size: 0.75rem;
+    font-weight: 400;
+    color: var(--text-faint);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 999px;
+  }
+
+  .cards { display: grid; grid-template-columns: 1fr; gap: 18px; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 14px;
+    padding: 22px 24px;
+  }
+  .card .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+  .card h3 { margin: 0; font-size: 1.05rem; color: var(--text); }
+  .card .idx {
+    font-size: 0.72rem;
+    color: var(--text-faint);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .card .story { color: var(--text-dim); font-size: 0.92rem; margin-bottom: 14px; }
+  .card .meta-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  @media (min-width: 720px) {
+    .card .meta-row { grid-template-columns: 1fr 1fr; }
+  }
+  .card .meta-box {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+  .card .meta-box .label {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-faint);
+    margin-bottom: 6px;
+  }
+  .card .meta-box .val { font-size: 0.88rem; color: var(--text); }
+  .card .meta-box ul { margin: 0; padding-left: 18px; }
+  .card .meta-box li { font-size: 0.85rem; margin-bottom: 4px; }
+
+  footer {
+    margin-top: 60px;
+    text-align: center;
+    color: var(--text-faint);
+    font-size: 0.8rem;
+    border-top: 1px solid var(--border);
+    padding-top: 24px;
+  }
+
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg: #0a0e1a;
+      --bg-card: #12182b;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="eyebrow">Premortem · Método Gary Klein</div>
+  <h1>O lançamento do Combo Forge falhou.</h1>
+  <p class="frame">Enquadramento: 6 meses se passaram. O lançamento do jogo — incluindo a estratégia de monetização atual (banner, interstitial, rewarded, IAP de remoção de anúncios) — já aconteceu e já fracassou. Este relatório trabalha de trás pra frente para entender por quê.</p>
+</header>
+
+<div class="stats-row">
+  <div class="stat"><div class="n">8</div><div class="l">Razões de falha</div></div>
+  <div class="stat"><div class="n">8</div><div class="l">Agentes de deep dive</div></div>
+  <div class="stat"><div class="n">1</div><div class="l">Suposição oculta comum</div></div>
+  <div class="stat"><div class="n">5</div><div class="l">Itens no checklist</div></div>
+</div>
+
+<div class="synthesis">
+  <h2>Síntese</h2>
+
+  <div class="synth-block">
+    <span class="tag likely">Falha mais provável</span>
+    <h3>Ausência de plano de ASO / aquisição de usuários</h3>
+    <p>É o único gap já verificável hoje, não uma hipótese sobre o futuro: apesar de dezenas de tickets meticulosos cobrindo cada sistema de jogo, nenhum arquivo no repositório toca ASO, keywords, orçamento de UA ou ficha de loja. Um produto tecnicamente impecável, invisível na busca, num gênero pós-Balatro concorrido.</p>
+  </div>
+
+  <div class="synth-block">
+    <span class="tag danger">Falha mais perigosa</span>
+    <h3>Dano reputacional por compulsão sem mitigação</h3>
+    <p>Diferente de um problema de monetização (sangra devagar, é corrigível), uma narrativa de "o estúdio sabia e retirou a proteção de propósito" é assimétrica, rápida e difícil de reverter — e o próprio GDD já documenta a decisão por escrito, seção 10: risco aceito conscientemente, sem contramedida.</p>
+  </div>
+
+  <div class="synth-block">
+    <span class="tag hidden">Suposição oculta</span>
+    <h3>"Documentado conscientemente" foi tratado como "sob controle"</h3>
+    <p>O padrão se repete no banner (risco aceito, sem gatilho de revisão), na compulsão (mitigação removida, sem contramedida) e no AdMob (review tratado como formalidade rápida). Documentar um risco no ADR ou no GDD não é mitigá-lo — sem uma métrica ou gatilho associado, o risco fica esquecido até virar incidente.</p>
+  </div>
+
+  <div class="synth-block revised">
+    <span class="tag" style="background: rgba(105,219,124,0.15); color: var(--accent-4); border: 1px solid rgba(105,219,124,0.4);">Plano revisado</span>
+    <h3>Ações concretas, uma por falha identificada</h3>
+    <ol>
+      <li>Antes de ligar <code>EXPO_PUBLIC_ADMOB_LIVE_ADS</code> em produção, testar com beta reais em telas pequenas a taxa de toque acidental/saída de app na Rodada; se passar 2x a taxa das telas estáticas, tirar o banner da tela de jogo.</li>
+      <li>Submeter o app ao AdMob readiness review 2–3 semanas antes da data de lançamento, com tráfego de um grupo de beta testers reais.</li>
+      <li>Escrever e testar a ficha de loja (ícone, screenshots, keywords, descrição) antes de submeter, com um mini teste pago (~US$300–500) num soft launch de 1–2 países pra medir CPI real.</li>
+      <li>Reinstaurar alguma forma de lembrete de pausa opcional (não bloqueante) antes do lançamento — o problema não é a mitigação específica removida, é ter zero.</li>
+      <li>Rodar um beta fechado de 2+ semanas com jogadores reais, medindo retenção D7 por cluster de skill, antes de travar a calibração do DDA.</li>
+      <li>Escrever pelo menos o primeiro ticket de conteúdo sazonal (mês 1) antes do lançamento, não como frase solta do GDD.</li>
+      <li>Reservar orçamento de tempo semanal fixo só para manutenção reativa (bugs, SDK, moderação), separado do tempo de feature nova.</li>
+    </ol>
+  </div>
+
+  <div class="synth-block checklist">
+    <span class="tag" style="background: rgba(77,171,247,0.15); color: var(--accent-5); border: 1px solid rgba(77,171,247,0.4);">Checklist pré-lançamento</span>
+    <ul>
+      <li>AdMob readiness review submetido e aprovado com tráfego de beta real, 2–3 semanas antes do lançamento.</li>
+      <li>Ficha de loja completa (ícone, screenshots, keywords, descrição) escrita e revisada antes da submissão.</li>
+      <li>Beta fechado de 2+ semanas medindo retenção D7 segmentada por skill e taxa de toque acidental no banner durante a Rodada.</li>
+      <li>Decisão registrada (com gatilho de reversão mensurável) sobre mitigação mínima de tempo de sessão — não apenas "risco aceito".</li>
+      <li>Primeiro ticket de conteúdo sazonal pós-lançamento (mês 1) escrito antes do lançamento.</li>
+    </ul>
+  </div>
+</div>
+
+<h2 class="section-title">As 8 razões de falha <span class="count">deep dive completo</span></h2>
+
+<div class="cards">
+
+  <div class="card" style="--accent: var(--accent-1);">
+    <div class="card-head"><h3>1. Banner de anúncio durante o próprio gameplay</h3><span class="idx">agente 1</span></div>
+    <p class="story">O AdMob real foi liberado na semana 3, ligando o banner full-width na tela de Rodada exatamente como especificado no ADR-0004. Em telas pequenas, o polegar do jogador toca o banner por engano durante um combo sob pressão de tempo — o Flow, pilar central do design, quebra por um evento alheio ao jogo. Ninguém rastreava saídas de app segmentadas por tamanho de tela; quando o D1 fechou em 24% (meta 40–45%), a equipe investigou tudo, menos o próprio anúncio, porque o risco já estava "aceito" no papel.</p>
+    <div class="meta-row">
+      <div class="meta-box"><div class="label">Suposição subjacente</div><div class="val">Um risco "aceito e anotado pra revisitar" seria revisitado de fato quando o AdMob liberasse anúncios reais — sem nenhum gatilho automático criado pra isso.</div></div>
+      <div class="meta-box"><div class="label">Sinais de alerta</div><ul><li>Saída de app nos 15s após interstitial na Rodada, por tamanho de tela</li><li>D1 segmentado por exposição a live ads na Rodada</li></ul></div>
+    </div>
+  </div>
+
+  <div class="card" style="--accent: var(--accent-2);">
+    <div class="card-head"><h3>2. Monetização insuficiente para o CAC do gênero</h3><span class="idx">agente 2</span></div>
+    <p class="story">Conversão de IAP ficou em ~1,2%, normal para cosmético puro — mas o ticket médio não cobria o CPI de US$1,80–2,40 do gênero pós-Balatro. O banner, aposta do ADR como "motor da compra de remoção", só converte com volume orgânico que nunca chegou sem UA agressivo. D7 real abaixo de 15% travou o Desafio Diário, a fonte principal de receita de anúncio. Mês 4: CAC de US$3,10 contra LTV projetado de US$1,40 — UA cortado a zero.</p>
+    <div class="meta-row">
+      <div class="meta-box"><div class="label">Suposição subjacente</div><div class="val">Um modelo 100% cosmético geraria retenção alta o bastante pra que o LTV superasse o CAC de um gênero nichado, sem orçamento de UA proporcional.</div></div>
+      <div class="meta-box"><div class="label">Sinais de alerta</div><ul><li>Retenção D7 abaixo de 20% no soft-launch</li><li>CPI pago acima de US$2,00 sem queda de conversão de IAP</li></ul></div>
+    </div>
+  </div>
+
+  <div class="card" style="--accent: var(--danger);">
+    <div class="card-head"><h3>3. Compulsão sem mitigação vira dano reputacional</h3><span class="idx">agente 3 · mais perigosa</span></div>
+    <p class="story">Um criador de "app detox" viraliza um vídeo de 40 minutos de gameplay ininterrupto, comparando o restart instantâneo a um caça-níquel. Alguém vaza o GDD (seção 10): o lembrete de pausa existiu, foi testado e foi removido "conscientemente, sem contramedida". A narrativa vira "o estúdio sabia e retirou a proteção de propósito". Duas lojas sinalizam o app pra revisão de bem-estar digital. Retenção D1 até sobe com o loop compulsivo — o dano é de confiança e imprensa, e nunca converte de volta em instalações.</p>
+    <div class="meta-row">
+      <div class="meta-box"><div class="label">Suposição subjacente</div><div class="val">"Risco aceito conscientemente e documentado" equivale a risco mitigado — na prática é o oposto: prova negligência deliberada quando descoberto.</div></div>
+      <div class="meta-box"><div class="label">Sinais de alerta</div><ul><li>Sessão média subindo de ~15min pra 45min+ sem conteúdo novo</li><li>Menções orgânicas de "compulsivo"/"vício" em reviews</li></ul></div>
+    </div>
+  </div>
+
+  <div class="card" style="--accent: var(--accent-3);">
+    <div class="card-head"><h3>4. Conteúdo se esgota antes do D30</h3><span class="idx">agente 4</span></div>
+    <p class="story">Por volta do dia 4–5, jogadores ativos já venceram 3 Runs, desbloquearam a Bigorna e viram os efeitos extras do marco de 5ª Run. Só resta o marco de recorde ≥2.500 — depois, repetição das mesmas 40 cartas e 10 relíquias. D7 nunca chega perto da meta. "Conteúdo sazonal" era só uma frase do GDD, sem ticket; a primeira leva de conteúdo novo sai 10 semanas depois do lançamento — tarde demais pra reter a coorte de D0.</p>
+    <div class="meta-row">
+      <div class="meta-box"><div class="label">Suposição subjacente</div><div class="val">5 marcos de meta-progressão bastariam pra esticar o interesse até depois do D7, sem medir quantas sessões cada marco consome.</div></div>
+      <div class="meta-box"><div class="label">Sinais de alerta</div><ul><li>Tempo até o marco de 2.500 pts abaixo de ~10–12 sessões</li><li>Nenhum ticket de conteúdo pós-lançamento aberto até o lançamento</li></ul></div>
+    </div>
+  </div>
+
+  <div class="card" style="--accent: var(--accent-5);">
+    <div class="card-head"><h3>5. DDA calibrado só com jogadores simulados</h3><span class="idx">agente 5</span></div>
+    <p class="story">O DDA foi calibrado contra dois perfis sintéticos do game-health-check, já forçando uma recalibração pré-lançamento tratada como "resolvido". Em produção, veteranos com builds de relíquia não-Combo empilham vantagem fora do multiplicador — o DDA nunca alcança, e eles saem por tédio. Novatos reais batem a mesma Rodada 3 vezes, a Meta cai 10%, mas ainda excede a habilidade real deles — saem por frustração. Os dois extremos do Flow se manifestam ao mesmo tempo, mascarados pela retenção agregada.</p>
+    <div class="meta-row">
+      <div class="meta-box"><div class="label">Suposição subjacente</div><div class="val">Dois perfis simulados por subagentes generalizam pra distribuição real de comportamento de milhares de jogadores.</div></div>
+      <div class="meta-box"><div class="label">Sinais de alerta</div><ul><li>Retenção D7 bimodal por cluster de skill</li><li>% de boost +15% e % de redução -10% subindo juntos</li></ul></div>
+    </div>
+  </div>
+
+  <div class="card" style="--accent: var(--accent-6);">
+    <div class="card-head"><h3>6. Bloqueio no readiness review do AdMob</h3><span class="idx">agente 6</span></div>
+    <p class="story">O app sobe às lojas ainda com anúncios de teste. O review do AdMob exige tráfego real sustentado, e sem UA pago (que dependia da receita de ads pra se pagar) o app fica preso em "limited ads serving". O rodapé fica vazio na janela crítica de formação da curva de retenção. O rewarded do Desafio Diário tem fill rate baixo, frustrando o próprio feature que deveria compensar. QA de policy sinaliza o posicionamento do banner no gameplay como violação, adicionando outro ciclo de revisão.</p>
+    <div class="meta-row">
+      <div class="meta-box"><div class="label">Suposição subjacente</div><div class="val">O readiness review do AdMob seria uma formalidade rápida, e não um gargalo dependente do próprio tráfego que o lançamento deveria gerar.</div></div>
+      <div class="meta-box"><div class="label">Sinais de alerta</div><ul><li>Flag de live ads ainda desligada 7–10 dias após o lançamento</li><li>Fill rate do rewarded abaixo de ~70%</li></ul></div>
+    </div>
+  </div>
+
+  <div class="card" style="--accent: var(--accent-7);">
+    <div class="card-head"><h3>7. Sem plano de ASO / aquisição de usuários</h3><span class="idx">agente 7 · mais provável</span></div>
+    <p class="story">Dezenas de tickets fechados, ADRs cobrindo cada decisão — mas só na semana do soft launch alguém abre o App Store Connect e percebe que faltam screenshots, keywords e até o nome já está em uso por outro app. A ficha sai genérica, publicada num fim de semana. Nos primeiros 30 dias, o app fica nas páginas 3–4 da busca, atrás de clones que investiram em ASO desde o dia 1. Mês 3: menos de 500 instalações — o produto validado internamente como divertido nunca chega ao volume necessário.</p>
+    <div class="meta-row">
+      <div class="meta-box"><div class="label">Suposição subjacente</div><div class="val">Um produto tecnicamente bem construído seria descoberto pelo mercado por conta própria, sem a descoberta ser projetada como qualquer outro sistema do jogo.</div></div>
+      <div class="meta-box"><div class="label">Sinais de alerta</div><ul><li>Zero menções a ASO/keywords/UA no repositório até a semana do lançamento</li><li>Nenhum protótipo de ficha de loja antes do ticket de lançamento</li></ul></div>
+    </div>
+  </div>
+
+  <div class="card" style="--accent: var(--accent-8);">
+    <div class="card-head"><h3>8. Equipe pequena não sustenta operação ao vivo</h3><span class="idx">agente 8</span></div>
+    <p class="story">O lançamento sai limpo — o fluxo de tickets sustenta bem trabalho batch, sem relógio. Semana 3: o ranking diário expõe um nome ofensivo, sem fila de moderação. Semana 6: um update de política do Google quebra o RevenueCat via AdMob SDK — dependência não coberta em nenhum ticket, porque manutenção reativa não tem ticket. Conteúdo sazonal atrasa porque é a mesma pessoa debugando. Mês 4: uma query de leaderboard degrada com o crescimento real da tabela, nunca dimensionada em dev. Reviews de 1 estrela citam "trava no ranking".</p>
+    <div class="meta-row">
+      <div class="meta-box"><div class="label">Suposição subjacente</div><div class="val">A cadência "um ticket por vez, sem prazo" que funcionou pré-lançamento se traduz automaticamente em capacidade de responder a incidentes concorrentes em produção.</div></div>
+      <div class="meta-box"><div class="label">Sinais de alerta</div><ul><li>Tempo entre bug reportado e fix ultrapassando 48h recorrentemente</li><li>Tickets sazonais adiados 2x seguidas</li></ul></div>
+    </div>
+  </div>
+
+</div>
+
+<footer>
+  Premortem gerado em 2026-09-03 · Alvo: lançamento completo do Combo Forge, incluindo monetização atual (banner, interstitial, rewarded, IAP remove_ads US$2,99) · 8 agentes de deep dive em paralelo
+</footer>
+
+</div>
+</body>
+</html>

@@ -93,3 +93,7 @@ _Evitar_: Partida, run run (sem repetição)
 **Loja**:
 O subsistema de monetização não-intrusiva do jogo: vende cosméticos (skins de Baralho — 100% visuais, nunca tocam poder de jogo) e a remoção de anúncios (IAP não-consumível que esconde o banner). A orquestração de IO (carga de ofertas, compra, restore, sync de entitlement no launch) vive no fluxo da Loja (store/shopFlow.ts), que devolve a fatia nova para o store aplicar — mesma relação do Desafio Diário com o dailyFlow.
 _Evitar_: Shop, storefront, lojinha
+
+**Telemetria**:
+Eventos de produto emitidos pelo app para observar como jogadores usam o Combo Forge em produção — retenção, progressão, calibração do DDA, fill rate de anúncio —, enviados ao Firebase Analytics e correlacionáveis ao mesmo device_id anônimo do Desafio Diário (ver ADR 0007). A orquestração de IO vive como port injetada nos flows do store, mesma relação da Loja com o shopFlow e do Desafio Diário com o dailyFlow.
+_Evitar_: Analytics, tracking, logging
