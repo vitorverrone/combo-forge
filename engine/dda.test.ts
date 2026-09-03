@@ -1,5 +1,6 @@
 import {
   adjustTarget,
+  attemptNumberForRound,
   createMemoryDdaStorage,
   DEFAULT_DDA_CONFIG,
   DEFAULT_DDA_STATE,
@@ -44,6 +45,22 @@ describe('adjustTarget (curva base ± DDA)', () => {
     const disabled = { ...DEFAULT_DDA_CONFIG, enabled: false };
     const dda = { lastFailedRound: 3, consecutiveFailures: 9, easyWins: 9 };
     expect(adjustTarget(baseTarget(3), 3, dda, disabled)).toBe(baseTarget(3));
+  });
+});
+
+describe('attemptNumberForRound (ticket 02/ADR 0007 — número da tentativa na telemetria)', () => {
+  test('histórico neutro é sempre a 1ª tentativa', () => {
+    expect(attemptNumberForRound(DEFAULT_DDA_STATE, 1)).toBe(1);
+  });
+
+  test('Rodada com falhas consecutivas é a N+1ª tentativa', () => {
+    const dda = { lastFailedRound: 3, consecutiveFailures: 2, easyWins: 0 };
+    expect(attemptNumberForRound(dda, 3)).toBe(3);
+  });
+
+  test('outra Rodada que não a da última derrota é sempre a 1ª tentativa', () => {
+    const dda = { lastFailedRound: 3, consecutiveFailures: 2, easyWins: 0 };
+    expect(attemptNumberForRound(dda, 4)).toBe(1);
   });
 });
 

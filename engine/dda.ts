@@ -109,6 +109,16 @@ export function adjustTarget(
   return target;
 }
 
+/**
+ * Em que tentativa da Rodada R o jogador está, contando a sequência de
+ * falhas persistida (ticket 02/ADR 0007 — telemetria): 1ª tentativa se R não
+ * é a Rodada da última derrota; N+1 se já falhou N vezes seguidas nela.
+ * Mesmo predicado usado por adjustTarget para decidir o desconto de Meta.
+ */
+export function attemptNumberForRound(dda: DdaState, roundNumber: number): number {
+  return dda.lastFailedRound === roundNumber ? dda.consecutiveFailures + 1 : 1;
+}
+
 /** "Vitória fácil": margem ≥ easyWinMargin acima da Meta com 1+ Jogada sobrando. */
 export function isEasyWin(
   score: number,
