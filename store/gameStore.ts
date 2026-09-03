@@ -118,6 +118,9 @@ export const MAX_SELECTION = 5;
 /** Intervalo de Runs entre anúncios intersticiais (ticket 02). */
 const INTERSTITIAL_RUNS_INTERVAL = 1;
 
+/** Abaixo disso, restartRun() dispara restart_immediate (ticket 02/ADR 0007). */
+const RESTART_IMMEDIATE_THRESHOLD_SECONDS = 10;
+
 export interface GameState {
   readonly screen: Screen;
   readonly forger: ForgerId;
@@ -158,6 +161,8 @@ export interface GameState {
   readonly adsRemoved: boolean;
   /** Contador de Runs desde o último intersticial. */
   readonly interstitialRunsSinceAd: number;
+  /** Timestamp (ms) da última runLost; null se a Run mais recente não terminou em derrota. Usado por restartRun() pra medir restart_immediate (ticket 02). */
+  readonly lastRunLostAt: number | null;
   /** True quando um intersticial deve ser exibido (Run end screens consomem). */
   readonly showInterstitial: boolean;
   /** Tutorial contextual em coach-mark (.scratch/tutorial-walkthrough): qual passo está ativo, o que já foi visto. */
@@ -319,6 +324,41 @@ export function persistRoundEnd(
   }
 }
 
+/**
+ * Dispara round_result pra cada Rodada resolvida e run_ended ao fim da Run
+ * (ticket 02/ADR 0007) — mesmos eventos que persistRoundEnd/recordRunEnd já
+ * processam, mesmo ponto de chamada em playSelection(). O número da
+ * tentativa vem do dda.consecutiveFailures da Run (carregado uma vez em
+ * startRun e fixo durante ela): quando a Rodada resolvida é a mesma da
+ * última derrota persistida, é mais uma tentativa na sequência; senão, é a
+ * primeira.
+ */
+function emitRoundAndRunTelemetry(
+  telemetry: TelemetryProvider,
+  run: RunState,
+  events: readonly RunEvent[],
+): void {
+  for (const event of events) {
+    if (event.type === 'roundWon' || event.type === 'roundLost') {
+      const marginPct = Math.round(((event.score - event.target) / event.target) * 100);
+      const attemptNumber =
+        run.dda.lastFailedRound === event.roundNumber ? run.dda.consecutiveFailures + 1 : 1;
+      void telemetry.logEvent('round_result', {
+        roundNumber: event.roundNumber,
+        result: event.type === 'roundWon' ? 'won' : 'lost',
+        marginPct,
+        attemptNumber,
+      });
+    } else if (event.type === 'runWon' || event.type === 'runLost') {
+      void telemetry.logEvent('run_ended', {
+        result: event.type === 'runWon' ? 'won' : 'lost',
+        roundNumber: event.roundNumber,
+        runScore: event.runScore,
+      });
+    }
+  }
+}
+
 /** Ports do fluxo do Desafio Diário a partir do estado atual do store. */
 function dailyFlowDeps(state: GameState, now: () => Date): DailyFlowDeps {
   return {
@@ -424,6 +464,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     shopProvider,
     adsRemoved: initialShop.adsRemoved,
     interstitialRunsSinceAd: 0,
+    lastRunLostAt: null,
     showInterstitial: false,
     tutorial: loadTutorialState(tutorialStorage),
     tutorialStorage,
@@ -474,13 +515,17 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     },
 
     startRun: () => {
-      const { forger, progression } = get();
+      const { forger, progression, telemetry } = get();
       const unlocks = computeUnlocks(progression);
       if (!isForgerUnlocked(unlocks, forger)) return;
       const seed = nextSeed();
       const rng = createSeededRng(seed);
       const dda = loadDda(ddaStorage, DEFAULT_DDA_CONFIG);
       const run = engineStartRun(seed, { forger, dda, ddaConfig: DEFAULT_DDA_CONFIG, rng, unlocks });
+      void telemetry.logEvent('run_started', {
+        forger,
+        runNumber: progression.stats.runsStarted + 1,
+      });
       set({ screen: 'game', runMode: 'normal', run, rng, selectedKeys: [], lastEvents: [], recentUnlocks: [] });
     },
 
@@ -575,9 +620,11 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
           });
         } else {
           persistRoundEnd(result.run, result.events, storage);
+          emitRoundAndRunTelemetry(get().telemetry, result.run, result.events);
           const ended = result.events.some(
             (event) => event.type === 'runWon' || event.type === 'runLost',
           );
+          const lost = result.events.some((event) => event.type === 'runLost');
           // Intersticial entre Runs (ticket 02): incrementa o contador a cada
           // Run concluída e agenda um intersticial quando atinge o intervalo.
           // Desafio Diário não conta (já tratado acima).
@@ -593,6 +640,10 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
           set({
             ...advanceProgression(result, played, progression, get().unlockChoice, get().recentUnlocks, progressionStorage),
             ...interstitialPatch,
+            // Toda Run que termina atualiza lastRunLostAt — null numa vitória
+            // (limpa um timestamp de derrota antigo, senão um restart rápido
+            // depois de VENCER dispararia restart_immediate por engano).
+            ...(ended ? { lastRunLostAt: lost ? now().getTime() : null } : {}),
           });
         }
       } catch {
@@ -629,6 +680,16 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     },
 
     restartRun: () => {
+      // Loop "só mais uma tentativa" (ADR 0007): restart abaixo do limiar
+      // logo após uma derrota é o sinal que o premortem de lançamento pediu
+      // pra observar (risco de compulsão sem mitigação).
+      const { lastRunLostAt, telemetry } = get();
+      if (lastRunLostAt !== null) {
+        const secondsSinceLoss = (now().getTime() - lastRunLostAt) / 1000;
+        if (secondsSinceLoss < RESTART_IMMEDIATE_THRESHOLD_SECONDS) {
+          void telemetry.logEvent('restart_immediate', { secondsSinceLoss });
+        }
+      }
       // Nova Run com novo seed e o mesmo Forjador, sem passar pela tela inicial.
       get().startRun();
     },

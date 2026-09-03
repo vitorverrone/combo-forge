@@ -29,6 +29,7 @@ import {
   REMOVE_ADS_ENTITLEMENT_ID,
   RunEvent,
   RunState,
+  TelemetryProvider,
 } from '../engine';
 
 import { createGameStore, persistRoundEnd, selectionPreview } from './gameStore';
@@ -59,6 +60,26 @@ function makeFakeDailyBackend(seed = 424242): DailyBackend & {
     setDisplayName: async (_deviceId: string, name: string) => name,
   };
   return fake;
+}
+
+/** Fake de telemetria: grava cada chamada de logEvent (ticket 02). */
+function makeFakeTelemetry(): TelemetryProvider & {
+  readonly events: readonly { name: string; params?: Record<string, string | number | boolean> }[];
+  clear(): void;
+} {
+  let events: { name: string; params?: Record<string, string | number | boolean> }[] = [];
+  return {
+    get events() {
+      return events;
+    },
+    logEvent: async (name, params) => {
+      events.push({ name, params });
+    },
+    setUserId: async () => {},
+    clear: () => {
+      events = [];
+    },
+  };
 }
 
 const spades = (value: number): Card => ({ suit: 'spades', value });
@@ -418,7 +439,10 @@ describe('Desafio Diário (ticket 13)', () => {
   test('anúncio não assistido (provider falso) não libera tentativa extra', async () => {
     const store = createGameStore({
       dailyBackend: makeFakeDailyBackend(),
-      adProvider: { requestRewardedAd: async () => false, requestInterstitialAd: async () => false },
+      adProvider: {
+        requestRewardedAd: async () => false,
+        requestInterstitialAd: async () => false,
+      },
     });
     await store.getState().startDailyChallenge();
     await store.getState().watchAdForExtraAttempt();
@@ -625,7 +649,10 @@ describe('Desafio Diário (ticket 13)', () => {
     expect(store.getState().daily.displayNameStatus).toBe('idle');
     expect(storage.loadDisplayName()).toBe('Fulano');
     // Recriar o store (nova sessão do app) carrega o nome persistido.
-    const reopened = createGameStore({ dailyStorage: storage, dailyBackend: makeFakeDailyBackend() });
+    const reopened = createGameStore({
+      dailyStorage: storage,
+      dailyBackend: makeFakeDailyBackend(),
+    });
     expect(reopened.getState().daily.displayName).toBe('Fulano');
   });
 
@@ -1059,5 +1086,144 @@ describe('persistRoundEnd (DDA persistido ao fim da Rodada)', () => {
       consecutiveFailures: 2,
       easyWins: 4,
     });
+  });
+});
+
+describe('telemetria: funil de Run (ticket 02)', () => {
+  const WINNING_HAND = [clubs(10), spades(10), hearts(10), diamonds(10)];
+
+  test('startRun dispara run_started com o forjador ativo e o número da Run', () => {
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({ telemetry });
+    store.getState().startRun();
+    expect(telemetry.events).toContainEqual({
+      name: 'run_started',
+      params: { forger: 'apprentice', runNumber: 1 },
+    });
+  });
+
+  test('Rodada vencida (sem terminar a Run) dispara round_result, sem run_ended', () => {
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({ telemetry });
+    store.getState().startRun();
+    store.setState({ run: makeRunWithHand(WINNING_HAND) }); // roundNumber 1 (padrão)
+    for (const card of WINNING_HAND) store.getState().toggleCard(cardKey(card));
+    store.getState().playSelection();
+
+    // Rodada vencida mas não a final: fase vai pra 'forging' (escolha de
+    // upgrade), não 'roundWon' — só a Rodada final de uma Run vitoriosa
+    // pula direto pra 'runWon'.
+    expect(store.getState().run?.phase).toBe('forging');
+    const roundResult = telemetry.events.find((event) => event.name === 'round_result');
+    expect(roundResult?.params).toMatchObject({ roundNumber: 1, result: 'won', attemptNumber: 1 });
+    expect(roundResult?.params?.marginPct).toBeGreaterThan(0);
+    expect(telemetry.events.some((event) => event.name === 'run_ended')).toBe(false);
+  });
+
+  test('attemptNumber reflete as falhas consecutivas já registradas na mesma Rodada', () => {
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({ telemetry });
+    store.getState().startRun();
+    store.setState({
+      run: {
+        ...makeRunWithHand(WINNING_HAND),
+        dda: { lastFailedRound: 1, consecutiveFailures: 2, easyWins: 0 },
+      },
+    });
+    for (const card of WINNING_HAND) store.getState().toggleCard(cardKey(card));
+    store.getState().playSelection();
+
+    const roundResult = telemetry.events.find((event) => event.name === 'round_result');
+    expect(roundResult?.params?.attemptNumber).toBe(3);
+  });
+
+  test('Run perdida dispara round_result (lost) e run_ended (lost)', () => {
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({ telemetry });
+    store.getState().startRun();
+    store.setState({ run: { ...makeRunWithHand([spades(1)]), playsRemaining: 1 } });
+    store.getState().toggleCard(cardKey(spades(1)));
+    store.getState().playSelection();
+
+    expect(store.getState().run?.phase).toBe('runLost');
+    const roundResult = telemetry.events.find((event) => event.name === 'round_result');
+    expect(roundResult?.params).toMatchObject({ roundNumber: 1, result: 'lost' });
+    expect(roundResult?.params?.marginPct).toBeLessThan(0);
+    const runEnded = telemetry.events.find((event) => event.name === 'run_ended');
+    expect(runEnded?.params).toMatchObject({ result: 'lost', roundNumber: 1 });
+  });
+
+  test('Run vencida (Rodada 6) dispara run_ended com resultado won', () => {
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({ telemetry });
+    store.getState().startRun();
+    store.setState({ run: { ...makeRunWithHand(WINNING_HAND), roundNumber: 6 } });
+    for (const card of WINNING_HAND) store.getState().toggleCard(cardKey(card));
+    store.getState().playSelection();
+
+    expect(store.getState().run?.phase).toBe('runWon');
+    const runEnded = telemetry.events.find((event) => event.name === 'run_ended');
+    expect(runEnded?.params).toMatchObject({ result: 'won', roundNumber: 6 });
+    expect(runEnded?.params?.runScore).toBeGreaterThan(0);
+  });
+
+  test('restartRun logo após a derrota dispara restart_immediate com os segundos decorridos', () => {
+    const telemetry = makeFakeTelemetry();
+    let now = new Date('2026-09-03T10:00:00Z');
+    const store = createGameStore({ telemetry, now: () => now });
+    store.getState().startRun();
+    store.setState({ run: { ...makeRunWithHand([spades(1)]), playsRemaining: 1 } });
+    store.getState().toggleCard(cardKey(spades(1)));
+    store.getState().playSelection();
+
+    now = new Date(now.getTime() + 3000); // 3s depois — abaixo do limiar
+    store.getState().restartRun();
+    const restart = telemetry.events.find((event) => event.name === 'restart_immediate');
+    expect(restart?.params?.secondsSinceLoss).toBe(3);
+  });
+
+  test('restartRun bem depois da derrota NÃO dispara restart_immediate', () => {
+    const telemetry = makeFakeTelemetry();
+    let now = new Date('2026-09-03T10:00:00Z');
+    const store = createGameStore({ telemetry, now: () => now });
+    store.getState().startRun();
+    store.setState({ run: { ...makeRunWithHand([spades(1)]), playsRemaining: 1 } });
+    store.getState().toggleCard(cardKey(spades(1)));
+    store.getState().playSelection();
+
+    now = new Date(now.getTime() + 60_000); // 60s depois — acima do limiar
+    store.getState().restartRun();
+    expect(telemetry.events.some((event) => event.name === 'restart_immediate')).toBe(false);
+  });
+
+  test('restartRun sem nenhuma derrota anterior não dispara restart_immediate', () => {
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({ telemetry });
+    store.getState().startRun();
+    store.getState().restartRun();
+    expect(telemetry.events.some((event) => event.name === 'restart_immediate')).toBe(false);
+  });
+
+  test('restartRun logo após VENCER não dispara restart_immediate, mesmo com uma derrota antiga registrada', () => {
+    const telemetry = makeFakeTelemetry();
+    let now = new Date('2026-09-03T10:00:00Z');
+    const store = createGameStore({ telemetry, now: () => now });
+    store.getState().startRun();
+    // Derrota inicial: registra lastRunLostAt.
+    store.setState({ run: { ...makeRunWithHand([spades(1)]), playsRemaining: 1 } });
+    store.getState().toggleCard(cardKey(spades(1)));
+    store.getState().playSelection();
+
+    // Restart imediato inicia a 2ª Run — desta vez ela é vencida.
+    store.getState().restartRun();
+    store.setState({ run: { ...makeRunWithHand(WINNING_HAND), roundNumber: 6 } });
+    for (const card of WINNING_HAND) store.getState().toggleCard(cardKey(card));
+    store.getState().playSelection();
+    expect(store.getState().run?.phase).toBe('runWon');
+
+    telemetry.clear(); // só interessa o que acontece a partir daqui
+    now = new Date(now.getTime() + 2000); // 2s depois da vitória — dentro do limiar
+    store.getState().restartRun();
+    expect(telemetry.events.some((event) => event.name === 'restart_immediate')).toBe(false);
   });
 });
