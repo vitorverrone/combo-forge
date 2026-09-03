@@ -1,20 +1,20 @@
 import { createDevTelemetryProvider } from './telemetry';
 
 describe('createDevTelemetryProvider (ticket 01)', () => {
-  test('logEvent não lança com parâmetros', () => {
+  test('logEvent resolve sem lançar, com parâmetros', async () => {
     const provider = createDevTelemetryProvider();
-    expect(() =>
+    await expect(
       provider.logEvent('run_started', { forger: 'apprentice', runNumber: 1 }),
-    ).not.toThrow();
+    ).resolves.toBeUndefined();
   });
 
-  test('logEvent não lança sem parâmetros', () => {
+  test('logEvent resolve sem lançar, sem parâmetros', async () => {
     const provider = createDevTelemetryProvider();
-    expect(() => provider.logEvent('shop_opened')).not.toThrow();
+    await expect(provider.logEvent('shop_opened')).resolves.toBeUndefined();
   });
 
-  test('setUserId não lança', () => {
+  test('setUserId resolve sem lançar', async () => {
     const provider = createDevTelemetryProvider();
-    expect(() => provider.setUserId('device-abc-123')).not.toThrow();
+    await expect(provider.setUserId('device-abc-123')).resolves.toBeUndefined();
   });
 });

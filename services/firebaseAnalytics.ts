@@ -18,12 +18,8 @@ import { TelemetryParams, TelemetryProvider } from '../engine';
 /** Provider real: cada chamada tenta o SDK nativo e nunca rejeita/lança. */
 export function createAppTelemetryProvider(): TelemetryProvider {
   return {
-    logEvent: (name, params) => {
-      void logFirebaseEvent(name, params);
-    },
-    setUserId: (deviceId) => {
-      void setFirebaseUserId(deviceId);
-    },
+    logEvent: logFirebaseEvent,
+    setUserId: setFirebaseUserId,
   };
 }
 

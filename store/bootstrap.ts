@@ -42,7 +42,7 @@ export function initializeSqlitePersistence(): void {
     // Desafio Diário, resolvido acima — permite cruzar um caso de ranking
     // com o funil de retenção dele sem introduzir nenhum dado pessoal.
     const telemetry = createAppTelemetryProvider();
-    telemetry.setUserId(deviceId);
+    void telemetry.setUserId(deviceId);
     // Loja persistida (comprados + equipados + remoção de anúncios), com
     // default aplicado a saves antigos sem o campo adsRemoved.
     const loadedShop = normalizeShopState(shopStorage.load());

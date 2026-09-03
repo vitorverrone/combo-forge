@@ -8,16 +8,21 @@
 
 export type TelemetryParams = Readonly<Record<string, string | number | boolean>>;
 
+/**
+ * Nunca rejeita (mesmo contrato de AdProvider): quem chama decide se espera
+ * ou dispara-e-esquece (`void provider.logEvent(...)`), como já é feito para
+ * `syncRemoveAdsEntitlement()` em store/bootstrap.ts.
+ */
 export interface TelemetryProvider {
-  logEvent(name: string, params?: TelemetryParams): void;
+  logEvent(name: string, params?: TelemetryParams): Promise<void>;
   /** Liga o device_id anônimo do Desafio Diário à identidade de telemetria (ADR 0007). */
-  setUserId(deviceId: string): void;
+  setUserId(deviceId: string): Promise<void>;
 }
 
 /** Implementação de desenvolvimento: nunca falha, nunca envia nada. */
 export function createDevTelemetryProvider(): TelemetryProvider {
   return {
-    logEvent: () => {},
-    setUserId: () => {},
+    logEvent: async () => {},
+    setUserId: async () => {},
   };
 }
