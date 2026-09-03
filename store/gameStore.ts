@@ -20,6 +20,7 @@ import { createStore, StoreApi } from 'zustand/vanilla';
 import {
   activeRelics,
   AdProvider,
+  attemptNumberForRound,
   Card,
   cardKey,
   claimOption as engineClaimOption,
@@ -127,6 +128,14 @@ export interface GameState {
   /** Modo da Run atual (Desafio Diário não conta para meta-progressão). */
   readonly runMode: RunMode;
   readonly run: RunState | null;
+  /**
+   * Contagem de Runs iniciadas na sessão do app (ticket 02/ADR 0007 —
+   * "número da Run" do evento run_started). Incrementado em startRun(), não
+   * em progression.stats.runsStarted: aquele campo só cresce quando uma Run
+   * TERMINA (recordRunEnd), então uma Run abandonada via backToStart() sem
+   * terminar faria o próximo run_started repetir o mesmo número.
+   */
+  readonly runsStartedCount: number;
   /** Identidades (`naipe:valor`) das cartas da Mão selecionadas. */
   readonly selectedKeys: readonly string[];
   /** Eventos do motor da última ação (para a UI reagir a eles). */
@@ -327,22 +336,20 @@ export function persistRoundEnd(
 /**
  * Dispara round_result pra cada Rodada resolvida e run_ended ao fim da Run
  * (ticket 02/ADR 0007) — mesmos eventos que persistRoundEnd/recordRunEnd já
- * processam, mesmo ponto de chamada em playSelection(). O número da
- * tentativa vem do dda.consecutiveFailures da Run (carregado uma vez em
- * startRun e fixo durante ela): quando a Rodada resolvida é a mesma da
- * última derrota persistida, é mais uma tentativa na sequência; senão, é a
- * primeira.
+ * processam, mesmo ponto de chamada em playSelection(). attemptNumberForRound
+ * (engine/dda.ts) deriva o número da tentativa do dda da Run (carregado uma
+ * vez em startRun e fixo durante ela) — mesmo predicado que adjustTarget já
+ * usa pro desconto de Meta, não reimplementado aqui.
  */
 function emitRoundAndRunTelemetry(
-  telemetry: TelemetryProvider,
   run: RunState,
   events: readonly RunEvent[],
+  telemetry: TelemetryProvider,
 ): void {
   for (const event of events) {
     if (event.type === 'roundWon' || event.type === 'roundLost') {
       const marginPct = Math.round(((event.score - event.target) / event.target) * 100);
-      const attemptNumber =
-        run.dda.lastFailedRound === event.roundNumber ? run.dda.consecutiveFailures + 1 : 1;
+      const attemptNumber = attemptNumberForRound(run.dda, event.roundNumber);
       void telemetry.logEvent('round_result', {
         roundNumber: event.roundNumber,
         result: event.type === 'roundWon' ? 'won' : 'lost',
@@ -425,6 +432,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     forger: 'apprentice',
     runMode: 'normal',
     run: null,
+    runsStartedCount: 0,
     selectedKeys: [],
     lastEvents: [],
     rng: null,
@@ -515,18 +523,25 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     },
 
     startRun: () => {
-      const { forger, progression, telemetry } = get();
+      const { forger, progression, telemetry, runsStartedCount } = get();
       const unlocks = computeUnlocks(progression);
       if (!isForgerUnlocked(unlocks, forger)) return;
       const seed = nextSeed();
       const rng = createSeededRng(seed);
       const dda = loadDda(ddaStorage, DEFAULT_DDA_CONFIG);
       const run = engineStartRun(seed, { forger, dda, ddaConfig: DEFAULT_DDA_CONFIG, rng, unlocks });
-      void telemetry.logEvent('run_started', {
-        forger,
-        runNumber: progression.stats.runsStarted + 1,
+      const nextRunsStartedCount = runsStartedCount + 1;
+      void telemetry.logEvent('run_started', { forger, runNumber: nextRunsStartedCount });
+      set({
+        screen: 'game',
+        runMode: 'normal',
+        run,
+        rng,
+        selectedKeys: [],
+        lastEvents: [],
+        recentUnlocks: [],
+        runsStartedCount: nextRunsStartedCount,
       });
-      set({ screen: 'game', runMode: 'normal', run, rng, selectedKeys: [], lastEvents: [], recentUnlocks: [] });
     },
 
     openDaily: () => {
@@ -620,16 +635,15 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
           });
         } else {
           persistRoundEnd(result.run, result.events, storage);
-          emitRoundAndRunTelemetry(get().telemetry, result.run, result.events);
-          const ended = result.events.some(
+          emitRoundAndRunTelemetry(result.run, result.events, get().telemetry);
+          const endedEvent = result.events.find(
             (event) => event.type === 'runWon' || event.type === 'runLost',
           );
-          const lost = result.events.some((event) => event.type === 'runLost');
           // Intersticial entre Runs (ticket 02): incrementa o contador a cada
           // Run concluída e agenda um intersticial quando atinge o intervalo.
           // Desafio Diário não conta (já tratado acima).
           let interstitialPatch: Partial<GameState> = {};
-          if (ended && !get().adsRemoved) {
+          if (endedEvent !== undefined && !get().adsRemoved) {
             const nextCount = get().interstitialRunsSinceAd + 1;
             if (nextCount >= INTERSTITIAL_RUNS_INTERVAL) {
               interstitialPatch = { interstitialRunsSinceAd: 0, showInterstitial: true };
@@ -637,13 +651,19 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
               interstitialPatch = { interstitialRunsSinceAd: nextCount };
             }
           }
+          // Toda Run que termina atualiza lastRunLostAt — null numa vitória
+          // (limpa um timestamp de derrota antigo, senão um restart rápido
+          // depois de VENCER dispararia restart_immediate por engano).
+          let lastRunLostAtPatch: Partial<GameState> = {};
+          if (endedEvent !== undefined) {
+            lastRunLostAtPatch = {
+              lastRunLostAt: endedEvent.type === 'runLost' ? now().getTime() : null,
+            };
+          }
           set({
             ...advanceProgression(result, played, progression, get().unlockChoice, get().recentUnlocks, progressionStorage),
             ...interstitialPatch,
-            // Toda Run que termina atualiza lastRunLostAt — null numa vitória
-            // (limpa um timestamp de derrota antigo, senão um restart rápido
-            // depois de VENCER dispararia restart_immediate por engano).
-            ...(ended ? { lastRunLostAt: lost ? now().getTime() : null } : {}),
+            ...lastRunLostAtPatch,
           });
         }
       } catch {

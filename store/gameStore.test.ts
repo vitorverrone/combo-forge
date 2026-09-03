@@ -1102,6 +1102,19 @@ describe('telemetria: funil de Run (ticket 02)', () => {
     });
   });
 
+  test('runNumber incrementa mesmo quando a Run anterior foi abandonada (backToStart) sem terminar', () => {
+    // Regressão: progression.stats.runsStarted só cresce em recordRunEnd
+    // (Run TERMINADA), então usá-lo direto pro runNumber faria abandonar
+    // uma Run no meio repetir o mesmo número na próxima.
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({ telemetry });
+    store.getState().startRun();
+    store.getState().backToStart();
+    store.getState().startRun();
+    const runStartedEvents = telemetry.events.filter((event) => event.name === 'run_started');
+    expect(runStartedEvents.map((event) => event.params?.runNumber)).toEqual([1, 2]);
+  });
+
   test('Rodada vencida (sem terminar a Run) dispara round_result, sem run_ended', () => {
     const telemetry = makeFakeTelemetry();
     const store = createGameStore({ telemetry });
