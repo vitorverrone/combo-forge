@@ -18,6 +18,7 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.combocardforge.app",
       "backgroundColor": "#161120",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
@@ -28,6 +29,7 @@
     "plugins": [
       "expo-sqlite",
       "expo-audio",
+      "@react-native-firebase/app",
       [
         "react-native-google-mobile-ads",
         {

@@ -82,7 +82,7 @@ fechado de 14 dias) rodando o quanto antes:
 | Google Play Console | ✅ **App já criado** (`com.combocardforge.app`), teste fechado publicado, 1 testador ativo | Recrutar até 12 testadores + aguardar 14 dias corridos |
 | Google Play Console — IAPs | ✅ **4 produtos únicos criados e ativos** (2026-08-28): Remove Ads, Royal Deck, Emerald Deck, Obsidian Deck | — |
 | App Store (iOS) | ⏳ Fora de escopo por enquanto (Test App ID no AdMob, sem app no ASC) | Retomar quando decidir publicar iOS |
-| Firebase Analytics (telemetria — ADR 0007 / ticket 01) | ⏳ Código pronto (`services/firebaseAnalytics.ts`), mas **sem projeto Firebase criado** — nenhum `google-services.json` existe ainda, então o SDK sempre degrada pra no-op | Criar o projeto no console do Firebase, adicionar o app Android (`com.combocardforge.app`), baixar `google-services.json` pra raiz do projeto, e só então adicionar o plugin `@react-native-firebase/app` + `googleServicesFile` no `app.json` |
+| Firebase Analytics (telemetria — ADR 0007 / ticket 01) | ✅ Projeto criado (`combo-forge-1ac97`), app Android (`com.combocardforge.app`) adicionado, `google-services.json` na raiz (fora do git — ver `.gitignore`) e plugin `@react-native-firebase/app` + `googleServicesFile` ligados em `app.json` | Rebuild (`eas build`) + validar no DebugView do Firebase Analytics em device físico; declarar no Data Safety form do Play Console |
 | EAS | ✅ Projeto vinculado, builds `preview` validados no emulador | `production` build só depois dos itens acima |
 | Identificadores `com.combocardforge.app` | ✅ Iguais em `app.json`, AdMob e Play Console | — |
 
@@ -437,26 +437,26 @@ versão anterior assumia "app em validação, não criado ainda").
 O código já está pronto — port `TelemetryProvider` (`engine/telemetry.ts`),
 implementação real em `services/firebaseAnalytics.ts` (API modular do
 `@react-native-firebase/analytics`, import dinâmico com degradação
-silenciosa pra no-op, mesmo padrão do AdMob) — mas o SDK nativo não tem
-como funcionar sem um projeto Firebase real:
+silenciosa pra no-op, mesmo padrão do AdMob):
 
-- [ ] Criar um projeto no [console do Firebase](https://console.firebase.google.com).
-- [ ] Adicionar um app Android com o package `com.combocardforge.app` (igual
+- [x] Criar um projeto no [console do Firebase](https://console.firebase.google.com)
+      (`combo-forge-1ac97`).
+- [x] Adicionar um app Android com o package `com.combocardforge.app` (igual
       ao AdMob/Play Console).
-- [ ] Baixar o `google-services.json` gerado e colocar na raiz do projeto
-      (mesmo nível de `app.json`; **não commitar** se contiver segredo —
-      confirmar política do arquivo antes do primeiro commit).
-- [ ] Adicionar `@react-native-firebase/app` ao array `plugins` do
-      `app.json` (com `googleServicesFile: "./google-services.json"` em
-      `android`) — **só depois** do arquivo acima existir; adicionar o
-      plugin sem o arquivo quebra o `expo prebuild`/`eas build` de todo
-      mundo.
+- [x] Baixar o `google-services.json` gerado e colocar na raiz do projeto
+      (mesmo nível de `app.json`) — mantido fora do git (`.gitignore`) pra
+      não acoplar o repo a este projeto Firebase específico; quem clonar o
+      repo do zero precisa repetir estes passos e gerar o próprio arquivo.
+- [x] Adicionar `@react-native-firebase/app` ao array `plugins` do
+      `app.json`, com `googleServicesFile: "./google-services.json"` em
+      `android`.
 - [ ] Rebuild (`eas build`) e validar em device físico que eventos chegam
       no DebugView do Firebase Analytics.
 - [ ] Data Safety form do Play Console (seção 6): declarar o Firebase
       Analytics como SDK de analytics, junto com RevenueCat/Supabase.
 
-Sem esse projeto, `services/firebaseAnalytics.ts` sempre cai no `catch` —
+Sem o `google-services.json` (ausente em qualquer clone novo até alguém
+repetir os passos acima), `services/firebaseAnalytics.ts` cai no `catch` —
 o app funciona integralmente, só sem nenhum evento chegando no Firebase.
 
 ---
