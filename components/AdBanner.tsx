@@ -11,9 +11,12 @@ export function AdBanner() {
   const insets = useSafeAreaInsets();
   const adsRemoved = useGameStore((state) => state.adsRemoved);
   const telemetry = useGameStore((state) => state.telemetry);
+  const run = useGameStore((state) => state.run);
   const unitId = adsAreLive() ? bannerAdUnitId() : TestIds.ADAPTIVE_BANNER;
 
-  if (!shouldShowBanner(adsRemoved, unitId)) return null;
+  // shouldShowBanner (engine/adProvider.ts, ADR 0008) já decide a Rodada
+  // ativa: aqui só lê o estado e chama a regra pura.
+  if (!shouldShowBanner(adsRemoved, unitId, run?.phase)) return null;
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 8) }]}>
