@@ -17,6 +17,7 @@ import {
   DailyLeaderboard,
   LeagueStanding,
 } from '../engine';
+import { LeagueLeaderboardResponse } from '../supabase/contract';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
@@ -24,6 +25,26 @@ const SUPABASE_ANON_KEY = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 /** URL e anon key configuradas? (anon é pública por design, embutida no app.) */
 export function isSupabaseConfigured(): boolean {
   return Boolean(SUPABASE_URL && SUPABASE_ANON_KEY);
+}
+
+/**
+ * Converte a resposta do contrato (`get_league_leaderboard` — supabase/contract.ts)
+ * pra forma que o engine usa (`LeagueStanding | null`): a Liga inativa vira
+ * null (mesma convenção de "sem dado" que fetchLeaderboard já usa pro
+ * leaderboard único), ativa vira o objeto sem o campo `active`. Extraída
+ * como função nomeada — ao contrário dos outros mapeamentos deste arquivo
+ * (casts de uma linha), este tem uma decisão real (active → null ou
+ * objeto) que merece nome e teste próprios.
+ */
+export function toEngineLeagueStanding(response: LeagueLeaderboardResponse): LeagueStanding | null {
+  if (!response.active) return null;
+  return {
+    week: response.week,
+    tier: response.tier,
+    division: response.division,
+    own: response.own,
+    top: response.top,
+  };
 }
 
 /**
@@ -74,8 +95,7 @@ export function createSupabaseDailyBackend(): DailyBackend | null {
         p_device_id: deviceId,
       });
       if (error) throw new Error(error.message);
-      const response = data as { active: boolean } & Partial<LeagueStanding>;
-      return response.active ? (response as LeagueStanding) : null;
+      return toEngineLeagueStanding(data as LeagueLeaderboardResponse);
     },
 
     setDisplayName: async (deviceId: string, name: string): Promise<string> => {
