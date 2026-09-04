@@ -91,6 +91,11 @@ export function GameScreen() {
                 accessibilityLabel: t('a11y.skipTutorial'),
                 onPress: tutorialGameScreenSkipPressed,
               }}
+              rightAction={{
+                label: t('common.done'),
+                accessibilityLabel: t('a11y.completeTutorial'),
+                onPress: tutorialGameScreenSkipPressed,
+              }}
             >
               <Pressable
                 accessibilityLabel={t('a11y.openOnboarding')}
@@ -104,15 +109,15 @@ export function GameScreen() {
                 <Text style={styles.navBtnText}>?</Text>
               </Pressable>
             </TutorialView>
-          </View>
-          <View style={styles.roundLabelWrap}>
-            <Text style={styles.roundLabel}>{t('game.round', { number: run.roundNumber })}</Text>
-            {runMode === 'daily' && <Text style={styles.dailyBadge}>{t('game.daily')}</Text>}
-          </View>
-          <View style={styles.scoreBlock}>
-            <Text style={styles.scoreValue}>{run.score}</Text>
-            <Text style={styles.scoreSep}>/</Text>
-            <Text style={styles.scoreTarget}>{run.target}</Text>
+            <View style={styles.roundLabelWrap}>
+              <Text style={styles.roundLabel}>{t('game.round', { number: run.roundNumber })}</Text>
+              {runMode === 'daily' && <Text style={styles.dailyBadge}>{t('game.daily')}</Text>}
+            </View>
+            <View style={styles.scoreBlock}>
+              <Text style={styles.scoreValue}>{run.score}</Text>
+              <Text style={styles.scoreSep}>/</Text>
+              <Text style={styles.scoreTarget}>{run.target}</Text>
+            </View>
           </View>
           {/* Progress bar */}
           <View style={styles.progressTrack}>
@@ -368,6 +373,8 @@ const styles = StyleSheet.create({
   navGroup: {
     flexDirection: 'row',
     gap: spacing[8],
+    position: 'relative',
+    width: '100%'
   },
   navBtn: {
     width: 40,
@@ -392,12 +399,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing[6],
-    paddingLeft: spacing[0],
-    paddingBottom: spacing[24],
     position: 'absolute',
     left: 0,
     right: 0,
-    top: 8,
+    top: 0,
+    bottom: 0,
     textAlign: 'center'
   },
   roundLabel: {
@@ -423,7 +429,13 @@ const styles = StyleSheet.create({
   },
   scoreBlock: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    right: 0,
   },
   scoreValue: {
     fontFamily: fonts.heading,

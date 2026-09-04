@@ -90,25 +90,27 @@ export function StartScreen() {
         <ScrollView contentContainerStyle={styles.scrollContentStyle}>
           {/* Center content */}
           <View style={styles.homeContent}>
-            {/* Title block */}
-            <View style={styles.titleBlock}>
-              <Text style={styles.title}>{t('start.title')}</Text>
-              <Text style={styles.tagline}>{t('start.tagline')}</Text>
-            </View>
+            <View style={styles.titleCardFan}>
+              {/* Title block */}
+              <View style={styles.titleBlock}>
+                <Text style={styles.title}>{t('start.title')}</Text>
+                <Text style={styles.tagline}>{t('start.tagline')}</Text>
+              </View>
 
-            {/* Card fan */}
-            <View style={styles.cardFan}>
-              <Animated.View style={[styles.fanCardLeft, leftStyle]}>
-                <PlayingCard card={{ suit: 'spades', value: 1 }} />
-              </Animated.View>
+              {/* Card fan */}
+              <View style={styles.cardFan}>
+                <Animated.View style={[styles.fanCardLeft, leftStyle]}>
+                  <PlayingCard card={{ suit: 'spades', value: 1 }} />
+                </Animated.View>
 
-              <Animated.View style={[styles.fanCardCenter]}>
-                <PlayingCard card={{ suit: 'hearts', value: 7 }} />
-              </Animated.View>
+                <Animated.View style={[styles.fanCardCenter]}>
+                  <PlayingCard card={{ suit: 'hearts', value: 7 }} />
+                </Animated.View>
 
-              <Animated.View style={[styles.fanCardRight, rightStyle]}>
-                <PlayingCard card={{ suit: 'diamonds', value: 10 }} />
-              </Animated.View>
+                <Animated.View style={[styles.fanCardRight, rightStyle]}>
+                  <PlayingCard card={{ suit: 'diamonds', value: 10 }} />
+                </Animated.View>
+              </View>
             </View>
 
             {/* Forger section */}
@@ -255,6 +257,9 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
     display: 'flex'
+  },
+  titleCardFan: {
+    gap: spacing[16]
   },
   titleBlock: {
     alignItems: 'center',
