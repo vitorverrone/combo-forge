@@ -4,8 +4,8 @@
 
 **Blocked by:** 01 — Port de telemetria (Firebase Analytics) instalado e conectado.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] O ponto do `gameStore` que chama `persistDda`/`updateDda` (`engine/dda.ts`) dispara `dda_adjustment` com a direção (Meta reduzida ou aumentada) e o gatilho (3 derrotas seguidas / 5 vitórias fáceis) — só quando o ajuste resultante muda a Meta de fato, não a cada Rodada.
-- [ ] O ponto do `gameStore` que chama `claimOption`/`claimReachedSingles` (`engine/progression.ts`) dispara `milestone_unlocked` com o identificador do marco.
-- [ ] Testes cobrindo os dois eventos acima com o `TelemetryProvider` fake, incluindo o caso em que uma Rodada é resolvida sem mudança na Meta do DDA (sem disparo de `dda_adjustment`).
+- [x] O ponto do `gameStore` que chama `persistDda`/`updateDda` (`engine/dda.ts`) dispara `dda_adjustment` com a direção (Meta reduzida ou aumentada) e o gatilho (3 derrotas seguidas / 5 vitórias fáceis) — só quando o ajuste resultante muda a Meta de fato, não a cada Rodada. Classificado por `ddaAdjustment()`, novo em `engine/dda.ts`.
+- [x] O ponto do `gameStore` que chama `claimOption`/`claimReachedSingles` (`engine/progression.ts`) dispara `milestone_unlocked` com o identificador do marco — `milestoneId` (ex.: `fifthRunWon`) e `optionId` (ex.: `value-bonus-7`), achado do code-review: só `optionId` não identifica o marco em si nos casos multi-opção.
+- [x] Testes cobrindo os dois eventos acima com o `TelemetryProvider` fake, incluindo o caso em que uma Rodada é resolvida sem mudança na Meta do DDA (sem disparo de `dda_adjustment`) — 13 testes novos entre `dda.test.ts` e `gameStore.test.ts`.
