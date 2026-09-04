@@ -6,10 +6,13 @@ import {
   canWatchExtraAd,
   dailyAttemptsForDay,
   DailyLeaderboard,
+  DailyLeaderboardEntry,
+  LeagueStanding,
   utcDateIso,
 } from '../engine';
 
 import { useTranslation } from '../i18n';
+import { leagueTierName } from './format';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -156,13 +159,17 @@ export function DailyChallengeScreen() {
         <View style={styles.divider} />
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('daily.thisWeekLeaderboard')}</Text>
+          <Text style={styles.sectionTitle}>
+            {daily.league !== null ? t('daily.leagueTitle') : t('daily.thisWeekLeaderboard')}
+          </Text>
         </View>
 
         {daily.leaderboardLoading ? (
           <View style={styles.leaderboardLoadingBox}>
             <Text style={styles.leaderboardLoadingText}>{t('daily.leaderboardLoading')}</Text>
           </View>
+        ) : daily.league !== null ? (
+          <LeagueStandingView standing={daily.league} />
         ) : (
           daily.leaderboard !== null && <LeaderboardList leaderboard={daily.leaderboard} />
         )}
@@ -192,46 +199,95 @@ export function DailyChallengeScreen() {
 
 function LeaderboardList({ leaderboard }: { leaderboard: DailyLeaderboard }) {
   const { t } = useTranslation();
-  const ownName = leaderboard.own?.name ?? t('daily.anonymousName');
   return (
     <View style={styles.leaderboard}>
-      <View style={styles.yourBest}>
-        <Text style={styles.yourBestLabel}>{t('daily.yourBest')}</Text>
-        <Text style={styles.yourBestValue}>
-          {leaderboard.own === null
-            ? t('daily.noScoreYet')
-            : `${ownName} · #${leaderboard.own.rank} · ${leaderboard.own.score.toLocaleString('en-US')}`}
-        </Text>
-      </View>
+      <YourBestRow own={leaderboard.own} />
       {leaderboard.top.length === 0 ? (
         <Text style={styles.emptyTop}>{t('daily.noScoresWeek')}</Text>
       ) : (
-        leaderboard.top.map((entry, index) => {
-          const isFirst = entry.rank === 1;
-          return (
-            <View
-              key={`${entry.rank}-${entry.score}`}
-              style={[
-                styles.lbRow,
-                isFirst && styles.lbRowFirst,
-                index > 0 && !isFirst && styles.lbRowBorder,
-              ]}
-            >
-              <Text style={[styles.lbRank, isFirst && styles.lbRankFirst]}>
-                {entry.rank}
-              </Text>
-              {isFirst && <Text style={styles.lbCrown}>♦</Text>}
-              <Text style={[styles.lbName, isFirst && styles.lbNameFirst]} numberOfLines={1}>
-                {entry.name ?? t('daily.anonymousName')}
-              </Text>
-              <Text style={[styles.lbScore, isFirst && styles.lbScoreFirst]}>
-                {entry.score.toLocaleString('en-US')}
-              </Text>
-            </View>
-          );
-        })
+        <RankedEntryRows entries={leaderboard.top} />
       )}
     </View>
+  );
+}
+
+/**
+ * Ranking da Liga (ADR 0010, ticket 02): Tier + Divisão do dispositivo e o
+ * ranking completo da própria Divisão (não um top 10 — a Divisão inteira já
+ * é do tamanho certo).
+ */
+function LeagueStandingView({ standing }: { standing: LeagueStanding }) {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.leaderboard}>
+      <View style={styles.leagueHeader}>
+        <Text style={styles.leagueTierText}>{leagueTierName(standing.tier)}</Text>
+        {standing.division !== null && (
+          <Text style={styles.leagueDivisionText}>
+            {t('daily.leagueDivision', { number: standing.division })}
+          </Text>
+        )}
+      </View>
+      <YourBestRow own={standing.own} />
+      {standing.top.length === 0 ? (
+        <Text style={styles.emptyTop}>{t('daily.noScoresWeek')}</Text>
+      ) : (
+        <RankedEntryRows entries={standing.top} />
+      )}
+    </View>
+  );
+}
+
+/** Posição própria — compartilhado entre LeaderboardList e LeagueStandingView. */
+function YourBestRow({ own }: { own: DailyLeaderboardEntry | null }) {
+  const { t } = useTranslation();
+  const ownName = own?.name ?? t('daily.anonymousName');
+  return (
+    <View style={styles.yourBest}>
+      <Text style={styles.yourBestLabel}>{t('daily.yourBest')}</Text>
+      <Text style={styles.yourBestValue}>
+        {own === null ? t('daily.noScoreYet') : `${ownName} · #${own.rank} · ${own.score.toLocaleString('en-US')}`}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * Linhas de um ranking (rank/nome/pontuação) — compartilhado entre
+ * LeaderboardList e LeagueStandingView. `entries` já vem ordenado por rank;
+ * o destaque de "1º lugar" é sempre o primeiro da lista, que no leaderboard
+ * único é rank global 1, e na Liga é o melhor da própria Divisão (nem
+ * sempre rank global 1 — só Divisões do topo do Diamante têm o rank 1 real).
+ */
+function RankedEntryRows({ entries }: { entries: readonly DailyLeaderboardEntry[] }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      {entries.map((entry, index) => {
+        const isFirst = index === 0;
+        return (
+          <View
+            key={`${entry.rank}-${entry.score}`}
+            style={[
+              styles.lbRow,
+              isFirst && styles.lbRowFirst,
+              index > 0 && !isFirst && styles.lbRowBorder,
+            ]}
+          >
+            <Text style={[styles.lbRank, isFirst && styles.lbRankFirst]}>
+              {entry.rank}
+            </Text>
+            {isFirst && <Text style={styles.lbCrown}>♦</Text>}
+            <Text style={[styles.lbName, isFirst && styles.lbNameFirst]} numberOfLines={1}>
+              {entry.name ?? t('daily.anonymousName')}
+            </Text>
+            <Text style={[styles.lbScore, isFirst && styles.lbScoreFirst]}>
+              {entry.score.toLocaleString('en-US')}
+            </Text>
+          </View>
+        );
+      })}
+    </>
   );
 }
 
@@ -430,6 +486,29 @@ const styles = StyleSheet.create({
     borderRadius: radius[14],
     overflow: 'hidden',
     alignSelf: 'stretch',
+  },
+  leagueHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingVertical: spacing[10],
+    paddingHorizontal: spacing[14],
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceBorder,
+  },
+  leagueTierText: {
+    fontFamily: fonts.heading,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: colors.gold,
+    textTransform: 'uppercase',
+  },
+  leagueDivisionText: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.textDim,
   },
   yourBest: {
     flexDirection: 'row',

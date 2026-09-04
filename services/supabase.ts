@@ -15,6 +15,7 @@ import {
   createUnavailableDailyBackend,
   DailyBackend,
   DailyLeaderboard,
+  LeagueStanding,
 } from '../engine';
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
@@ -66,6 +67,15 @@ export function createSupabaseDailyBackend(): DailyBackend | null {
       });
       if (error) throw new Error(error.message);
       return data as DailyLeaderboard;
+    },
+
+    fetchLeagueLeaderboard: async (deviceId: string): Promise<LeagueStanding | null> => {
+      const { data, error } = await client.rpc('get_league_leaderboard', {
+        p_device_id: deviceId,
+      });
+      if (error) throw new Error(error.message);
+      const response = data as { active: boolean } & Partial<LeagueStanding>;
+      return response.active ? (response as LeagueStanding) : null;
     },
 
     setDisplayName: async (deviceId: string, name: string): Promise<string> => {

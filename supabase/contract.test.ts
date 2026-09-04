@@ -10,8 +10,19 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 
 import { validateDisplayName as engineValidateDisplayName } from '../engine/displayName';
-import { dailySeed, isoWeekStart, PROHIBITED_DISPLAY_NAME_TERMS, validateDisplayName } from './contract';
-import type { LeaderboardEntry, WeeklyLeaderboard } from './contract';
+import {
+  dailySeed,
+  demoteLeagueTier,
+  isoWeekStart,
+  leagueDivisionNumber,
+  leagueDivisionPosition,
+  LEAGUE_POPULATION_THRESHOLD,
+  promoteLeagueTier,
+  PROHIBITED_DISPLAY_NAME_TERMS,
+  resolveLeagueTierFromDivision,
+  validateDisplayName,
+} from './contract';
+import type { LeaderboardEntry, LeagueStanding, LeagueTier, WeeklyLeaderboard } from './contract';
 
 describe('seed diário determinístico (get_daily_seed)', () => {
   test('valores dourados: fórmula md5(ISO) → int32 mascarado, conferida no Postgres real', () => {
@@ -76,6 +87,109 @@ describe('tipos do contrato (shape do leaderboard)', () => {
   test('LeaderboardEntry aceita name null (dispositivo sem Nome de Exibição cadastrado)', () => {
     const entry: LeaderboardEntry = { rank: 4, score: 900, name: null };
     expect(entry.name).toBeNull();
+  });
+
+  test('LeagueStanding aceita division/own null (dispositivo sem pontuação na semana)', () => {
+    const standing: LeagueStanding = {
+      active: true,
+      week: '2026-09-07',
+      tier: 'bronze',
+      division: null,
+      own: null,
+      top: [],
+    };
+    expect(standing.division).toBeNull();
+    expect(standing.own).toBeNull();
+  });
+});
+
+describe('Liga: ordem dos Tiers (promoteLeagueTier/demoteLeagueTier, ADR 0010, ticket 02)', () => {
+  const ORDER: readonly LeagueTier[] = ['bronze', 'silver', 'gold', 'platinum', 'diamond'];
+
+  test('promoteLeagueTier sobe um Tier por vez', () => {
+    for (let i = 0; i < ORDER.length - 1; i += 1) {
+      expect(promoteLeagueTier(ORDER[i])).toBe(ORDER[i + 1]);
+    }
+  });
+
+  test('promoteLeagueTier não tem efeito no teto (diamond)', () => {
+    expect(promoteLeagueTier('diamond')).toBe('diamond');
+  });
+
+  test('demoteLeagueTier desce um Tier por vez', () => {
+    for (let i = ORDER.length - 1; i > 0; i -= 1) {
+      expect(demoteLeagueTier(ORDER[i])).toBe(ORDER[i - 1]);
+    }
+  });
+
+  test('demoteLeagueTier não tem efeito no piso (bronze)', () => {
+    expect(demoteLeagueTier('bronze')).toBe('bronze');
+  });
+});
+
+describe('Liga: aritmética de Divisão (leagueDivisionNumber/leagueDivisionPosition, ADR 0010, ticket 02)', () => {
+  test('rank 1 e rank 30 caem na Divisão 1 (blocos de 30)', () => {
+    expect(leagueDivisionNumber(1)).toBe(1);
+    expect(leagueDivisionNumber(30)).toBe(1);
+  });
+
+  test('rank 31 vira a Divisão 2', () => {
+    expect(leagueDivisionNumber(31)).toBe(2);
+    expect(leagueDivisionNumber(60)).toBe(2);
+    expect(leagueDivisionNumber(61)).toBe(3);
+  });
+
+  test('posição dentro da Divisão reinicia em 1 a cada bloco', () => {
+    expect(leagueDivisionPosition(1)).toBe(1);
+    expect(leagueDivisionPosition(30)).toBe(30);
+    expect(leagueDivisionPosition(31)).toBe(1);
+    expect(leagueDivisionPosition(60)).toBe(30);
+  });
+});
+
+describe('Liga: resolução de Tier a partir da Divisão (resolveLeagueTierFromDivision, ADR 0010, ticket 02)', () => {
+  test('top 5 de uma Divisão de 30 sobe de Tier', () => {
+    for (let position = 1; position <= 5; position += 1) {
+      expect(resolveLeagueTierFromDivision('silver', position, 30)).toBe('gold');
+    }
+  });
+
+  test('meio da Divisão (posições 6 a 25) mantém o Tier', () => {
+    expect(resolveLeagueTierFromDivision('silver', 6, 30)).toBe('silver');
+    expect(resolveLeagueTierFromDivision('silver', 25, 30)).toBe('silver');
+  });
+
+  test('últimos 5 de uma Divisão de 30 (posições 26 a 30) descem de Tier', () => {
+    for (let position = 26; position <= 30; position += 1) {
+      expect(resolveLeagueTierFromDivision('silver', position, 30)).toBe('bronze');
+    }
+  });
+
+  test('piso do Bronze: rebaixamento não tem efeito', () => {
+    expect(resolveLeagueTierFromDivision('bronze', 30, 30)).toBe('bronze');
+  });
+
+  test('teto do Diamond: promoção não tem efeito', () => {
+    expect(resolveLeagueTierFromDivision('diamond', 1, 30)).toBe('diamond');
+  });
+
+  test('Divisão pequena demais pra caber as duas zonas sem sobrepor: promoção tem prioridade sobre rebaixamento', () => {
+    // Divisão de 8 (zona de 5): as posições 4 e 5 satisfariam a condição de
+    // rebaixamento (posição > 8 - 5 = 3) SE a promoção não fosse checada
+    // primeiro — aqui a zona de 5 já cobre a Divisão inteira de um lado, sem
+    // sobrar nenhuma posição "no meio" que mantenha o Tier.
+    for (let position = 1; position <= 5; position += 1) {
+      expect(resolveLeagueTierFromDivision('silver', position, 8)).toBe('gold');
+    }
+    for (let position = 6; position <= 8; position += 1) {
+      expect(resolveLeagueTierFromDivision('silver', position, 8)).toBe('bronze');
+    }
+  });
+});
+
+describe('Liga: constantes do contrato (ADR 0010, ticket 02)', () => {
+  test('limiar de massa crítica documentado em 300 participantes/semana', () => {
+    expect(LEAGUE_POPULATION_THRESHOLD).toBe(300);
   });
 });
 

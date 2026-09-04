@@ -10,6 +10,7 @@ import {
   DisplayNameValidation,
   ForgeEffect,
   ForgerId,
+  LeagueTier,
   PatternKind,
   Relic,
   RelicCategory,
@@ -168,6 +169,20 @@ const FORGER_NAME_I18N_KEY: Readonly<Record<ForgerId, string>> = {
 /** Translated Forjador name for display. */
 export function forgerName(id: ForgerId): string {
   return i18n.t(FORGER_NAME_I18N_KEY[id]);
+}
+
+/** Liga Tier names — translated via i18n (ADR 0010, ticket 02). */
+const LEAGUE_TIER_I18N_KEY: Readonly<Record<LeagueTier, string>> = {
+  bronze: 'format.leagueTier.bronze',
+  silver: 'format.leagueTier.silver',
+  gold: 'format.leagueTier.gold',
+  platinum: 'format.leagueTier.platinum',
+  diamond: 'format.leagueTier.diamond',
+};
+
+/** Translated Tier name for display. */
+export function leagueTierName(tier: LeagueTier): string {
+  return i18n.t(LEAGUE_TIER_I18N_KEY[tier]);
 }
 
 /** Translated Deck skin description (Loja). Nome do Deck continua em inglês. */

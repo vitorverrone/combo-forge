@@ -490,6 +490,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       adLoading: false,
       submitStatus: 'idle',
       leaderboard: null,
+      league: null,
       leaderboardLoading: false,
       leaderboardError: null,
       displayName: dailyStorage.loadDisplayName(),
@@ -646,7 +647,33 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       const result = await runDailyCommand(get().daily, dailyFlowDeps(get(), now), {
         type: 'fetchLeaderboard',
       });
-      set({ daily: result.daily });
+      // Aplica só os campos que este comando possui (Liga, ticket 02: a
+      // busca agora encadeia 2 chamadas ao backend — fetchLeagueLeaderboard
+      // e, em fallback, fetchLeaderboard — então essa promise passa mais
+      // tempo em voo). Um `set({ daily: result.daily })` substituindo o
+      // objeto inteiro reintroduziria os campos do snapshot capturado no
+      // início desta função, apagando qualquer mutação concorrente
+      // (attempts/status/etc.) que outro comando já tenha aplicado nesse
+      // meio-tempo (ex.: startDailyChallenge rodando em paralelo).
+      // Não aplica result.daily.attempts: o comando recalcula o rollover de
+      // dia como efeito colateral de toda chamada a runDailyCommand (mesmo
+      // em comandos "sem mutação" — dailyFlow.test.ts cobre isso), mas
+      // aplicar esse valor aqui reabriria a MESMA corrida que este comentário
+      // descreve (fetchLeaderboard pode resolver depois de startDailyChallenge
+      // já ter consumido uma tentativa, e sobrescreveria o valor fresco com um
+      // stale). Sem risco em deixar de fora: a UI recalcula o rollover de novo
+      // a cada render (dailyAttemptsForDay em DailyChallengeScreen), e todo
+      // comando que de fato consome/libera uma tentativa (start/watchAd/
+      // submit) já aplica seu próprio attempts fresco por conta própria.
+      set((state) => ({
+        daily: {
+          ...state.daily,
+          leaderboard: result.daily.leaderboard,
+          league: result.daily.league,
+          leaderboardLoading: result.daily.leaderboardLoading,
+          leaderboardError: result.daily.leaderboardError,
+        },
+      }));
     },
 
     setDisplayName: async (name: string) => {

@@ -115,6 +115,8 @@
     "extraReady": "Tentativa extra pronta.",
     "freeReady": "Tentativa gratuita pronta hoje.",
     "thisWeekLeaderboard": "Ranking da semana",
+    "leagueTitle": "Sua Liga",
+    "leagueDivision": "Divisão {{number}}",
     "leaderboardLoading": "Carregando ranking…",
     "noScoresThisWeek": "Nenhuma pontuação esta semana ainda.",
     "yourBest": "Sua melhor",
@@ -265,6 +267,13 @@
       "apprentice": "Aprendiz",
       "hammer": "Martelo",
       "anvil": "Bigorna"
+    },
+    "leagueTier": {
+      "bronze": "Bronze",
+      "silver": "Prata",
+      "gold": "Ouro",
+      "platinum": "Platina",
+      "diamond": "Diamante"
     },
     "deckSkin": {
       "deck-classic": "Baralho clássico de pergaminho",

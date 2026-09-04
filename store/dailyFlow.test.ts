@@ -43,6 +43,7 @@ function makeFakeDailyBackend(seed = 424242): DailyBackend & {
       own: { rank: 1, score: 4242, name: 'Fulano' },
       top: [{ rank: 1, score: 4242, name: 'Fulano' }],
     }),
+    fetchLeagueLeaderboard: async () => null, // Liga inativa por padrão nos testes — ver dailyFlow.test.ts "Liga" abaixo
     setDisplayName: async (deviceId, name) => {
       displayNameCalls.push({ deviceId, name });
       return name;
@@ -73,6 +74,7 @@ function makeDailyState(overrides: Partial<DailyState> = {}): DailyState {
     adLoading: false,
     submitStatus: 'idle',
     leaderboard: null,
+    league: null,
     leaderboardLoading: false,
     leaderboardError: null,
     displayName: null,
@@ -280,6 +282,50 @@ describe('runDailyCommand — fetchLeaderboard', () => {
     expect(result.daily.leaderboardError).toBe('sem leaderboard');
     expect(result.daily.leaderboard).toBeNull();
     expect(result.daily.leaderboardLoading).toBe(false);
+  });
+});
+
+describe('runDailyCommand — fetchLeaderboard: Liga (ADR 0010, ticket 02)', () => {
+  test('Liga ativa: guarda a posição na Liga e não busca o leaderboard único', async () => {
+    let globalLeaderboardCalls = 0;
+    const deps = makeDeps({
+      backend: {
+        ...makeFakeDailyBackend(),
+        fetchLeaderboard: async () => {
+          globalLeaderboardCalls += 1;
+          throw new Error('não deveria ser chamado com a Liga ativa');
+        },
+        fetchLeagueLeaderboard: async () => ({
+          week: '2026-08-10',
+          tier: 'silver',
+          division: 2,
+          own: { rank: 34, score: 1200, name: 'Ana' },
+          top: [{ rank: 34, score: 1200, name: 'Ana' }],
+        }),
+      },
+    });
+    const result = await runDailyCommand(makeDailyState(), deps, { type: 'fetchLeaderboard' });
+    expect(result.daily.league?.tier).toBe('silver');
+    expect(result.daily.league?.division).toBe(2);
+    expect(result.daily.leaderboard).toBeNull();
+    expect(result.daily.leaderboardLoading).toBe(false);
+    expect(globalLeaderboardCalls).toBe(0);
+  });
+
+  test('Liga inativa (null): cai de volta para o leaderboard único e limpa a Liga', async () => {
+    const deps = makeDeps({
+      backend: {
+        ...makeFakeDailyBackend(),
+        fetchLeagueLeaderboard: async () => null,
+      },
+    });
+    const result = await runDailyCommand(
+      makeDailyState({ league: { week: '2026-08-03', tier: 'gold', division: 1, own: null, top: [] } }),
+      deps,
+      { type: 'fetchLeaderboard' },
+    );
+    expect(result.daily.league).toBeNull();
+    expect(result.daily.leaderboard?.own?.score).toBe(4242);
   });
 });
 

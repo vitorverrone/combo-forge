@@ -58,12 +58,30 @@ function validateDisplayName(rawName) {
   return { valid: true };
 }
 
+// Espelho da resolução de Tier da Liga (ADR 0010, ticket 02), duplicado aqui
+// pela mesma razão das fórmulas acima — fonte canônica é supabase/contract.ts.
+const LEAGUE_TIERS = ['bronze', 'silver', 'gold', 'platinum', 'diamond'];
+function promoteLeagueTier(tier) {
+  const i = LEAGUE_TIERS.indexOf(tier);
+  return LEAGUE_TIERS[Math.min(LEAGUE_TIERS.length - 1, i + 1)];
+}
+function demoteLeagueTier(tier) {
+  const i = LEAGUE_TIERS.indexOf(tier);
+  return LEAGUE_TIERS[Math.max(0, i - 1)];
+}
+function resolveLeagueTierFromDivision(previousTier, positionInDivision, actualDivisionSize, zoneSize = 5) {
+  if (positionInDivision <= zoneSize) return promoteLeagueTier(previousTier);
+  if (positionInDivision > actualDivisionSize - zoneSize) return demoteLeagueTier(previousTier);
+  return previousTier;
+}
+
 const here = dirname(fileURLToPath(import.meta.url));
 const root = join(here, '..', '..');
 const migrations = [
   join(root, 'supabase', 'migrations', '0001_daily_challenge.sql'),
   join(root, 'supabase', 'migrations', '0002_daily_challenge_access.sql'),
   join(root, 'supabase', 'migrations', '0003_display_name.sql'),
+  join(root, 'supabase', 'migrations', '0004_league.sql'),
 ];
 const IMAGE = 'postgres:16-alpine';
 const CONTAINER = 'combo-forge-pg-verify';
@@ -280,6 +298,125 @@ try {
     playersDirectDenied = true;
   }
   check(playersDirectDenied, 'anon NÃO acessa players diretamente (RLS sem políticas)');
+
+  console.log('\n6. Liga (get_league_leaderboard, ADR 0010, ticket 02)');
+  const belowThreshold = JSON.parse(psql(`select public.get_league_leaderboard('dev-a', '2026-08-13 12:00:00+00')`));
+  check(belowThreshold.active === false, 'abaixo da massa crítica (poucos participantes na semana) → active: false');
+
+  // Massa crítica: 300 dispositivos genéricos pontuando na semana de
+  // 2026-08-31 (segunda) — liga a Liga só pra essa semana em diante.
+  psql(`
+    insert into public.daily_submissions (day, device_id, score)
+    select '2026-08-31'::date, 'bulk-' || i, 100 + i
+    from generate_series(1, 300) as i
+  `);
+
+  const newDevice = JSON.parse(psql(`select public.get_league_leaderboard('dev-lg-new', '2026-08-31 12:00:00+00')`));
+  check(newDevice.active === true, 'acima da massa crítica → active: true');
+  check(newDevice.tier === 'bronze', 'dispositivo novo (sem posicionamento anterior) sempre entra em bronze');
+  check(newDevice.division === null && newDevice.own === null, 'sem pontuação na semana atual → division/own null (dispositivo não jogou ainda)');
+  check(JSON.stringify(newDevice.top) === '[]', 'sem own, a Divisão não pode ser calculada → top vazio');
+
+  // Cenário de promoção/rebaixamento: 13 dispositivos no Tier 'silver' na
+  // semana anterior (2026-08-24), incluindo um empate exato na posição 5
+  // (dev-lg-5 e dev-lg-5b) — testa "todos os empatados sobem juntos" (mais
+  // de 5 promovidos) e a zona "no meio" (fica no mesmo Tier) numa Divisão
+  // pequena (13, não os ~30 de produção — a matemática é a mesma).
+  const prevWeekScores = [
+    ['dev-lg-1', 1200], ['dev-lg-2', 1100], ['dev-lg-3', 1000], ['dev-lg-4', 900],
+    ['dev-lg-5', 800], ['dev-lg-5b', 800],
+    ['dev-lg-6', 700], ['dev-lg-7', 600],
+    ['dev-lg-8', 500], ['dev-lg-9', 400], ['dev-lg-10', 300], ['dev-lg-11', 200], ['dev-lg-12', 100],
+  ];
+  for (const [deviceId] of prevWeekScores) {
+    psql(`insert into public.league_placements (device_id, week, tier) values ('${deviceId}', '2026-08-24', 'silver')`);
+  }
+  psql(`
+    insert into public.daily_submissions (day, device_id, score) values
+    ${prevWeekScores.map(([deviceId, score]) => `('2026-08-24', '${deviceId}', ${score})`).join(',\n    ')}
+  `);
+  // Cada um pontua também na semana atual (2026-08-31), senão own/division
+  // ficariam null (mesma regra do dispositivo novo acima) — a pontuação
+  // desta semana não influencia a promoção/rebaixamento, só a da anterior.
+  psql(`
+    insert into public.daily_submissions (day, device_id, score) values
+    ${prevWeekScores.map(([deviceId, score]) => `('2026-08-31', '${deviceId}', ${score})`).join(',\n    ')}
+  `);
+
+  // Posição = rank "competition" (empates compartilham; o próximo rank
+  // distinto pula os números do empate) — calculada à mão a partir dos
+  // scores acima, não derivada do índice do array (índice e rank divergem a
+  // partir do empate dev-lg-5/dev-lg-5b).
+  const devicePositions = {
+    'dev-lg-1': 1, 'dev-lg-2': 2, 'dev-lg-3': 3, 'dev-lg-4': 4,
+    'dev-lg-5': 5, 'dev-lg-5b': 5,
+    'dev-lg-6': 7, 'dev-lg-7': 8,
+    'dev-lg-8': 9, 'dev-lg-9': 10, 'dev-lg-10': 11, 'dev-lg-11': 12, 'dev-lg-12': 13,
+  };
+  const expectedTiers = Object.fromEntries(
+    Object.entries(devicePositions).map(([deviceId, position]) => [
+      deviceId,
+      resolveLeagueTierFromDivision('silver', position, prevWeekScores.length),
+    ]),
+  );
+  for (const [deviceId, expectedTier] of Object.entries(expectedTiers)) {
+    const standing = JSON.parse(psql(`select public.get_league_leaderboard('${deviceId}', '2026-08-31 12:00:00+00')`));
+    check(
+      standing.tier === expectedTier,
+      `${deviceId} (posição ${devicePositions[deviceId]}): Tier resolvido = ${standing.tier} (esperado ${expectedTier})`,
+    );
+  }
+  check(expectedTiers['dev-lg-5'] === 'gold' && expectedTiers['dev-lg-5b'] === 'gold', 'empate exato na fronteira (ambos posição 5): os dois dispositivos empatados sobem juntos');
+  check(expectedTiers['dev-lg-6'] === 'silver' && expectedTiers['dev-lg-7'] === 'silver', 'zona do meio (fora das duas pontas) mantém o Tier');
+  check(expectedTiers['dev-lg-8'] === 'bronze', 'fora da zona de promoção/permanência → desce de Tier');
+
+  // Resolução é preguiçosa e idempotente: uma segunda chamada não recalcula
+  // nem muda o Tier já persistido pra semana.
+  const secondCall = JSON.parse(psql(`select public.get_league_leaderboard('dev-lg-1', '2026-08-31 12:00:00+00')`));
+  check(secondCall.tier === 'gold', 'segunda consulta na mesma semana devolve o Tier já persistido, sem recalcular');
+
+  // Cenário com MAIS de uma Divisão no mesmo Tier (o cenário acima só tinha
+  // 13 dispositivos — uma Divisão só): 35 dispositivos no Tier 'gold' na
+  // semana anterior formam 2 Divisões (ranks 1-30 = Divisão 1, de tamanho
+  // cheio; ranks 31-35 = Divisão 2, com só 5). Prova que a zona de
+  // subida/descida é por Divisão, não pelo Tier inteiro: dev-lgm-26 (fim da
+  // Divisão 1) desce mesmo não estando entre os 5 piores do Tier inteiro (que
+  // seriam os ranks 31-35, a Divisão 2); dev-lgm-31 (início da Divisão 2) sobe
+  // mesmo estando entre os 5 piores ranks do Tier inteiro.
+  const multiDivisionScores = Array.from({ length: 35 }, (_, i) => [`dev-lgm-${i + 1}`, 3500 - i * 100]);
+  for (const [deviceId] of multiDivisionScores) {
+    psql(`insert into public.league_placements (device_id, week, tier) values ('${deviceId}', '2026-08-24', 'gold')`);
+  }
+  psql(`
+    insert into public.daily_submissions (day, device_id, score) values
+    ${multiDivisionScores.map(([deviceId, score]) => `('2026-08-24', '${deviceId}', ${score})`).join(',\n    ')}
+  `);
+  psql(`
+    insert into public.daily_submissions (day, device_id, score) values
+    ${multiDivisionScores.map(([deviceId, score]) => `('2026-08-31', '${deviceId}', ${score})`).join(',\n    ')}
+  `);
+  const multiDivisionExpectations = [
+    ['dev-lgm-1', 'platinum', 'topo da Divisão 1 (posição 1 de 30)'],
+    ['dev-lgm-5', 'platinum', 'topo da Divisão 1 (posição 5 de 30)'],
+    ['dev-lgm-15', 'gold', 'meio da Divisão 1 (posição 15 de 30) — mantém o Tier'],
+    ['dev-lgm-26', 'silver', 'fim da Divisão 1 (posição 26 de 30) — desce mesmo não estando entre os 5 piores do Tier inteiro'],
+    ['dev-lgm-30', 'silver', 'fim da Divisão 1 (posição 30 de 30)'],
+    ['dev-lgm-31', 'platinum', 'início da Divisão 2 (posição 1 de 5) — sobe mesmo estando entre os 5 piores ranks do Tier inteiro'],
+    ['dev-lgm-35', 'platinum', 'Divisão 2 é pequena demais (5, igual à zona) — promoção cobre a Divisão inteira'],
+  ];
+  for (const [deviceId, expectedTier, description] of multiDivisionExpectations) {
+    const standing = JSON.parse(psql(`select public.get_league_leaderboard('${deviceId}', '2026-08-31 12:00:00+00')`));
+    check(standing.tier === expectedTier, `${deviceId}: ${description} → Tier ${standing.tier} (esperado ${expectedTier})`);
+  }
+
+  check(psqlCommand(`set role anon; select public.get_league_leaderboard('anon-league-dev', '2026-08-31 12:00:00+00')`).startsWith('{'), 'anon consegue consultar a Liga (security definer)');
+  let leaguePlacementsDirectDenied = false;
+  try {
+    psqlCommand(`set role anon; select * from public.league_placements`);
+  } catch {
+    leaguePlacementsDirectDenied = true;
+  }
+  check(leaguePlacementsDirectDenied, 'anon NÃO acessa league_placements diretamente (RLS sem políticas)');
 
   if (failures === 0) {
     console.log('\n✔ Contrato do Desafio Diário verificado contra Postgres real.');
