@@ -145,11 +145,3 @@ Anúncios recompensados são opcionais (ex.: assistir para +1 tentativa extra em
 - **Escopo de MVP:** Loop core completo, 3 forjadores, sistema de desafio diário, loja cosmética básica, sem multiplayer em tempo real.
 
 - **Pós-lançamento:** Conteúdo sazonal (cartas/relíquias novas), eventos de desafio especial, expansão de forjadores.
-
-**10. Riscos de Design Ético e Mitigações**
-
-| **Risco** | **Mitigação** |
-|----|----|
-| Restart instantâneo vira gatilho compulsivo (sessões excessivamente longas) | Nenhuma mitigação ativa — o lembrete gentil de pausa foi removido; risco aceito conscientemente, sem contramedida no produto atual |
-| Pressão de comparação social no ranking diário | Ranking sempre opt-in, sem exposição pública de derrota |
-| Dificuldade dinâmica manipular artificialmente frustração para converter | DDA tunado apenas para manter Flow, sem gatilho de oferta de compra pós-derrota |

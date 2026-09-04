@@ -8,6 +8,7 @@ import {
   createDeck,
   ForgedCard,
   ForgeOffer,
+  RELIC_CAP,
   RunState,
   SUITS,
 } from '../engine';
@@ -36,6 +37,8 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
   const [activeOffer, setActiveOffer] = useState<number | null>(null);
   const [targetKey, setTargetKey] = useState<string | null>(null);
   const [cardEffectConfirmed, setCardEffectConfirmed] = useState(false);
+  const [replaceCandidateId, setReplaceCandidateId] = useState<string | null>(null);
+  const [replaceConfirmed, setReplaceConfirmed] = useState(false);
 
   const forgeActiveStep = useGameStore((state) => state.tutorial.forgeActiveStep);
   const checkForgeTutorialTrigger = useGameStore((state) => state.checkForgeTutorialTrigger);
@@ -49,6 +52,13 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
   const deck = useMemo(() => createDeck(), []);
   const active = activeOffer !== null ? run.forgeOffers[activeOffer] : undefined;
   const relicCount = activeRelics(run.startingRelic, run.relics).length;
+  // A Relíquia de largada do Forjador fica fora do teto (engine/relics.ts) —
+  // o máximo exibido precisa somá-la, senão o contador mostra "4 / 3".
+  const relicMax = RELIC_CAP + (run.startingRelic !== undefined ? 1 : 0);
+  // Ajuste de UX: no teto, a oferta de Relíquia continua aparecendo — o
+  // jogador escolhe qual das já adquiridas (nunca a de largada do Forjador,
+  // que fica fora de run.relics) sai no lugar da nova.
+  const relicAtCap = active !== undefined && active.type === 'relic' && run.relics.length >= RELIC_CAP;
 
   const handleOfferPress = (index: number) => {
     tutorialForgeOfferTouched();
@@ -56,10 +66,14 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
       setActiveOffer(null);
       setTargetKey(null);
       setCardEffectConfirmed(false);
+      setReplaceCandidateId(null);
+      setReplaceConfirmed(false);
     } else {
       setActiveOffer(index);
       setTargetKey(null);
       setCardEffectConfirmed(false);
+      setReplaceCandidateId(null);
+      setReplaceConfirmed(false);
     }
   };
 
@@ -69,6 +83,12 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
     setCardEffectConfirmed(true);
   };
 
+  const handleApplyReplace = () => {
+    if (active === undefined || activeOffer === null || active.type !== 'relic') return;
+    if (replaceCandidateId === null) return;
+    setReplaceConfirmed(true);
+  };
+
   const handleConfirm = () => {
     if (active === undefined || activeOffer === null) return;
     if (active.type === 'cardEffect') {
@@ -76,12 +96,17 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
       const target = deck.find((card) => cardKey(card) === targetKey);
       if (target === undefined) return;
       applyForgeOffer(activeOffer, target);
+    } else if (relicAtCap) {
+      if (replaceCandidateId === null) return;
+      applyForgeOffer(activeOffer, undefined, replaceCandidateId);
     } else {
       applyForgeOffer(activeOffer);
     }
     setActiveOffer(null);
     setTargetKey(null);
     setCardEffectConfirmed(false);
+    setReplaceCandidateId(null);
+    setReplaceConfirmed(false);
   };
 
   return (
@@ -90,7 +115,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
       <View style={styles.topbar}>
         <View style={styles.relicCounter}>
           <Text style={styles.relicCounterLabel}>{t('forge.relics')}</Text>
-          <Text style={styles.relicCounterValue}>{relicCount} / 3</Text>
+          <Text style={styles.relicCounterValue}>{relicCount} / {relicMax}</Text>
         </View>
       </View>
 
@@ -128,7 +153,10 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
       {/* Forge button */}
       <View style={styles.actions}>
         {(() => {
-          const forgeDisabled = activeOffer === null || (active !== undefined && active.type === 'cardEffect' && !cardEffectConfirmed);
+          const forgeDisabled =
+            activeOffer === null ||
+            (active !== undefined && active.type === 'cardEffect' && !cardEffectConfirmed) ||
+            (relicAtCap && !replaceConfirmed);
           return (
             <Pressable
               accessibilityRole="button"
@@ -207,6 +235,69 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
                 ]}
               >
                 <Text style={[styles.btnPrimaryText, targetKey === null && styles.btnDisabledText]}>{t('common.apply')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {/* Relic replace picker overlay — teto de Relíquias atingido. Mesmo
+          fluxo de dois passos do picker de Efeito de Carta acima: seleciona
+          (destaca) → confirma dentro do overlay → o botão "Forge" do rodapé
+          aplica de fato. */}
+      {active !== undefined && active.type === 'relic' && relicAtCap && !replaceConfirmed && (
+        <View style={styles.overlay}>
+          <View style={styles.pickerPanel}>
+            <Text style={styles.pickerTitle}>{t('forge.chooseRelicToReplace')}</Text>
+            <Text style={styles.pickerSub}>{t('forge.relicCapReached', { name: active.relic.name })}</Text>
+            <ScrollView contentContainerStyle={styles.relicReplaceList}>
+              {run.relics.map((relic) => {
+                const isSelected = replaceCandidateId === relic.id;
+                return (
+                  <Pressable
+                    key={relic.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('a11y.chooseRelicToReplace', { name: relic.name })}
+                    onPress={() => setReplaceCandidateId(relic.id)}
+                    style={({ pressed }) => [
+                      styles.relicReplaceOption,
+                      isSelected && styles.offerSelected,
+                      pressed && styles.btnPressed,
+                    ]}
+                  >
+                    <View style={styles.relicGem} />
+                    <View style={styles.offerInfo}>
+                      <Text style={styles.offerName}>{relic.name}</Text>
+                      <Text style={styles.offerDesc}>{relicDescription(relic)}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+            <View style={styles.pickerActions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={t('common.cancel')}
+                onPress={() => { setActiveOffer(null); setReplaceCandidateId(null); }}
+                style={({ pressed }) => [styles.btnDanger, pressed && styles.btnPressed]}
+              >
+                <Text style={styles.btnDangerText}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ disabled: replaceCandidateId === null }}
+                accessibilityLabel={t('a11y.confirmReplace')}
+                disabled={replaceCandidateId === null}
+                onPress={handleApplyReplace}
+                style={({ pressed }) => [
+                  styles.btnPrimarySmall,
+                  replaceCandidateId === null && styles.btnDisabledSmall,
+                  pressed && replaceCandidateId !== null && styles.btnPressed,
+                ]}
+              >
+                <Text style={[styles.btnPrimaryText, replaceCandidateId === null && styles.btnDisabledText]}>
+                  {t('common.apply')}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -560,6 +651,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing[6],
+  },
+  relicReplaceList: {
+    gap: spacing[10],
+  },
+  relicReplaceOption: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing[14],
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: radius[12],
+    padding: spacing[12],
   },
   pickCard: {
     width: '18%',

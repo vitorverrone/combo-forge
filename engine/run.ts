@@ -345,14 +345,18 @@ export function makePlay(
 /**
  * Aplica a oferta de Forja escolhida: um Efeito de Forja na carta alvo
  * (transformando-a numa Carta Forjada, empilhando efeitos) ou a aquisição da
- * Relíquia (respeitando o teto de RELIC_CAP — a de largada do Forjador fica
- * fora). Encerra a fase 'forging' e volta para 'roundWon', pronta para
- * startNextRound.
+ * Relíquia. Abaixo do teto de RELIC_CAP, a Relíquia só é adicionada. No teto,
+ * `replaceRelicId` (o id de uma Relíquia já adquirida, nunca a de largada do
+ * Forjador — essa fica fora de `run.relics`) escolhe qual sai no lugar da
+ * nova; omitido nesse caso, lança erro (a UI precisa perguntar antes de
+ * chamar de novo). Encerra a fase 'forging' e volta para 'roundWon', pronta
+ * para startNextRound.
  */
 export function applyForgeOffer(
   run: RunState,
   offerIndex: number,
   targetCard?: Card,
+  replaceRelicId?: string,
 ): { run: RunState; events: RunEvent[] } {
   if (run.phase !== 'forging') {
     throw new Error(`Não é possível forjar na fase '${run.phase}'.`);
@@ -373,10 +377,17 @@ export function applyForgeOffer(
     return forgeApplied(run, forgedCards, run.relics, offerIndex);
   }
 
-  if (run.relics.length >= RELIC_CAP) {
-    throw new Error(`Teto de ${RELIC_CAP} Relíquias ativas atingido.`);
+  if (run.relics.length < RELIC_CAP) {
+    return forgeApplied(run, run.forgedCards, [...run.relics, offer.relic], offerIndex);
   }
-  return forgeApplied(run, run.forgedCards, [...run.relics, offer.relic], offerIndex);
+  if (replaceRelicId === undefined) {
+    throw new Error(`Teto de ${RELIC_CAP} Relíquias ativas atingido — escolha uma Relíquia para substituir.`);
+  }
+  if (!run.relics.some((relic) => relic.id === replaceRelicId)) {
+    throw new Error(`Relíquia a substituir não encontrada entre as ativas: ${replaceRelicId}.`);
+  }
+  const relics = run.relics.map((relic) => (relic.id === replaceRelicId ? offer.relic : relic));
+  return forgeApplied(run, run.forgedCards, relics, offerIndex);
 }
 
 /** Estrutura da Rodada derivada das Relíquias ativas (Mecânica). */

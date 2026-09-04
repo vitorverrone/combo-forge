@@ -3,6 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { activeRelics, ROUNDS_PER_RUN, RunState } from '../engine';
 
 import { useTranslation } from '../i18n';
+import { AchievementToast } from './AchievementToast';
 import { DailySubmitStatus } from './DailySubmitStatus';
 import { forgerName } from './format';
 import { RelicRow } from './RelicRow';
@@ -19,7 +20,6 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
   const { t } = useTranslation();
   const restartRun = useGameStore((state) => state.restartRun);
   const backToStart = useGameStore((state) => state.backToStart);
-  const recentUnlocks = useGameStore((state) => state.recentUnlocks);
   const runMode = useGameStore((state) => state.runMode);
   const daily = useGameStore((state) => state.daily);
   const openDaily = useGameStore((state) => state.openDaily);
@@ -30,6 +30,8 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
 
   return (
     <View style={styles.container}>
+      <AchievementToast />
+
       {/* Win badge */}
       <View style={styles.winBadge}>
         <Text style={styles.winBadgeIcon}>✓</Text>
@@ -42,21 +44,6 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
       <Text style={styles.subtitle}>
         {t('runWon.forgedRun', { forger: forgerName(run.forger), score: run.runScore })}
       </Text>
-
-      {/* Unlock banner */}
-      {!dailyEnd && recentUnlocks.length > 0 && (
-        <View style={styles.unlockBanner}>
-          <View style={styles.unlockGem} />
-          <View>
-            <Text style={styles.unlockBannerLabel}>
-              {recentUnlocks.length > 1 ? t('runWon.newUnlocks') : t('runWon.newUnlock')}
-            </Text>
-            <Text style={styles.unlockBannerName}>
-              {recentUnlocks.join(' · ')}
-            </Text>
-          </View>
-        </View>
-      )}
 
       {/* Final score card */}
       <View style={styles.finalCard}>
@@ -166,42 +153,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 21,
     marginTop: spacing[8],
-  },
-  /* ── Unlock banner ── */
-  unlockBanner: {
-    alignSelf: 'stretch',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing[10],
-    backgroundColor: 'rgba(224,165,62,0.1)',
-    borderWidth: 1,
-    borderColor: colors.gold,
-    borderRadius: radius[12],
-    padding: spacing[12],
-    paddingHorizontal: spacing[14],
-    marginTop: spacing[18],
-  },
-  unlockGem: {
-    width: 12,
-    height: 12,
-    borderRadius: 3,
-    backgroundColor: colors.gold,
-    transform: [{ rotate: '45deg' }],
-    flexShrink: 0,
-  },
-  unlockBannerLabel: {
-    fontFamily: fonts.body,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 1,
-    color: colors.gold,
-    textTransform: 'uppercase',
-  },
-  unlockBannerName: {
-    fontFamily: fonts.heading,
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.text,
   },
   /* ── Final score card ── */
   finalCard: {

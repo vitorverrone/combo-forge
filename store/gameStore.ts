@@ -225,7 +225,7 @@ export interface GameState {
    * de carta exigem a carta alvo do Baralho; a de Relíquia, só o índice.
    * Encerra a fase 'forging' e volta para 'roundWon' (pronto para nextRound).
    */
-  readonly applyForgeOffer: (offerIndex: number, targetCard?: Card) => void;
+  readonly applyForgeOffer: (offerIndex: number, targetCard?: Card, replaceRelicId?: string) => void;
   /** Avança para a próxima Rodada após vencer e forjar (fase 'roundWon'). */
   readonly nextRound: () => void;
   /** Reinicia imediatamente uma nova Run (novo seed, mesmo Forjador). */
@@ -735,14 +735,14 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       }
     },
 
-    applyForgeOffer: (offerIndex, targetCard) => {
+    applyForgeOffer: (offerIndex, targetCard, replaceRelicId) => {
       const { run } = get();
       if (run === null || run.phase !== 'forging') return;
       try {
-        const result = engineApplyForgeOffer(run, offerIndex, targetCard);
+        const result = engineApplyForgeOffer(run, offerIndex, targetCard, replaceRelicId);
         set({ run: result.run, selectedKeys: [], lastEvents: result.events });
       } catch {
-        // Oferta/carta inválida (defesa da UI): estado permanece intacto
+        // Oferta/carta/Relíquia inválida (defesa da UI): estado permanece intacto
       }
     },
 

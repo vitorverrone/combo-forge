@@ -89,11 +89,12 @@ describe('generateForgeOffers', () => {
     expect(a).not.toEqual(b);
   });
 
-  test('com o teto de 3 Relíquias ativas, a oferta de Relíquia vira uma terceira oferta de carta', () => {
+  test('com o teto de 3 Relíquias ativas, a oferta de Relíquia continua aparecendo (ajuste de UX de troca)', () => {
     const owned = RELIC_POOL.slice(0, RELIC_CAP);
     const offers = generateForgeOffers(createSeededRng(7), owned);
     expect(offers).toHaveLength(3);
-    expect(offers.every((o) => o.type === 'cardEffect')).toBe(true);
+    expect(offers.filter((o) => o.type === 'cardEffect')).toHaveLength(2);
+    expect(offers.filter((o) => o.type === 'relic')).toHaveLength(1);
   });
 
   test('a oferta de Relíquia nunca é uma Relíquia já ativa', () => {
@@ -156,10 +157,10 @@ describe('Forja na Run', () => {
     expect(a.forgeOffers).not.toEqual(b.forgeOffers);
   });
 
-  test('com 3 Relíquias ativas, as ofertas da Rodada vencida são todas de carta', () => {
+  test('com 3 Relíquias ativas, a Rodada vencida ainda oferece Relíquia (pra troca)', () => {
     const { run } = winRoundOne(createSeededRng(1), { relics: RELIC_POOL.slice(0, RELIC_CAP) });
     expect(run.forgeOffers).toHaveLength(3);
-    expect(run.forgeOffers.every((o) => o.type === 'cardEffect')).toBe(true);
+    expect(run.forgeOffers.filter((o) => o.type === 'relic')).toHaveLength(1);
   });
 
   test('jogar na fase forging lança erro', () => {
@@ -224,13 +225,45 @@ describe('applyForgeOffer', () => {
     expect(() => applyForgeOffer(run, 0, { suit: 'spades', value: 13 } as Card)).toThrow();
   });
 
-  test('Relíquia ofertada acima do teto lança erro (guarda defensiva)', () => {
+  test('Relíquia ofertada no teto sem escolher qual substituir lança erro', () => {
     const run = makeRun([spades(7)], {
       phase: 'forging',
       forgeOffers: [relicOffer],
       relics: RELIC_POOL.slice(0, RELIC_CAP),
     });
     expect(() => applyForgeOffer(run, 0)).toThrow();
+  });
+
+  test('Relíquia ofertada no teto substitui a Relíquia escolhida, preservando as outras', () => {
+    const owned = RELIC_POOL.slice(0, RELIC_CAP);
+    const run = makeRun([spades(7)], { phase: 'forging', forgeOffers: [relicOffer], relics: owned });
+    const { run: next } = applyForgeOffer(run, 0, undefined, owned[1].id);
+    expect(next.relics).toHaveLength(RELIC_CAP);
+    expect(next.relics.map((r) => r.id)).toEqual([owned[0].id, relicOffer.relic.id, owned[2].id]);
+    expect(next.phase).toBe('roundWon');
+  });
+
+  test('Relíquia ofertada no teto com id inexistente pra substituir lança erro', () => {
+    const run = makeRun([spades(7)], {
+      phase: 'forging',
+      forgeOffers: [relicOffer],
+      relics: RELIC_POOL.slice(0, RELIC_CAP),
+    });
+    expect(() => applyForgeOffer(run, 0, undefined, 'id-que-nao-existe')).toThrow();
+  });
+
+  test('a Relíquia de largada do Forjador nunca é elegível pra substituição (fica fora de run.relics)', () => {
+    const startingRelic = RELIC_POOL[9];
+    const owned = RELIC_POOL.slice(0, RELIC_CAP);
+    const run = makeRun([spades(7)], {
+      phase: 'forging',
+      forgeOffers: [relicOffer],
+      relics: owned,
+      startingRelic,
+    });
+    expect(() => applyForgeOffer(run, 0, undefined, startingRelic.id)).toThrow();
+    const { run: next } = applyForgeOffer(run, 0, undefined, owned[0].id);
+    expect(next.startingRelic).toEqual(startingRelic);
   });
 });
 
@@ -286,16 +319,17 @@ describe('Relíquias de Mecânica na estrutura (ticket 06)', () => {
     expect(next.deck.hand).toHaveLength(HAND_SIZE + 1);
   });
 
-  test('a Relíquia de largada do Forjador não conta para o teto de ofertas', () => {
+  test('a Relíquia de largada do Forjador não conta para o teto — a oferta de Relíquia continua aparecendo', () => {
     const run = makeRun(QUAD_TENS, {
       forger: 'hammer',
-      startingRelic: RELIC_POOL[0],
+      startingRelic: RELIC_POOL[9],
       relics: RELIC_POOL.slice(0, RELIC_CAP),
     });
-    // 3 adquiridas + 1 de largada: a Forja vira a oferta de Relíquia em carta
+    // 3 adquiridas (no teto) + 1 de largada (fora do teto): a Forja ainda
+    // oferece Relíquia — o jogador escolhe qual das 3 adquiridas substituir.
     const { run: won } = makePlay(run, QUAD_TENS, createSeededRng(3));
     expect(won.forgeOffers).toHaveLength(3);
-    expect(won.forgeOffers.every((o) => o.type === 'cardEffect')).toBe(true);
+    expect(won.forgeOffers.filter((o) => o.type === 'relic')).toHaveLength(1);
   });
 });
 
