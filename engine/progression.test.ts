@@ -13,7 +13,9 @@ import {
   isForgerUnlocked,
   isOptionClaimable,
   milestoneOptionTitle,
+  normalizeProgression,
   pendingMilestones,
+  PersistedProgression,
   poolsFor,
   recordPlay,
   recordRunEnd,
@@ -256,6 +258,33 @@ describe('persistência via port injetado', () => {
 
   test('storage vazio devolve null', () => {
     expect(createMemoryProgressionStorage().load()).toBeNull();
+  });
+});
+
+describe('normalizeProgression (saves antigos — ADR 0009)', () => {
+  test('sem save (null) devolve o estado inicial', () => {
+    expect(normalizeProgression(null)).toEqual(DEFAULT_PROGRESSION);
+  });
+
+  test('save com stats parcial (campo novo ausente) recebe os defaults sem perder o resto', () => {
+    const oldSave = {
+      stats: { runsWon: 3, bestRunScore: 1200 },
+      claimedOptions: ['unlock-forger-hammer'],
+    } as unknown as PersistedProgression;
+    const normalized = normalizeProgression(oldSave);
+    expect(normalized.stats.runsWon).toBe(3);
+    expect(normalized.stats.bestRunScore).toBe(1200);
+    expect(normalized.stats.runsStarted).toBe(DEFAULT_PROFILE_STATS.runsStarted);
+    expect(normalized.stats.maxMultiplier).toBe(DEFAULT_PROFILE_STATS.maxMultiplier);
+    expect(normalized.claimedOptions).toEqual(['unlock-forger-hammer']);
+  });
+
+  test('save completo passa sem alteração', () => {
+    const p: PersistedProgression = {
+      stats: statsWith({ runsWon: 5 }),
+      claimedOptions: ['unlock-forger-hammer'],
+    };
+    expect(normalizeProgression(p)).toEqual(p);
   });
 });
 

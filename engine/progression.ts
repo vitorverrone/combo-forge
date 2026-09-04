@@ -25,6 +25,7 @@
  * eventualmente desbloqueiam; a escolha define apenas a ordem.
  */
 
+import { assertNever } from './assert';
 import { Card, cardKey, ForgeEffect } from './cards';
 import { BONUS_FORGE_EFFECTS, FORGE_EFFECT_POOL, ForgeEffectOption } from './forge';
 import { ForgerId } from './forgers';
@@ -103,7 +104,9 @@ export const ALL_UNLOCKS: UnlocksState = {
 export type UnlockKind =
   | { readonly kind: 'forger'; readonly forger: ForgerId }
   | { readonly kind: 'forgeEffect'; readonly effectId: string }
-  | { readonly kind: 'rareRelics' };
+  | { readonly kind: 'rareRelics' }
+  /** Título (ADR 0009): marco cosmético — só texto de Perfil, não concede nada em UnlocksState. */
+  | { readonly kind: 'title' };
 
 export interface MilestoneOption {
   /** Id estável usado no estado persistido (claimedOptions). */
@@ -214,6 +217,20 @@ export const DEFAULT_PROGRESSION: PersistedProgression = {
   claimedOptions: [],
 };
 
+/**
+ * Estado carregado do storage, normalizado: saves antigos, gravados antes de
+ * um campo novo entrar em ProfileStats (ex. winsByForger, ADR 0009), não têm
+ * esse campo — o merge profundo em stats aplica os defaults sem perder o
+ * resto. Null (sem save) vira o estado inicial. Espelha normalizeShopState
+ * (engine/shop.ts), mas com merge em dois níveis: ao contrário de
+ * PersistedShop (objeto plano), stats é aninhado, e um merge raso deixaria
+ * um stats antigo sem os campos novos.
+ */
+export function normalizeProgression(state: PersistedProgression | null): PersistedProgression {
+  if (state === null) return DEFAULT_PROGRESSION;
+  return { ...DEFAULT_PROGRESSION, ...state, stats: { ...DEFAULT_PROFILE_STATS, ...state.stats } };
+}
+
 /** Port de persistência da meta-progressão (injetado; memória para testes). */
 export interface ProgressionStorage {
   load(): PersistedProgression | null;
@@ -244,12 +261,20 @@ export function computeUnlocks(p: PersistedProgression): UnlocksState {
   let rareRelics = false;
   for (const { option } of OPTION_INDEX.values()) {
     if (!claimed.has(option.id)) continue;
-    if (option.unlock.kind === 'forger') {
-      forgers.push(option.unlock.forger);
-    } else if (option.unlock.kind === 'forgeEffect') {
-      extraEffects.push(option.unlock.effectId);
-    } else {
-      rareRelics = true;
+    switch (option.unlock.kind) {
+      case 'forger':
+        forgers.push(option.unlock.forger);
+        break;
+      case 'forgeEffect':
+        extraEffects.push(option.unlock.effectId);
+        break;
+      case 'rareRelics':
+        rareRelics = true;
+        break;
+      case 'title':
+        break;
+      default:
+        assertNever(option.unlock);
     }
   }
   return { forgers, extraEffects, rareRelics };
