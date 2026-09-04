@@ -1,9 +1,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { activeRelics, getForger, ROUNDS_PER_RUN, RunState } from '../engine';
+import { activeRelics, ROUNDS_PER_RUN, RunState } from '../engine';
 
 import { useTranslation } from '../i18n';
 import { DailySubmitStatus } from './DailySubmitStatus';
+import { forgerName } from './format';
 import { RelicRow } from './RelicRow';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
@@ -39,7 +40,7 @@ export function RunWonScreen({ run }: RunWonScreenProps) {
       </Text>
       <Text style={styles.title}>{dailyEnd ? t('runWon.dailyComplete') : t('runWon.runComplete')}</Text>
       <Text style={styles.subtitle}>
-        {t('runWon.forgedRun', { forger: getForger(run.forger).name, score: run.runScore })}
+        {t('runWon.forgedRun', { forger: forgerName(run.forger), score: run.runScore })}
       </Text>
 
       {/* Unlock banner */}

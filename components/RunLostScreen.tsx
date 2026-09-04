@@ -2,10 +2,11 @@ import { AccessibilityInfo, Animated, Easing, Pressable, StyleSheet, Text, View 
 import { useEffect, useMemo, useState } from 'react';
 import { Trans } from 'react-i18next';
 
-import { activeRelics, getForger, RunState } from '../engine';
+import { activeRelics, RunState } from '../engine';
 
 import { useTranslation } from '../i18n';
 import { DailySubmitStatus } from './DailySubmitStatus';
+import { forgerName } from './format';
 import { RelicRow } from './RelicRow';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
@@ -62,7 +63,7 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
     <View style={styles.container}>
       <Text style={styles.eyebrow}>
         {dailyEnd ? `${t('runLost.dailyChallenge')} · ` : ''}
-        {t('runLost.eyebrowRound', { number: run.roundNumber, forger: getForger(run.forger).name })}
+        {t('runLost.eyebrowRound', { number: run.roundNumber, forger: forgerName(run.forger) })}
       </Text>
       <Text style={styles.title}>{soClose ? t('runLost.soClose') : t('runLost.runOver')}</Text>
 
