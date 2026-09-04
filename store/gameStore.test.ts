@@ -1359,3 +1359,12 @@ describe('telemetria: DDA e progressão (ticket 03)', () => {
     });
   });
 });
+
+describe('telemetria: monetização (ticket 04)', () => {
+  test('openShop dispara shop_opened', () => {
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({ telemetry, shopProvider: createDevShopProvider() });
+    store.getState().openShop();
+    expect(telemetry.events).toContainEqual({ name: 'shop_opened', params: undefined });
+  });
+});

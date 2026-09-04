@@ -4,11 +4,27 @@ import {
   createInitialShopState,
   createMemoryShopStorage,
   REMOVE_ADS_ENTITLEMENT_ID,
+  REMOVE_ADS_PRODUCT_ID,
   ShopProvider,
   ShopStorage,
+  TelemetryProvider,
 } from '../engine';
 
 import { equipCosmetic, runShopCommand, ShopFlowDeps, ShopFlowState } from './shopFlow';
+
+/** Fake de telemetria: grava cada chamada de logEvent (mesmo padrão de gameStore.test.ts). */
+function makeFakeTelemetry(): TelemetryProvider & {
+  readonly events: { name: string; params?: Record<string, string | number | boolean> }[];
+} {
+  const events: { name: string; params?: Record<string, string | number | boolean> }[] = [];
+  return {
+    events,
+    logEvent: async (name, params) => {
+      events.push({ name, params });
+    },
+    setUserId: async () => {},
+  };
+}
 
 /** Estado inicial da fatia da Loja (idle, sem compras). */
 function makeState(overrides: Partial<ShopFlowState> = {}): ShopFlowState {
@@ -30,8 +46,9 @@ function makeState(overrides: Partial<ShopFlowState> = {}): ShopFlowState {
 function makeDeps(
   provider: ShopProvider = createDevShopProvider(),
   storage: ShopStorage = createMemoryShopStorage(),
+  telemetry: TelemetryProvider = makeFakeTelemetry(),
 ): ShopFlowDeps {
-  return { provider, storage };
+  return { provider, storage, telemetry };
 }
 
 describe('loja cosmética (ticket 14) — fluxo', () => {
@@ -51,6 +68,43 @@ describe('loja cosmética (ticket 14) — fluxo', () => {
     expect(state.shop.owned.owned).toContain('deck-obsidian');
     expect(state.shop.owned.equippedDeckSkin).toBe('deck-obsidian'); // aplicada na hora
     expect(storage.load()?.owned).toContain('deck-obsidian');
+  });
+
+  test('purchaseCosmetic bem-sucedida dispara purchase_completed com o productId (ticket 04)', async () => {
+    const telemetry = makeFakeTelemetry();
+    await runShopCommand(makeState(), makeDeps(createDevShopProvider(), createMemoryShopStorage(), telemetry), {
+      type: 'purchaseCosmetic',
+      itemId: 'deck-obsidian',
+    });
+    expect(telemetry.events).toContainEqual({
+      name: 'purchase_completed',
+      params: { productId: 'combo_forge_skin_obsidian' },
+    });
+  });
+
+  test('purchaseCosmetic cancelada pelo jogador NÃO dispara purchase_completed', async () => {
+    const telemetry = makeFakeTelemetry();
+    const provider = { ...createDevShopProvider(), purchase: async () => false };
+    await runShopCommand(makeState(), makeDeps(provider, createMemoryShopStorage(), telemetry), {
+      type: 'purchaseCosmetic',
+      itemId: 'deck-obsidian',
+    });
+    expect(telemetry.events.some((event) => event.name === 'purchase_completed')).toBe(false);
+  });
+
+  test('purchaseCosmetic com falha do provider NÃO dispara purchase_completed', async () => {
+    const telemetry = makeFakeTelemetry();
+    const provider = {
+      ...createDevShopProvider(),
+      purchase: async () => {
+        throw new Error('loja fora do ar');
+      },
+    };
+    await runShopCommand(makeState(), makeDeps(provider, createMemoryShopStorage(), telemetry), {
+      type: 'purchaseCosmetic',
+      itemId: 'deck-obsidian',
+    });
+    expect(telemetry.events.some((event) => event.name === 'purchase_completed')).toBe(false);
   });
 
   test('equipCosmetic equipa apenas itens comprados e troca a skin atual', async () => {
@@ -127,14 +181,27 @@ describe('remoção de anúncios (ticket 02) — fluxo', () => {
     expect(storage.load()?.adsRemoved).toBe(true);
   });
 
-  test('cancelamento (provider false) não marca adsRemoved nem persiste', async () => {
+  test('purchaseRemoveAds bem-sucedida dispara purchase_completed com REMOVE_ADS_PRODUCT_ID (ticket 04)', async () => {
+    const telemetry = makeFakeTelemetry();
+    await runShopCommand(makeState(), makeDeps(createDevShopProvider(), createMemoryShopStorage(), telemetry), {
+      type: 'purchaseRemoveAds',
+    });
+    expect(telemetry.events).toContainEqual({
+      name: 'purchase_completed',
+      params: { productId: REMOVE_ADS_PRODUCT_ID },
+    });
+  });
+
+  test('cancelamento (provider false) não marca adsRemoved nem persiste, nem dispara purchase_completed', async () => {
     const storage = createMemoryShopStorage();
+    const telemetry = makeFakeTelemetry();
     const provider = { ...createDevShopProvider(), purchase: async () => false };
-    const state = await runShopCommand(makeState(), makeDeps(provider, storage), {
+    const state = await runShopCommand(makeState(), makeDeps(provider, storage, telemetry), {
       type: 'purchaseRemoveAds',
     });
     expect(state.adsRemoved).toBe(false);
     expect(state.shop.purchasing).toBeNull();
+    expect(telemetry.events.some((event) => event.name === 'purchase_completed')).toBe(false);
     expect(storage.load()).toBeNull(); // nada persistido
   });
 

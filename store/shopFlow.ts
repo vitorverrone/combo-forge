@@ -31,6 +31,7 @@ import {
   ShopOffering,
   ShopProvider,
   ShopStorage,
+  TelemetryProvider,
 } from '../engine';
 
 /** Estado da Loja no store (movido do gameStore — refactor). */
@@ -60,6 +61,8 @@ export interface ShopFlowDeps {
   readonly storage: ShopStorage;
   /** Provider de compras (RevenueCat no app; dev simulado nos testes). */
   readonly provider: ShopProvider;
+  /** Telemetria (ticket 04/ADR 0007) — no-op em dev/testes. */
+  readonly telemetry: TelemetryProvider;
 }
 
 /** Comandos do ciclo de vida da Loja (todos com IO; equip é função própria). */
@@ -139,6 +142,7 @@ async function purchaseCosmetic(
       let owned = enginePurchaseItem(state.shop.owned, itemId);
       owned = engineEquipItem(owned, itemId);
       deps.storage.save(owned);
+      void deps.telemetry.logEvent('purchase_completed', { productId });
       return { ...busy, shop: { ...busy.shop, owned, purchasing: null } };
     }
     // Cancelamento pelo jogador: sem adicionar nada.
@@ -164,6 +168,7 @@ async function purchaseRemoveAds(
       // o banner some na hora (ADR 0004).
       const owned = { ...state.shop.owned, adsRemoved: true };
       deps.storage.save(owned);
+      void deps.telemetry.logEvent('purchase_completed', { productId: REMOVE_ADS_PRODUCT_ID });
       return { ...busy, shop: { ...busy.shop, owned, purchasing: null }, adsRemoved: true };
     }
     // Cancelamento pelo jogador: sem marcar nada.

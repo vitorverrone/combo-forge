@@ -10,6 +10,7 @@ import { colors } from './theme';
 export function AdBanner() {
   const insets = useSafeAreaInsets();
   const adsRemoved = useGameStore((state) => state.adsRemoved);
+  const telemetry = useGameStore((state) => state.telemetry);
   const unitId = adsAreLive() ? bannerAdUnitId() : TestIds.ADAPTIVE_BANNER;
 
   if (!shouldShowBanner(adsRemoved, unitId)) return null;
@@ -20,6 +21,13 @@ export function AdBanner() {
         unitId={unitId}
         size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
         requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+        // ad_request_result (ticket 04/ADR 0007): sinal real de fill rate do
+        // AdMob pro banner — mesmo par filled true/false do rewarded e do
+        // intersticial em services/ads.ts.
+        onAdLoaded={() => void telemetry.logEvent('ad_request_result', { format: 'banner', filled: true })}
+        onAdFailedToLoad={() =>
+          void telemetry.logEvent('ad_request_result', { format: 'banner', filled: false })
+        }
       />
     </View>
   );
