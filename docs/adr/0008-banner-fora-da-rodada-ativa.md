@@ -10,5 +10,6 @@ A correção é cirúrgica, não uma reversão total: o banner some só quando `
 
 ## Consequências
 
-- `components/AdBanner.tsx` lê `run?.phase` do store (novo) além de `adsRemoved`/`adUnitId`; a regra pura `shouldShowBanner` (`engine/adProvider.ts`) não muda — ela decide "removido ou não", a fase da Run é uma condição de UI adicional, não uma regra de domínio.
+- `shouldShowBanner` (`engine/adProvider.ts`) ganha um terceiro parâmetro, `runPhase: RunPhase | undefined`, e passa a decidir também a Rodada ativa (`runPhase !== 'playing'`) — a regra continua inteira e pura numa função testável, mesmo precedente já usado por `shouldStartForgeTutorial`/`shouldStartGameScreenTutorial` (`store/tutorialFlow.ts`), que também recebem a fase da Run como parâmetro em vez de decidir dentro de um componente. Achado do code-review: a primeira versão desta mudança deixava a condição só dentro de `AdBanner.tsx`, fragmentando a regra entre o componente e o engine.
+- `components/AdBanner.tsx` lê `run?.phase` do store e só chama `shouldShowBanner(adsRemoved, adUnitId, run?.phase)` — sem lógica própria.
 - O ADR 0004 permanece válido para as demais telas; este ADR documenta a exceção, não substitui o anterior.
