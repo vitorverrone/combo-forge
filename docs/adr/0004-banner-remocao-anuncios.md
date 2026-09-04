@@ -10,6 +10,8 @@ O banner **não é linha de receita** — é o motor da compra de remoção. Ban
 
 Banner **full-width de 50dp** (`ADAPTIVE_BANNER`) em **todas as telas, inclusive a de jogo** (Rodada, Forja, Fim de Run). 50dp é exatamente o tamanho padrão de banner do SDK (o mínimo é 50dp; 30dp não existe como tamanho AdMob). O risco de clique acidental na Rodada (banner é clicável e abre o anúncio no meio do jogo) foi **aceito** — fica anotado para revisitar se o AdMob sinalizar cliques acidentais.
 
+> **Atualização (ADR 0008):** o banner deixou de aparecer especificamente durante a Rodada ativa (`run.phase === 'playing'`) — o premortem de lançamento identificou o risco acima como motivo suficiente, sem esperar o AdMob sinalizar. Continua em todas as outras telas, inclusive Forja e fim de Rodada/Run.
+
 ## O que a compra remove
 
 A compra remove **só o banner**. O anúncio recompensado do Desafio Diário permanece disponível: ele é opt-in, dá benefício de jogo (tentativa extra) e não é "poluição de anúncio" no sentido que o comprador quer eliminar — remover o recompensado puniria quem pagou (perderia a tentativa extra). É o padrão da indústria: "remove ads" tira passivos, mantém recompensados.
