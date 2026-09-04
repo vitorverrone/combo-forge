@@ -46,6 +46,8 @@ export interface ProfileStats {
   readonly maxMultiplier: number;
   /** Quantas vezes cada carta (identidade `naipe:valor`) entrou numa Jogada. */
   readonly cardPlays: Readonly<Record<string, number>>;
+  /** Runs vencidas com cada Forjador (Título de maestria, ADR 0009). */
+  readonly winsByForger: Readonly<Record<ForgerId, number>>;
 }
 
 export const DEFAULT_PROFILE_STATS: ProfileStats = {
@@ -54,6 +56,7 @@ export const DEFAULT_PROFILE_STATS: ProfileStats = {
   bestRunScore: 0,
   maxMultiplier: 1,
   cardPlays: {},
+  winsByForger: { apprentice: 0, hammer: 0, anvil: 0 },
 };
 
 /** Registra uma Jogada nas estatísticas: contagem de cartas + maior combo. */
@@ -71,12 +74,20 @@ export function recordPlay(stats: ProfileStats, cards: readonly Card[], multipli
 }
 
 /** Registra o fim de uma Run (vitória ou derrota) nas estatísticas. */
-export function recordRunEnd(stats: ProfileStats, won: boolean, runScore: number): ProfileStats {
+export function recordRunEnd(
+  stats: ProfileStats,
+  won: boolean,
+  runScore: number,
+  forger: ForgerId,
+): ProfileStats {
   return {
     ...stats,
     runsStarted: stats.runsStarted + 1,
     runsWon: stats.runsWon + (won ? 1 : 0),
     bestRunScore: Math.max(stats.bestRunScore, runScore),
+    winsByForger: won
+      ? { ...stats.winsByForger, [forger]: stats.winsByForger[forger] + 1 }
+      : stats.winsByForger,
   };
 }
 
@@ -232,6 +243,13 @@ export const MILESTONES: readonly Milestone[] = [
     description: 'Play all 40 cards in the Deck at least once.',
     condition: (stats) => Object.keys(stats.cardPlays).length >= 40,
     options: [{ id: 'title-full-deck', title: 'Full Deck', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'forgerMastery',
+    title: 'Triple Forger',
+    description: 'Win a run with each of the 3 Forgers.',
+    condition: (stats) => Object.values(stats.winsByForger).every((count) => count > 0),
+    options: [{ id: 'title-triple-forger', title: 'Triple Forger', unlock: { kind: 'title' } }],
   },
 ];
 

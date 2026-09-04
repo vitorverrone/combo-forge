@@ -49,12 +49,23 @@ describe('estatísticas de perfil', () => {
   });
 
   test('recordRunEnd registra vitória/derrota e o recorde de pontos', () => {
-    const won = recordRunEnd(recordRunEnd(DEFAULT_PROFILE_STATS, false, 120), true, 2600);
+    const won = recordRunEnd(recordRunEnd(DEFAULT_PROFILE_STATS, false, 120, 'apprentice'), true, 2600, 'apprentice');
     expect(won.runsStarted).toBe(2);
     expect(won.runsWon).toBe(1);
     expect(won.bestRunScore).toBe(2600);
-    const noRecord = recordRunEnd(won, false, 90);
+    const noRecord = recordRunEnd(won, false, 90, 'apprentice');
     expect(noRecord.bestRunScore).toBe(2600);
+  });
+
+  test('recordRunEnd incrementa winsByForger só em vitória, e só do Forjador certo', () => {
+    let stats = recordRunEnd(DEFAULT_PROFILE_STATS, true, 500, 'hammer');
+    expect(stats.winsByForger).toEqual({ apprentice: 0, hammer: 1, anvil: 0 });
+    stats = recordRunEnd(stats, false, 300, 'hammer'); // derrota não altera
+    expect(stats.winsByForger.hammer).toBe(1);
+    stats = recordRunEnd(stats, true, 700, 'hammer'); // 2ª vitória com o mesmo Forjador incrementa, não duplica
+    expect(stats.winsByForger.hammer).toBe(2);
+    stats = recordRunEnd(stats, true, 400, 'anvil');
+    expect(stats.winsByForger).toEqual({ apprentice: 0, hammer: 2, anvil: 1 });
   });
 });
 
@@ -353,6 +364,38 @@ describe('Títulos: Vitórias, Recorde de Pontuação, Multiplicador e Maestria 
     // não dos Títulos — que não concedem Forjador/Efeito/Relíquia nenhum.
     expect(unlocks.forgers).toEqual(['apprentice', 'hammer', 'anvil']);
     expect(unlocks.rareRelics).toBe(true);
+    expect(unlocks.extraEffects).toEqual([]);
+  });
+});
+
+describe('Título: Maestria de Forjador (ticket 03, ADR 0009)', () => {
+  test('condição falsa com 0 Forjadores vencidos', () => {
+    const milestone = MILESTONES.find((m) => m.id === 'forgerMastery');
+    expect(milestone?.condition(statsWith())).toBe(false);
+  });
+
+  test('condição falsa com só 1 dos 3 Forjadores vencidos', () => {
+    const milestone = MILESTONES.find((m) => m.id === 'forgerMastery');
+    const stats = statsWith({ winsByForger: { apprentice: 3, hammer: 0, anvil: 0 } });
+    expect(milestone?.condition(stats)).toBe(false);
+  });
+
+  test('condição verdadeira só quando os 3 Forjadores têm ao menos 1 vitória', () => {
+    const milestone = MILESTONES.find((m) => m.id === 'forgerMastery');
+    const stats = statsWith({ winsByForger: { apprentice: 1, hammer: 1, anvil: 1 } });
+    expect(milestone?.condition(stats)).toBe(true);
+  });
+
+  test('reivindicado automaticamente (opção única) e não concede poder', () => {
+    const p: typeof DEFAULT_PROGRESSION = {
+      ...DEFAULT_PROGRESSION,
+      stats: statsWith({ winsByForger: { apprentice: 2, hammer: 1, anvil: 1 } }),
+    };
+    const result = claimReachedSingles(p);
+    expect(result.claimed).toContain('title-triple-forger');
+    const unlocks = computeUnlocks(result.persisted);
+    expect(unlocks.forgers).toEqual(['apprentice']); // nenhum marco de poder atingido aqui
+    expect(unlocks.rareRelics).toBe(false);
     expect(unlocks.extraEffects).toEqual([]);
   });
 });
