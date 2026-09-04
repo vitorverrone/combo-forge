@@ -596,6 +596,64 @@ describe('Desafio Diário (ticket 13)', () => {
     expect(backend.leaderboardFetches).toBe(1);
   });
 
+  test('submissão bem-sucedida soma a Sequência do Desafio Diário (ADR 0010, ticket 01)', async () => {
+    let now = new Date('2026-09-04T12:00:00Z');
+    const store = createGameStore({ dailyBackend: makeFakeDailyBackend(), now: () => now });
+    await store.getState().submitDailyScore(500);
+    expect(store.getState().progression.stats.dailyStreakCurrent).toBe(1);
+    expect(store.getState().progression.stats.dailyStreakBest).toBe(1);
+
+    now = new Date('2026-09-05T09:00:00Z');
+    await store.getState().submitDailyScore(600);
+    expect(store.getState().progression.stats.dailyStreakCurrent).toBe(2);
+  });
+
+  test('resubmissão no mesmo dia não soma a Sequência de novo (ADR 0010, ticket 01)', async () => {
+    const now = new Date('2026-09-04T12:00:00Z');
+    const store = createGameStore({ dailyBackend: makeFakeDailyBackend(), now: () => now });
+    await store.getState().submitDailyScore(500);
+    await store.getState().submitDailyScore(700); // melhora a própria pontuação, mesmo dia
+    expect(store.getState().progression.stats.dailyStreakCurrent).toBe(1);
+  });
+
+  test('submissão que falha não altera a Sequência (ADR 0010, ticket 01)', async () => {
+    const backend: DailyBackend = {
+      ...makeFakeDailyBackend(),
+      submitScore: async () => {
+        throw new Error('rede fora');
+      },
+    };
+    const store = createGameStore({ dailyBackend: backend });
+    await store.getState().submitDailyScore(500);
+    expect(store.getState().progression.stats.dailyStreakCurrent).toBe(0);
+  });
+
+  test('marco de Sequência de 3 dias é reivindicado ao submeter o 3º dia seguido e dispara milestone_unlocked (ADR 0010, ticket 01)', async () => {
+    const telemetry = makeFakeTelemetry();
+    const now = new Date('2026-09-04T12:00:00Z');
+    const store = createGameStore({
+      telemetry,
+      dailyBackend: makeFakeDailyBackend(),
+      now: () => now,
+      initialProgression: {
+        ...DEFAULT_PROGRESSION,
+        stats: {
+          ...DEFAULT_PROFILE_STATS,
+          dailyStreakCurrent: 2,
+          dailyStreakBest: 2,
+          dailyStreakLastDate: '2026-09-03',
+        },
+      },
+    });
+    await store.getState().submitDailyScore(500);
+    expect(store.getState().progression.stats.dailyStreakCurrent).toBe(3);
+    expect(store.getState().progression.claimedOptions).toContain('title-daily-spark');
+    expect(telemetry.events).toContainEqual({
+      name: 'milestone_unlocked',
+      params: { optionId: 'title-daily-spark', milestoneId: 'dailyStreak3' },
+    });
+  });
+
   test('submissão que falha NÃO busca o ranking de novo (ticket 03)', async () => {
     // fetchLeaderboard continua vindo de `backend` (não da cópia abaixo) —
     // é nele que a contagem de chamadas é rastreada.

@@ -48,6 +48,12 @@ export interface ProfileStats {
   readonly cardPlays: Readonly<Record<string, number>>;
   /** Runs vencidas com cada Forjador (Título de maestria, ADR 0009). */
   readonly winsByForger: Readonly<Record<ForgerId, number>>;
+  /** Dias consecutivos (fronteira UTC) com ao menos 1 submissão ao Desafio Diário. Zera ao pular um dia (Sequência, ADR 0010). */
+  readonly dailyStreakCurrent: number;
+  /** Recorde histórico da Sequência — nunca decresce; alimenta os Títulos de constância (ADR 0010). */
+  readonly dailyStreakBest: number;
+  /** Última data (YYYY-MM-DD, UTC) com submissão contabilizada na Sequência; null se nunca submeteu. */
+  readonly dailyStreakLastDate: string | null;
 }
 
 export const DEFAULT_PROFILE_STATS: ProfileStats = {
@@ -57,6 +63,9 @@ export const DEFAULT_PROFILE_STATS: ProfileStats = {
   maxMultiplier: 1,
   cardPlays: {},
   winsByForger: { apprentice: 0, hammer: 0, anvil: 0 },
+  dailyStreakCurrent: 0,
+  dailyStreakBest: 0,
+  dailyStreakLastDate: null,
 };
 
 /** Registra uma Jogada nas estatísticas: contagem de cartas + maior combo. */
@@ -88,6 +97,37 @@ export function recordRunEnd(
     winsByForger: won
       ? { ...stats.winsByForger, [forger]: stats.winsByForger[forger] + 1 }
       : stats.winsByForger,
+  };
+}
+
+/** True se `nextDateIso` é exatamente o dia seguinte a `dateIso` (ambos `YYYY-MM-DD`, UTC). */
+function isNextDay(dateIso: string, nextDateIso: string): boolean {
+  const toUtcDay = (iso: string) => {
+    const [y, m, d] = iso.split('-').map(Number);
+    return Date.UTC(y, m - 1, d) / 86_400_000;
+  };
+  return toUtcDay(nextDateIso) - toUtcDay(dateIso) === 1;
+}
+
+/**
+ * Registra uma submissão do Desafio Diário na Sequência (ADR 0010): soma 1
+ * quando é a primeira submissão do dia (fronteira UTC, mesma do backend);
+ * reinicia em 1 se um dia foi pulado; não altera nada numa resubmissão do
+ * mesmo dia (ex.: melhorando a própria pontuação com uma tentativa extra). O
+ * recorde histórico (`dailyStreakBest`) nunca decresce — é ele, não a
+ * Sequência atual, que alimenta os Títulos de constância.
+ */
+export function recordDailySubmission(stats: ProfileStats, todayIso: string): ProfileStats {
+  if (stats.dailyStreakLastDate === todayIso) return stats;
+  const current =
+    stats.dailyStreakLastDate !== null && isNextDay(stats.dailyStreakLastDate, todayIso)
+      ? stats.dailyStreakCurrent + 1
+      : 1;
+  return {
+    ...stats,
+    dailyStreakCurrent: current,
+    dailyStreakBest: Math.max(stats.dailyStreakBest, current),
+    dailyStreakLastDate: todayIso,
   };
 }
 
@@ -250,6 +290,37 @@ export const MILESTONES: readonly Milestone[] = [
     description: 'Win a run with each of the 3 Forgers.',
     condition: (stats) => Object.values(stats.winsByForger).every((count) => count > 0),
     options: [{ id: 'title-triple-forger', title: 'Triple Forger', unlock: { kind: 'title' } }],
+  },
+  // Sequência do Desafio Diário (ADR 0010, ticket 01): Títulos de constância
+  // — 7 e 30 dias espelham de propósito as janelas de retenção D7/D30 do GDD
+  // §8, fazendo do marco jogável um proxy da métrica que a feature tenta mover.
+  {
+    id: 'dailyStreak3',
+    title: 'Daily Spark',
+    description: 'Play the Daily Challenge 3 days in a row.',
+    condition: (stats) => stats.dailyStreakBest >= 3,
+    options: [{ id: 'title-daily-spark', title: 'Daily Spark', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'dailyStreak7',
+    title: 'Weekly Ritual',
+    description: 'Play the Daily Challenge 7 days in a row.',
+    condition: (stats) => stats.dailyStreakBest >= 7,
+    options: [{ id: 'title-weekly-ritual', title: 'Weekly Ritual', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'dailyStreak15',
+    title: 'Steady Hammer',
+    description: 'Play the Daily Challenge 15 days in a row.',
+    condition: (stats) => stats.dailyStreakBest >= 15,
+    options: [{ id: 'title-steady-hammer', title: 'Steady Hammer', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'dailyStreak30',
+    title: 'Unbroken Forge',
+    description: 'Play the Daily Challenge 30 days in a row.',
+    condition: (stats) => stats.dailyStreakBest >= 30,
+    options: [{ id: 'title-unbroken-forge', title: 'Unbroken Forge', unlock: { kind: 'title' } }],
   },
 ];
 
