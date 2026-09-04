@@ -519,6 +519,11 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     dismissInterstitial: () => set({ showInterstitial: false }),
 
     openShop: () => {
+      // shop_opened (ticket 04/ADR 0007): openShop() é o único ponto que
+      // define screen: 'shop' — dispara aqui em vez de um useEffect na
+      // ShopScreen, mesmo padrão de todo telemetry.logEvent já disparado
+      // deste feature (store/services, nunca componente React).
+      void get().telemetry.logEvent('shop_opened');
       set({ screen: 'shop' });
       void get().loadShop();
     },
@@ -916,7 +921,7 @@ function advanceProgression(
 
 /** Ports da Loja a partir do estado atual do store (mesmo padrão do dailyFlow). */
 function shopFlowDeps(state: GameState): ShopFlowDeps {
-  return { storage: state.shopStorage, provider: state.shopProvider };
+  return { storage: state.shopStorage, provider: state.shopProvider, telemetry: state.telemetry };
 }
 
 /** Fatia da Loja (estado + remoção de anúncios) a partir do estado atual. */

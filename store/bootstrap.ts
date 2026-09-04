@@ -50,7 +50,7 @@ export function initializeSqlitePersistence(): void {
       ddaStorage,
       dailyStorage,
       dailyBackend: createAppDailyBackend(),
-      adProvider: createAppAdProvider(),
+      adProvider: createAppAdProvider(telemetry),
       telemetry,
       shopStorage,
       shopProvider: createAppShopProvider(),

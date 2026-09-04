@@ -21,7 +21,7 @@
 
 import { Platform } from 'react-native';
 
-import { AdProvider } from '../engine';
+import { AdProvider, TelemetryProvider } from '../engine';
 
 const REWARDED_UNIT_ANDROID = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_ANDROID;
 const REWARDED_UNIT_IOS = process.env.EXPO_PUBLIC_ADMOB_REWARDED_AD_UNIT_ID_IOS;
@@ -76,13 +76,13 @@ export function adsAreLive(): boolean {
  * Provider para o store: real (AdMob) se configurado; dev simulado se não.
  * Mesmo padrão dos demais serviços do app (Supabase, RevenueCat).
  */
-export function createAppAdProvider(): AdProvider {
+export function createAppAdProvider(telemetry: TelemetryProvider): AdProvider {
   // Em dev usa TestIds oficiais do SDK (banner já faz o mesmo);
   // em produção só usa ad unit real se configurado via env — e cada formato
   // usa o seu próprio (rewarded e intersticial não compartilham ad unit).
   return {
-    requestRewardedAd: () => requestAdMobRewarded(rewardedAdUnitId()),
-    requestInterstitialAd: () => requestAdMobInterstitial(interstitialAdUnitId()),
+    requestRewardedAd: () => requestAdMobRewarded(rewardedAdUnitId(), telemetry),
+    requestInterstitialAd: () => requestAdMobInterstitial(interstitialAdUnitId(), telemetry),
   };
 }
 
@@ -91,8 +91,17 @@ export function createAppAdProvider(): AdProvider {
  * assistiu até o fim (EARNED_REWARD). Desistir (CLOSED sem recompensa),
  * falha de carregamento (ERROR) ou ambiente sem módulo nativo → false.
  * Nunca rejeita: a chamada não pode quebrar o fluxo do jogo.
+ *
+ * ad_request_result (ticket 04/ADR 0007) dispara só em LOADED/ERROR — o
+ * sinal real de fill rate do AdMob para este ad unit. Não dispara no catch
+ * externo (módulo nativo indisponível, ex.: Expo Go/web/testes): isso é
+ * ausência de ambiente, não falha de preenchimento do AdMob, e contaria
+ * como NO_FILL de todo dev/teste, poluindo a métrica de produção.
  */
-async function requestAdMobRewarded(adUnitId: string | undefined): Promise<boolean> {
+async function requestAdMobRewarded(
+  adUnitId: string | undefined,
+  telemetry: TelemetryProvider,
+): Promise<boolean> {
   try {
     const {
       AdEventType,
@@ -120,6 +129,7 @@ async function requestAdMobRewarded(adUnitId: string | undefined): Promise<boole
       const unsubscribeLoaded = rewarded.addAdEventListener(
         RewardedAdEventType.LOADED,
         () => {
+          void telemetry.logEvent('ad_request_result', { format: 'rewarded', filled: true });
           // Falha ao exibir: garante o settle (sem rejeição não tratada) e
           // o fluxo nunca fica pendurado — o usuário volta ao jogo intacto.
           void rewarded.show().catch(() => settle(false));
@@ -135,7 +145,10 @@ async function requestAdMobRewarded(adUnitId: string | undefined): Promise<boole
       );
       const unsubscribeError = rewarded.addAdEventListener(
         AdEventType.ERROR,
-        () => settle(false),
+        () => {
+          void telemetry.logEvent('ad_request_result', { format: 'rewarded', filled: false });
+          settle(false);
+        },
       );
       const cleanup = () => {
         unsubscribeLoaded();
@@ -154,8 +167,14 @@ async function requestAdMobRewarded(adUnitId: string | undefined): Promise<boole
  * Mostra um anúncio intersticial (tela cheia) entre Runs. Resolve true
  * quando exibido com sucesso; false se falhou ou indisponível. Nunca rejeita:
  * o fluxo do jogo nunca é interrompido.
+ *
+ * ad_request_result (ticket 04/ADR 0007): mesma regra do rewarded — só
+ * LOADED/ERROR contam pro fill rate, não o catch de módulo indisponível.
  */
-async function requestAdMobInterstitial(adUnitId: string | undefined): Promise<boolean> {
+async function requestAdMobInterstitial(
+  adUnitId: string | undefined,
+  telemetry: TelemetryProvider,
+): Promise<boolean> {
   try {
     const {
       AdEventType,
@@ -182,6 +201,7 @@ async function requestAdMobInterstitial(adUnitId: string | undefined): Promise<b
       const unsubscribeLoaded = interstitial.addAdEventListener(
         AdEventType.LOADED,
         () => {
+          void telemetry.logEvent('ad_request_result', { format: 'interstitial', filled: true });
           void interstitial.show().catch(() => settle(false));
         },
       );
@@ -191,7 +211,10 @@ async function requestAdMobInterstitial(adUnitId: string | undefined): Promise<b
       );
       const unsubscribeError = interstitial.addAdEventListener(
         AdEventType.ERROR,
-        () => settle(false),
+        () => {
+          void telemetry.logEvent('ad_request_result', { format: 'interstitial', filled: false });
+          settle(false);
+        },
       );
       const cleanup = () => {
         unsubscribeLoaded();
