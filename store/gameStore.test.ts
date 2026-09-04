@@ -926,9 +926,9 @@ describe('meta-progressão (ticket 11)', () => {
   const QUAD_TENS = [clubs(10), spades(10), hearts(10), diamonds(10)];
 
   /** Coloca uma Run na Rodada 6 com Mão vencedora e joga a quadra (runWon). */
-  function winStoreRun(store: ReturnType<typeof createGameStore>): void {
+  function winStoreRun(store: ReturnType<typeof createGameStore>, forger: ForgerId = 'apprentice'): void {
     store.getState().startRun(); // garante a stream de RNG no store
-    store.setState({ run: { ...makeRunWithHand(QUAD_TENS), roundNumber: 6 } });
+    store.setState({ run: { ...makeRunWithHand(QUAD_TENS), roundNumber: 6, forger } });
     for (const card of QUAD_TENS) store.getState().toggleCard(cardKey(card));
     store.getState().playSelection();
   }
@@ -1038,21 +1038,13 @@ describe('meta-progressão (ticket 11)', () => {
       },
     });
 
-    function winWithForger(forger: ForgerId): void {
-      store.getState().chooseForger(forger);
-      store.getState().startRun();
-      store.setState({ run: { ...makeRunWithHand(QUAD_TENS), roundNumber: 6, forger } });
-      for (const card of QUAD_TENS) store.getState().toggleCard(cardKey(card));
-      store.getState().playSelection();
-    }
-
-    winWithForger('apprentice');
+    winStoreRun(store, 'apprentice');
     expect(store.getState().progression.stats.winsByForger).toEqual({ apprentice: 1, hammer: 0, anvil: 0 });
 
-    winWithForger('hammer');
+    winStoreRun(store, 'hammer');
     expect(store.getState().progression.stats.winsByForger).toEqual({ apprentice: 1, hammer: 1, anvil: 0 });
 
-    winWithForger('anvil');
+    winStoreRun(store, 'anvil');
     expect(store.getState().progression.stats.winsByForger).toEqual({ apprentice: 1, hammer: 1, anvil: 1 });
     expect(store.getState().recentUnlocks).toContain(milestoneOptionTitle('title-triple-forger'));
   });
