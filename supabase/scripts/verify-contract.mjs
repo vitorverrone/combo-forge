@@ -375,6 +375,40 @@ try {
   const secondCall = JSON.parse(psql(`select public.get_league_leaderboard('dev-lg-1', '2026-08-31 12:00:00+00')`));
   check(secondCall.tier === 'gold', 'segunda consulta na mesma semana devolve o Tier já persistido, sem recalcular');
 
+  // Cenário com MAIS de uma Divisão no mesmo Tier (o cenário acima só tinha
+  // 13 dispositivos — uma Divisão só): 35 dispositivos no Tier 'gold' na
+  // semana anterior formam 2 Divisões (ranks 1-30 = Divisão 1, de tamanho
+  // cheio; ranks 31-35 = Divisão 2, com só 5). Prova que a zona de
+  // subida/descida é por Divisão, não pelo Tier inteiro: dev-lgm-26 (fim da
+  // Divisão 1) desce mesmo não estando entre os 5 piores do Tier inteiro (que
+  // seriam os ranks 31-35, a Divisão 2); dev-lgm-31 (início da Divisão 2) sobe
+  // mesmo estando entre os 5 piores ranks do Tier inteiro.
+  const multiDivisionScores = Array.from({ length: 35 }, (_, i) => [`dev-lgm-${i + 1}`, 3500 - i * 100]);
+  for (const [deviceId] of multiDivisionScores) {
+    psql(`insert into public.league_placements (device_id, week, tier) values ('${deviceId}', '2026-08-24', 'gold')`);
+  }
+  psql(`
+    insert into public.daily_submissions (day, device_id, score) values
+    ${multiDivisionScores.map(([deviceId, score]) => `('2026-08-24', '${deviceId}', ${score})`).join(',\n    ')}
+  `);
+  psql(`
+    insert into public.daily_submissions (day, device_id, score) values
+    ${multiDivisionScores.map(([deviceId, score]) => `('2026-08-31', '${deviceId}', ${score})`).join(',\n    ')}
+  `);
+  const multiDivisionExpectations = [
+    ['dev-lgm-1', 'platinum', 'topo da Divisão 1 (posição 1 de 30)'],
+    ['dev-lgm-5', 'platinum', 'topo da Divisão 1 (posição 5 de 30)'],
+    ['dev-lgm-15', 'gold', 'meio da Divisão 1 (posição 15 de 30) — mantém o Tier'],
+    ['dev-lgm-26', 'silver', 'fim da Divisão 1 (posição 26 de 30) — desce mesmo não estando entre os 5 piores do Tier inteiro'],
+    ['dev-lgm-30', 'silver', 'fim da Divisão 1 (posição 30 de 30)'],
+    ['dev-lgm-31', 'platinum', 'início da Divisão 2 (posição 1 de 5) — sobe mesmo estando entre os 5 piores ranks do Tier inteiro'],
+    ['dev-lgm-35', 'platinum', 'Divisão 2 é pequena demais (5, igual à zona) — promoção cobre a Divisão inteira'],
+  ];
+  for (const [deviceId, expectedTier, description] of multiDivisionExpectations) {
+    const standing = JSON.parse(psql(`select public.get_league_leaderboard('${deviceId}', '2026-08-31 12:00:00+00')`));
+    check(standing.tier === expectedTier, `${deviceId}: ${description} → Tier ${standing.tier} (esperado ${expectedTier})`);
+  }
+
   check(psqlCommand(`set role anon; select public.get_league_leaderboard('anon-league-dev', '2026-08-31 12:00:00+00')`).startsWith('{'), 'anon consegue consultar a Liga (security definer)');
   let leaguePlacementsDirectDenied = false;
   try {

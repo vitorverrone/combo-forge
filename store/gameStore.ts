@@ -655,6 +655,16 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       // início desta função, apagando qualquer mutação concorrente
       // (attempts/status/etc.) que outro comando já tenha aplicado nesse
       // meio-tempo (ex.: startDailyChallenge rodando em paralelo).
+      // Não aplica result.daily.attempts: o comando recalcula o rollover de
+      // dia como efeito colateral de toda chamada a runDailyCommand (mesmo
+      // em comandos "sem mutação" — dailyFlow.test.ts cobre isso), mas
+      // aplicar esse valor aqui reabriria a MESMA corrida que este comentário
+      // descreve (fetchLeaderboard pode resolver depois de startDailyChallenge
+      // já ter consumido uma tentativa, e sobrescreveria o valor fresco com um
+      // stale). Sem risco em deixar de fora: a UI recalcula o rollover de novo
+      // a cada render (dailyAttemptsForDay em DailyChallengeScreen), e todo
+      // comando que de fato consome/libera uma tentativa (start/watchAd/
+      // submit) já aplica seu próprio attempts fresco por conta própria.
       set((state) => ({
         daily: {
           ...state.daily,

@@ -6,6 +6,7 @@ import {
   canWatchExtraAd,
   dailyAttemptsForDay,
   DailyLeaderboard,
+  DailyLeaderboardEntry,
   LeagueStanding,
   utcDateIso,
 } from '../engine';
@@ -198,44 +199,13 @@ export function DailyChallengeScreen() {
 
 function LeaderboardList({ leaderboard }: { leaderboard: DailyLeaderboard }) {
   const { t } = useTranslation();
-  const ownName = leaderboard.own?.name ?? t('daily.anonymousName');
   return (
     <View style={styles.leaderboard}>
-      <View style={styles.yourBest}>
-        <Text style={styles.yourBestLabel}>{t('daily.yourBest')}</Text>
-        <Text style={styles.yourBestValue}>
-          {leaderboard.own === null
-            ? t('daily.noScoreYet')
-            : `${ownName} · #${leaderboard.own.rank} · ${leaderboard.own.score.toLocaleString('en-US')}`}
-        </Text>
-      </View>
+      <YourBestRow own={leaderboard.own} />
       {leaderboard.top.length === 0 ? (
         <Text style={styles.emptyTop}>{t('daily.noScoresWeek')}</Text>
       ) : (
-        leaderboard.top.map((entry, index) => {
-          const isFirst = entry.rank === 1;
-          return (
-            <View
-              key={`${entry.rank}-${entry.score}`}
-              style={[
-                styles.lbRow,
-                isFirst && styles.lbRowFirst,
-                index > 0 && !isFirst && styles.lbRowBorder,
-              ]}
-            >
-              <Text style={[styles.lbRank, isFirst && styles.lbRankFirst]}>
-                {entry.rank}
-              </Text>
-              {isFirst && <Text style={styles.lbCrown}>♦</Text>}
-              <Text style={[styles.lbName, isFirst && styles.lbNameFirst]} numberOfLines={1}>
-                {entry.name ?? t('daily.anonymousName')}
-              </Text>
-              <Text style={[styles.lbScore, isFirst && styles.lbScoreFirst]}>
-                {entry.score.toLocaleString('en-US')}
-              </Text>
-            </View>
-          );
-        })
+        <RankedEntryRows entries={leaderboard.top} />
       )}
     </View>
   );
@@ -244,13 +214,10 @@ function LeaderboardList({ leaderboard }: { leaderboard: DailyLeaderboard }) {
 /**
  * Ranking da Liga (ADR 0010, ticket 02): Tier + Divisão do dispositivo e o
  * ranking completo da própria Divisão (não um top 10 — a Divisão inteira já
- * é do tamanho certo). `top` já vem ordenado por rank; o destaque de "1º
- * lugar" é o primeiro da lista (melhor da Divisão), não necessariamente rank
- * global 1 — Divisões diferentes de Diamante nunca têm o rank 1 da semana.
+ * é do tamanho certo).
  */
 function LeagueStandingView({ standing }: { standing: LeagueStanding }) {
   const { t } = useTranslation();
-  const ownName = standing.own?.name ?? t('daily.anonymousName');
   return (
     <View style={styles.leaderboard}>
       <View style={styles.leagueHeader}>
@@ -261,43 +228,66 @@ function LeagueStandingView({ standing }: { standing: LeagueStanding }) {
           </Text>
         )}
       </View>
-      <View style={styles.yourBest}>
-        <Text style={styles.yourBestLabel}>{t('daily.yourBest')}</Text>
-        <Text style={styles.yourBestValue}>
-          {standing.own === null
-            ? t('daily.noScoreYet')
-            : `${ownName} · #${standing.own.rank} · ${standing.own.score.toLocaleString('en-US')}`}
-        </Text>
-      </View>
+      <YourBestRow own={standing.own} />
       {standing.top.length === 0 ? (
         <Text style={styles.emptyTop}>{t('daily.noScoresWeek')}</Text>
       ) : (
-        standing.top.map((entry, index) => {
-          const isFirst = index === 0;
-          return (
-            <View
-              key={`${entry.rank}-${entry.score}`}
-              style={[
-                styles.lbRow,
-                isFirst && styles.lbRowFirst,
-                index > 0 && !isFirst && styles.lbRowBorder,
-              ]}
-            >
-              <Text style={[styles.lbRank, isFirst && styles.lbRankFirst]}>
-                {entry.rank}
-              </Text>
-              {isFirst && <Text style={styles.lbCrown}>♦</Text>}
-              <Text style={[styles.lbName, isFirst && styles.lbNameFirst]} numberOfLines={1}>
-                {entry.name ?? t('daily.anonymousName')}
-              </Text>
-              <Text style={[styles.lbScore, isFirst && styles.lbScoreFirst]}>
-                {entry.score.toLocaleString('en-US')}
-              </Text>
-            </View>
-          );
-        })
+        <RankedEntryRows entries={standing.top} />
       )}
     </View>
+  );
+}
+
+/** Posição própria — compartilhado entre LeaderboardList e LeagueStandingView. */
+function YourBestRow({ own }: { own: DailyLeaderboardEntry | null }) {
+  const { t } = useTranslation();
+  const ownName = own?.name ?? t('daily.anonymousName');
+  return (
+    <View style={styles.yourBest}>
+      <Text style={styles.yourBestLabel}>{t('daily.yourBest')}</Text>
+      <Text style={styles.yourBestValue}>
+        {own === null ? t('daily.noScoreYet') : `${ownName} · #${own.rank} · ${own.score.toLocaleString('en-US')}`}
+      </Text>
+    </View>
+  );
+}
+
+/**
+ * Linhas de um ranking (rank/nome/pontuação) — compartilhado entre
+ * LeaderboardList e LeagueStandingView. `entries` já vem ordenado por rank;
+ * o destaque de "1º lugar" é sempre o primeiro da lista, que no leaderboard
+ * único é rank global 1, e na Liga é o melhor da própria Divisão (nem
+ * sempre rank global 1 — só Divisões do topo do Diamante têm o rank 1 real).
+ */
+function RankedEntryRows({ entries }: { entries: readonly DailyLeaderboardEntry[] }) {
+  const { t } = useTranslation();
+  return (
+    <>
+      {entries.map((entry, index) => {
+        const isFirst = index === 0;
+        return (
+          <View
+            key={`${entry.rank}-${entry.score}`}
+            style={[
+              styles.lbRow,
+              isFirst && styles.lbRowFirst,
+              index > 0 && !isFirst && styles.lbRowBorder,
+            ]}
+          >
+            <Text style={[styles.lbRank, isFirst && styles.lbRankFirst]}>
+              {entry.rank}
+            </Text>
+            {isFirst && <Text style={styles.lbCrown}>♦</Text>}
+            <Text style={[styles.lbName, isFirst && styles.lbNameFirst]} numberOfLines={1}>
+              {entry.name ?? t('daily.anonymousName')}
+            </Text>
+            <Text style={[styles.lbScore, isFirst && styles.lbScoreFirst]}>
+              {entry.score.toLocaleString('en-US')}
+            </Text>
+          </View>
+        );
+      })}
+    </>
   );
 }
 
