@@ -4,13 +4,13 @@
 
 **Blocked by:** 01 (mesmo motivo da ticket 02 — depende do tratamento de `kind: 'title'` em `computeUnlocks`).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `ProfileStats`/`DEFAULT_PROFILE_STATS` ganham `winsByForger` com os 3 Forjadores zerados por padrão.
-- [ ] `recordRunEnd(stats, won, runScore, forger)` incrementa `winsByForger[forger]` só quando `won` é `true`; derrota não altera `winsByForger`.
-- [ ] Vencer duas vezes com o mesmo Forjador incrementa a contagem (não duplica um registro booleano) — condição do marco usa algo como `Object.values(winsByForger).every((count) => count > 0)`, testada com 0, 1 e 3 Forjadores já vencidos.
-- [ ] `store/gameStore.ts`: o call site de `recordRunEnd` dentro de `advanceProgression` passa `result.run.forger`.
-- [ ] Regressão de fiação em `store/gameStore.test.ts`: uma Run vencida com um Forjador específico (via `chooseForger`) reflete o `forger` certo em `progression.stats.winsByForger` no estado final — mesmo padrão usado no ticket 02 da telemetria pra `runsStartedCount`/`lastRunLostAt`.
-- [ ] `MILESTONES` ganha o marco de maestria de Forjador, reivindicado automaticamente por `claimReachedSingles`, disparando `milestone_unlocked` com o `milestoneId` correto.
-- [ ] `i18n/en.json` e `i18n/pt.json` ganham `milestones.<id>.title`, `milestones.<id>.description` e `milestoneOptions.<id>.title` pro marco.
-- [ ] Typecheck, testes (`engine/progression.test.ts`, `store/gameStore.test.ts`) e lint passam.
+- [x] `ProfileStats`/`DEFAULT_PROFILE_STATS` ganham `winsByForger` com os 3 Forjadores zerados por padrão.
+- [x] `recordRunEnd(stats, won, runScore, forger)` incrementa `winsByForger[forger]` só quando `won` é `true`; derrota não altera `winsByForger`.
+- [x] Vencer duas vezes com o mesmo Forjador incrementa a contagem (não duplica um registro booleano) — condição do marco usa `Object.values(winsByForger).every((count) => count > 0)`, testada com 0, 1 e 3 Forjadores já vencidos.
+- [x] `store/gameStore.ts`: o call site de `recordRunEnd` dentro de `advanceProgression` passa `result.run.forger`.
+- [x] Regressão de fiação em `store/gameStore.test.ts`: uma Run vencida com um Forjador específico reflete o `forger` certo em `progression.stats.winsByForger` no estado final. Achado do code-review (eixo Standards): a primeira versão duplicava o helper `winStoreRun` já existente no describe block — corrigido estendendo `winStoreRun` com um parâmetro `forger` opcional em vez de duplicar.
+- [x] `MILESTONES` ganha o marco `forgerMastery`, reivindicado automaticamente por `claimReachedSingles`, disparando `milestone_unlocked` com o `milestoneId` correto.
+- [x] `i18n/en.json` e `i18n/pt.json` ganham `milestones.forgerMastery.{title,description}` e `milestoneOptions.title-triple-forger.title`.
+- [x] Typecheck, testes (`engine/progression.test.ts`, `store/gameStore.test.ts`) e lint passam — 471 testes, suíte inteira verde.
