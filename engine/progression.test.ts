@@ -4,6 +4,7 @@ import { createSeededRng } from './random';
 import { RELIC_POOL } from './relics';
 import {
   ALL_UNLOCKS,
+  applyUnlockKind,
   claimOption,
   claimReachedSingles,
   computeUnlocks,
@@ -20,6 +21,7 @@ import {
   recordPlay,
   recordRunEnd,
   unlockStatuses,
+  UnlocksDraft,
   UnlocksState,
 } from './progression';
 import { makePlay, PLAYS_PER_ROUND, RunState, startRun } from './run';
@@ -75,6 +77,12 @@ describe('desbloqueios derivados (computeUnlocks)', () => {
     expect(unlocks.extraEffects).toContain('value-bonus-7');
     expect(unlocks.rareRelics).toBe(true);
     expect(p.claimedOptions).toHaveLength(4); // não muta o original
+  });
+
+  test('applyUnlockKind trata kind "title" como no-op — não concede forger/efeito/rareRelics (ADR 0009)', () => {
+    const draft: UnlocksDraft = { forgers: ['apprentice'], extraEffects: [], rareRelics: false };
+    applyUnlockKind(draft, { kind: 'title' });
+    expect(draft).toEqual({ forgers: ['apprentice'], extraEffects: [], rareRelics: false });
   });
 });
 

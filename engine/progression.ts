@@ -253,31 +253,46 @@ export function saveProgression(storage: ProgressionStorage, state: PersistedPro
   storage.save(state);
 }
 
+/** Acumulador mutável de computeUnlocks (UnlocksState, mas com campos graváveis). */
+export interface UnlocksDraft {
+  forgers: ForgerId[];
+  extraEffects: string[];
+  rareRelics: boolean;
+}
+
+/**
+ * Aplica um único desbloqueio já reivindicado a um UnlocksDraft em
+ * construção. Extraída de computeUnlocks pra ser testável com uma
+ * UnlockKind sintética, sem depender de um Milestone real em MILESTONES —
+ * necessário pro kind 'title' (ADR 0009), que não concede nada aqui.
+ */
+export function applyUnlockKind(draft: UnlocksDraft, unlock: UnlockKind): void {
+  switch (unlock.kind) {
+    case 'forger':
+      draft.forgers.push(unlock.forger);
+      return;
+    case 'forgeEffect':
+      draft.extraEffects.push(unlock.effectId);
+      return;
+    case 'rareRelics':
+      draft.rareRelics = true;
+      return;
+    case 'title':
+      return;
+    default:
+      assertNever(unlock);
+  }
+}
+
 /** Desbloqueios efetivos derivados das opções reivindicadas. */
 export function computeUnlocks(p: PersistedProgression): UnlocksState {
   const claimed = new Set(p.claimedOptions);
-  const forgers: ForgerId[] = ['apprentice'];
-  const extraEffects: string[] = [];
-  let rareRelics = false;
+  const draft: UnlocksDraft = { forgers: ['apprentice'], extraEffects: [], rareRelics: false };
   for (const { option } of OPTION_INDEX.values()) {
     if (!claimed.has(option.id)) continue;
-    switch (option.unlock.kind) {
-      case 'forger':
-        forgers.push(option.unlock.forger);
-        break;
-      case 'forgeEffect':
-        extraEffects.push(option.unlock.effectId);
-        break;
-      case 'rareRelics':
-        rareRelics = true;
-        break;
-      case 'title':
-        break;
-      default:
-        assertNever(option.unlock);
-    }
+    applyUnlockKind(draft, option.unlock);
   }
-  return { forgers, extraEffects, rareRelics };
+  return draft;
 }
 
 /** True se o Forjador pode ser escolhido com os desbloqueios atuais. */
