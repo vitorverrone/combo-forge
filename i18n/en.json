@@ -327,6 +327,10 @@
     "deckMastery": {
       "title": "Full Deck",
       "description": "Play all 40 cards in the Deck at least once."
+    },
+    "forgerMastery": {
+      "title": "Triple Forger",
+      "description": "Win a run with each of the 3 Forgers."
     }
   },
   "milestoneOptions": {
@@ -371,6 +375,9 @@
     },
     "title-full-deck": {
       "title": "Full Deck"
+    },
+    "title-triple-forger": {
+      "title": "Triple Forger"
     }
   },
   "ad": {

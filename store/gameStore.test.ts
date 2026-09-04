@@ -18,6 +18,7 @@ import {
   DEFAULT_PROFILE_STATS,
   DEFAULT_PROGRESSION,
   DeckState,
+  ForgerId,
   generateForgeOffers,
   isForgerUnlocked,
   loadDda,
@@ -925,9 +926,9 @@ describe('meta-progressão (ticket 11)', () => {
   const QUAD_TENS = [clubs(10), spades(10), hearts(10), diamonds(10)];
 
   /** Coloca uma Run na Rodada 6 com Mão vencedora e joga a quadra (runWon). */
-  function winStoreRun(store: ReturnType<typeof createGameStore>): void {
+  function winStoreRun(store: ReturnType<typeof createGameStore>, forger: ForgerId = 'apprentice'): void {
     store.getState().startRun(); // garante a stream de RNG no store
-    store.setState({ run: { ...makeRunWithHand(QUAD_TENS), roundNumber: 6 } });
+    store.setState({ run: { ...makeRunWithHand(QUAD_TENS), roundNumber: 6, forger } });
     for (const card of QUAD_TENS) store.getState().toggleCard(cardKey(card));
     store.getState().playSelection();
   }
@@ -1027,6 +1028,25 @@ describe('meta-progressão (ticket 11)', () => {
     const stats = store.getState().progression.stats;
     expect(stats.cardPlays[cardKey(hand[0])]).toBe(1);
     expect(stats.maxMultiplier).toBeGreaterThanOrEqual(1);
+  });
+
+  test('vencer com um Forjador específico reflete o forger certo em winsByForger (ticket 03)', () => {
+    const store = createGameStore({
+      initialProgression: {
+        ...DEFAULT_PROGRESSION,
+        claimedOptions: ['unlock-forger-hammer', 'unlock-forger-anvil'],
+      },
+    });
+
+    winStoreRun(store, 'apprentice');
+    expect(store.getState().progression.stats.winsByForger).toEqual({ apprentice: 1, hammer: 0, anvil: 0 });
+
+    winStoreRun(store, 'hammer');
+    expect(store.getState().progression.stats.winsByForger).toEqual({ apprentice: 1, hammer: 1, anvil: 0 });
+
+    winStoreRun(store, 'anvil');
+    expect(store.getState().progression.stats.winsByForger).toEqual({ apprentice: 1, hammer: 1, anvil: 1 });
+    expect(store.getState().recentUnlocks).toContain(milestoneOptionTitle('title-triple-forger'));
   });
 
   test('openProfile, openCollection e backToStart navegam entre telas', () => {

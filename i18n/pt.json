@@ -327,6 +327,10 @@
     "deckMastery": {
       "title": "Baralho Completo",
       "description": "Jogue as 40 cartas do Baralho ao menos uma vez cada."
+    },
+    "forgerMastery": {
+      "title": "Forjador Completo",
+      "description": "Vença uma run com cada um dos 3 Forjadores."
     }
   },
   "milestoneOptions": {
@@ -371,6 +375,9 @@
     },
     "title-full-deck": {
       "title": "Baralho Completo"
+    },
+    "title-triple-forger": {
+      "title": "Forjador Completo"
     }
   },
   "ad": {

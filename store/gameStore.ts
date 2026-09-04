@@ -893,7 +893,10 @@ function advanceProgression(
     (event) => event.type === 'runWon' || event.type === 'runLost',
   );
   if (ended !== undefined) {
-    next = { ...next, stats: recordRunEnd(next.stats, ended.type === 'runWon', result.run.runScore) };
+    next = {
+      ...next,
+      stats: recordRunEnd(next.stats, ended.type === 'runWon', result.run.runScore, result.run.forger),
+    };
     const singles = claimReachedSingles(next);
     next = singles.persisted;
     if (singles.claimed.length > 0) {
