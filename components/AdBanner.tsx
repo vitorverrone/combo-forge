@@ -11,14 +11,12 @@ export function AdBanner() {
   const insets = useSafeAreaInsets();
   const adsRemoved = useGameStore((state) => state.adsRemoved);
   const telemetry = useGameStore((state) => state.telemetry);
-  const runPhase = useGameStore((state) => state.run?.phase);
+  const run = useGameStore((state) => state.run);
   const unitId = adsAreLive() ? bannerAdUnitId() : TestIds.ADAPTIVE_BANNER;
 
-  // Fora da Rodada ativa (ADR 0008 — reverte parte do ADR 0004): o risco de
-  // toque acidental era especificamente sobre selecionar cartas sob pressão
-  // de tempo. Forja, fim de Rodada e fim de Run não são time-pressured —
-  // o banner continua aparecendo neles, e em todas as outras telas.
-  if (!shouldShowBanner(adsRemoved, unitId) || runPhase === 'playing') return null;
+  // shouldShowBanner (engine/adProvider.ts, ADR 0008) já decide a Rodada
+  // ativa: aqui só lê o estado e chama a regra pura.
+  if (!shouldShowBanner(adsRemoved, unitId, run?.phase)) return null;
 
   return (
     <View style={[styles.container, { paddingBottom: Math.max(insets.bottom, 8) }]}>
