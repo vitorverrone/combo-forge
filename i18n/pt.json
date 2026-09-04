@@ -67,6 +67,7 @@
     "runsWon": "Runs ganhas",
     "winRate": "Taxa de vitória",
     "biggestCombo": "Maior combo",
+    "currentStreak": "Sequência atual",
     "favoriteCards": "Cartas favoritas",
     "noCardsYet": "Nenhuma carta jogada ainda — comece uma run!",
     "plays": "jogadas",
@@ -105,6 +106,7 @@
     "title": "Desafio Diário",
     "subtitle": "Uma tentativa é gratuita cada dia. Depois, assista um anúncio recompensado para jogar de novo — sem limite.",
     "attemptsLeft": "Tentativas restantes",
+    "streakLabel": "Sequência:",
     "watchAd": "Assistir anúncio · Tentativa extra",
     "watchAdLoading": "ASSISTINDO…",
     "playDaily": "Jogar Desafio Diário",
@@ -333,6 +335,22 @@
     "forgerMastery": {
       "title": "Forjador Completo",
       "description": "Vença uma run com cada um dos 3 Forjadores."
+    },
+    "dailyStreak3": {
+      "title": "Faísca Diária",
+      "description": "Jogue o Desafio Diário 3 dias seguidos."
+    },
+    "dailyStreak7": {
+      "title": "Ritual Semanal",
+      "description": "Jogue o Desafio Diário 7 dias seguidos."
+    },
+    "dailyStreak15": {
+      "title": "Martelo Constante",
+      "description": "Jogue o Desafio Diário 15 dias seguidos."
+    },
+    "dailyStreak30": {
+      "title": "Forja Inquebrável",
+      "description": "Jogue o Desafio Diário 30 dias seguidos."
     }
   },
   "milestoneOptions": {
@@ -380,6 +398,18 @@
     },
     "title-triple-forger": {
       "title": "Forjador Completo"
+    },
+    "title-daily-spark": {
+      "title": "Faísca Diária"
+    },
+    "title-weekly-ritual": {
+      "title": "Ritual Semanal"
+    },
+    "title-steady-hammer": {
+      "title": "Martelo Constante"
+    },
+    "title-unbroken-forge": {
+      "title": "Forja Inquebrável"
     }
   },
   "ad": {

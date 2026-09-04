@@ -65,6 +65,10 @@ export function ProfileScreen() {
               <Text style={styles.statValue}>×{stats.maxMultiplier}</Text>
               <Text style={styles.statLabel}>{t('profile.biggestCombo')}</Text>
             </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statValue}>{stats.dailyStreakCurrent}</Text>
+              <Text style={styles.statLabel}>{t('profile.currentStreak')}</Text>
+            </View>
           </View>
         </View>
 

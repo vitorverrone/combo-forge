@@ -19,6 +19,7 @@ import {
   pendingMilestones,
   PersistedProgression,
   poolsFor,
+  recordDailySubmission,
   recordPlay,
   recordRunEnd,
   unlockStatuses,
@@ -395,6 +396,92 @@ describe('Título: Maestria de Forjador (ticket 03, ADR 0009)', () => {
     expect(result.claimed).toContain('title-triple-forger');
     const unlocks = computeUnlocks(result.persisted);
     expect(unlocks.forgers).toEqual(['apprentice']); // nenhum marco de poder atingido aqui
+    expect(unlocks.rareRelics).toBe(false);
+    expect(unlocks.extraEffects).toEqual([]);
+  });
+});
+
+describe('Sequência do Desafio Diário (recordDailySubmission, ADR 0010, ticket 01)', () => {
+  test('primeira submissão começa a Sequência em 1', () => {
+    const stats = recordDailySubmission(DEFAULT_PROFILE_STATS, '2026-09-04');
+    expect(stats.dailyStreakCurrent).toBe(1);
+    expect(stats.dailyStreakBest).toBe(1);
+    expect(stats.dailyStreakLastDate).toBe('2026-09-04');
+  });
+
+  test('dia seguinte incrementa a Sequência', () => {
+    let stats = recordDailySubmission(DEFAULT_PROFILE_STATS, '2026-09-04');
+    stats = recordDailySubmission(stats, '2026-09-05');
+    expect(stats.dailyStreakCurrent).toBe(2);
+    expect(stats.dailyStreakBest).toBe(2);
+  });
+
+  test('resubmissão no mesmo dia não altera a Sequência', () => {
+    let stats = recordDailySubmission(DEFAULT_PROFILE_STATS, '2026-09-04');
+    const resubmitted = recordDailySubmission(stats, '2026-09-04');
+    expect(resubmitted).toEqual(stats);
+  });
+
+  test('pular um dia reinicia a Sequência em 1, mas preserva o recorde histórico', () => {
+    let stats = recordDailySubmission(DEFAULT_PROFILE_STATS, '2026-09-01');
+    stats = recordDailySubmission(stats, '2026-09-02');
+    stats = recordDailySubmission(stats, '2026-09-03'); // Sequência de 3, recorde 3
+    expect(stats.dailyStreakBest).toBe(3);
+    stats = recordDailySubmission(stats, '2026-09-05'); // pulou o dia 4
+    expect(stats.dailyStreakCurrent).toBe(1);
+    expect(stats.dailyStreakBest).toBe(3); // recorde não decresce
+  });
+
+  test('atravessa a virada de mês corretamente (dia seguinte de 31 é dia 1)', () => {
+    let stats = recordDailySubmission(DEFAULT_PROFILE_STATS, '2026-08-31');
+    stats = recordDailySubmission(stats, '2026-09-01');
+    expect(stats.dailyStreakCurrent).toBe(2);
+  });
+
+  test('uma nova Sequência que supera o recorde antigo atualiza dailyStreakBest de novo', () => {
+    let stats = recordDailySubmission(DEFAULT_PROFILE_STATS, '2026-09-01');
+    stats = recordDailySubmission(stats, '2026-09-02'); // Sequência 2, recorde 2
+    stats = recordDailySubmission(stats, '2026-09-10'); // pulou vários dias, reinicia em 1
+    expect(stats.dailyStreakCurrent).toBe(1);
+    expect(stats.dailyStreakBest).toBe(2);
+    stats = recordDailySubmission(stats, '2026-09-11');
+    stats = recordDailySubmission(stats, '2026-09-12'); // Sequência 3, supera o recorde
+    expect(stats.dailyStreakCurrent).toBe(3);
+    expect(stats.dailyStreakBest).toBe(3);
+  });
+});
+
+describe('Títulos: Sequência do Desafio Diário (ADR 0010, ticket 01)', () => {
+  test.each([
+    ['dailyStreak3', 3] as const,
+    ['dailyStreak7', 7] as const,
+    ['dailyStreak15', 15] as const,
+    ['dailyStreak30', 30] as const,
+  ])('%s: condição falsa abaixo do limiar, verdadeira no limiar exato e acima dele', (id, threshold) => {
+    const milestone = MILESTONES.find((m) => m.id === id);
+    expect(milestone).toBeDefined();
+    expect(milestone?.condition(statsWith({ dailyStreakBest: threshold - 1 }))).toBe(false);
+    expect(milestone?.condition(statsWith({ dailyStreakBest: threshold }))).toBe(true);
+    expect(milestone?.condition(statsWith({ dailyStreakBest: threshold + 1 }))).toBe(true);
+  });
+
+  test('cada Título de Sequência é reivindicado automaticamente (opção única) e não concede poder', () => {
+    const p: typeof DEFAULT_PROGRESSION = {
+      ...DEFAULT_PROGRESSION,
+      stats: statsWith({ dailyStreakBest: 30 }),
+    };
+    const result = claimReachedSingles(p);
+    const titleOptionIds = [
+      'title-daily-spark',
+      'title-weekly-ritual',
+      'title-steady-hammer',
+      'title-unbroken-forge',
+    ];
+    for (const optionId of titleOptionIds) {
+      expect(result.claimed).toContain(optionId);
+    }
+    const unlocks = computeUnlocks(result.persisted);
+    expect(unlocks.forgers).toEqual(['apprentice']);
     expect(unlocks.rareRelics).toBe(false);
     expect(unlocks.extraEffects).toEqual([]);
   });

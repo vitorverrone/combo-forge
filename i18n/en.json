@@ -67,6 +67,7 @@
     "runsWon": "Runs won",
     "winRate": "Win rate",
     "biggestCombo": "Biggest combo",
+    "currentStreak": "Current streak",
     "favoriteCards": "Favorite cards",
     "noCardsYet": "No cards played yet — start a run!",
     "plays": "plays",
@@ -105,6 +106,7 @@
     "title": "Daily Challenge",
     "subtitle": "One attempt is free each day. After that, watch a rewarded ad to play again — no limit.",
     "attemptsLeft": "Attempts left",
+    "streakLabel": "Day streak:",
     "watchAd": "Watch ad · Extra attempt",
     "watchAdLoading": "WATCHING…",
     "playDaily": "Play Daily Challenge",
@@ -333,6 +335,22 @@
     "forgerMastery": {
       "title": "Triple Forger",
       "description": "Win a run with each of the 3 Forgers."
+    },
+    "dailyStreak3": {
+      "title": "Daily Spark",
+      "description": "Play the Daily Challenge 3 days in a row."
+    },
+    "dailyStreak7": {
+      "title": "Weekly Ritual",
+      "description": "Play the Daily Challenge 7 days in a row."
+    },
+    "dailyStreak15": {
+      "title": "Steady Hammer",
+      "description": "Play the Daily Challenge 15 days in a row."
+    },
+    "dailyStreak30": {
+      "title": "Unbroken Forge",
+      "description": "Play the Daily Challenge 30 days in a row."
     }
   },
   "milestoneOptions": {
@@ -380,6 +398,18 @@
     },
     "title-triple-forger": {
       "title": "Triple Forger"
+    },
+    "title-daily-spark": {
+      "title": "Daily Spark"
+    },
+    "title-weekly-ritual": {
+      "title": "Weekly Ritual"
+    },
+    "title-steady-hammer": {
+      "title": "Steady Hammer"
+    },
+    "title-unbroken-forge": {
+      "title": "Unbroken Forge"
     }
   },
   "ad": {

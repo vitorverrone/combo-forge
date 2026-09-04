@@ -31,6 +31,7 @@ import { useState } from 'react';
 export function DailyChallengeScreen() {
   const { t } = useTranslation();
   const daily = useGameStore((state) => state.daily);
+  const dailyStreakCurrent = useGameStore((state) => state.progression.stats.dailyStreakCurrent);
   const startDailyChallenge = useGameStore((state) => state.startDailyChallenge);
   const watchAdForExtraAttempt = useGameStore((state) => state.watchAdForExtraAttempt);
   const setDisplayName = useGameStore((state) => state.setDisplayName);
@@ -89,6 +90,12 @@ export function DailyChallengeScreen() {
           </Text>
           <Text style={styles.attemptsHint}>{hintText}</Text>
         </View>
+
+        {dailyStreakCurrent > 0 && (
+          <Text style={styles.streakLine}>
+            {t('daily.streakLabel')} <Text style={styles.streakValue}>{dailyStreakCurrent}</Text>
+          </Text>
+        )}
 
         {canAd && (
           <Pressable
@@ -317,6 +324,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing[6],
     lineHeight: 18,
+  },
+  streakLine: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textDim,
+    textAlign: 'center',
+    marginTop: spacing[10],
+  },
+  streakValue: {
+    color: colors.gold,
+    fontWeight: '700',
   },
   btnPrimary: {
     alignSelf: 'stretch',
