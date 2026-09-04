@@ -147,6 +147,28 @@ export interface DailyLeaderboard {
 }
 
 /**
+ * Um dos 5 patamares nomeados da Liga (ADR 0010, ticket 02) — bronze é piso
+ * (sem rebaixamento), diamond é teto (sem promoção).
+ */
+export type LeagueTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
+
+/**
+ * Posição do dispositivo na Liga (Tier + Divisão), quando ativa. `division`
+ * e `own` são null quando o dispositivo ainda não pontuou na semana — sem
+ * pontuação não há rank pra saber em qual Divisão (bloco de ~30) ele cai.
+ */
+export interface LeagueStanding {
+  /** Segunda-feira da semana (ISO), YYYY-MM-DD. */
+  readonly week: string;
+  readonly tier: LeagueTier;
+  /** Número da Divisão (1-based); null se o dispositivo não pontuou na semana. */
+  readonly division: number | null;
+  readonly own: DailyLeaderboardEntry | null;
+  /** Ranking completo da Divisão (não um top 10) — vazio se `own` for null. */
+  readonly top: readonly DailyLeaderboardEntry[];
+}
+
+/**
  * Port de persistência do Desafio Diário: tentativas do dia + deviceId +
  * Nome de Exibição (ticket 02 — nome é propriedade do dispositivo, mesma
  * chave/lugar do deviceId, independente do dia).
@@ -199,6 +221,14 @@ export interface DailyBackend {
   /** Leaderboard semanal (posição própria + top 10, sem identidades). */
   fetchLeaderboard(deviceId: string): Promise<DailyLeaderboard>;
   /**
+   * Posição na Liga (Tier + Divisão), quando ativa (ADR 0010, ticket 02).
+   * Null quando a base de jogadores ainda não atingiu a massa crítica da
+   * semana — o chamador cai de volta para fetchLeaderboard (leaderboard
+   * único). Resolve o Tier do dispositivo pra semana atual como efeito
+   * colateral da própria consulta (preguiçoso, sem job agendado).
+   */
+  fetchLeagueLeaderboard(deviceId: string): Promise<LeagueStanding | null>;
+  /**
    * Grava o Nome de Exibição do dispositivo (ticket 02). Rejeita a Promise
    * quando o servidor recusa (moderação/formato — fonte da verdade final,
    * além da validação do cliente) ou em falha de rede; devolve o nome
@@ -215,6 +245,7 @@ export function createUnavailableDailyBackend(): DailyBackend {
     fetchSeed: unavailable,
     submitScore: unavailable,
     fetchLeaderboard: unavailable,
+    fetchLeagueLeaderboard: unavailable,
     setDisplayName: unavailable,
   };
 }

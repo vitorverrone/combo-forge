@@ -6,10 +6,12 @@ import {
   canWatchExtraAd,
   dailyAttemptsForDay,
   DailyLeaderboard,
+  LeagueStanding,
   utcDateIso,
 } from '../engine';
 
 import { useTranslation } from '../i18n';
+import { leagueTierName } from './format';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -156,13 +158,17 @@ export function DailyChallengeScreen() {
         <View style={styles.divider} />
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{t('daily.thisWeekLeaderboard')}</Text>
+          <Text style={styles.sectionTitle}>
+            {daily.league !== null ? t('daily.leagueTitle') : t('daily.thisWeekLeaderboard')}
+          </Text>
         </View>
 
         {daily.leaderboardLoading ? (
           <View style={styles.leaderboardLoadingBox}>
             <Text style={styles.leaderboardLoadingText}>{t('daily.leaderboardLoading')}</Text>
           </View>
+        ) : daily.league !== null ? (
+          <LeagueStandingView standing={daily.league} />
         ) : (
           daily.leaderboard !== null && <LeaderboardList leaderboard={daily.leaderboard} />
         )}
@@ -208,6 +214,66 @@ function LeaderboardList({ leaderboard }: { leaderboard: DailyLeaderboard }) {
       ) : (
         leaderboard.top.map((entry, index) => {
           const isFirst = entry.rank === 1;
+          return (
+            <View
+              key={`${entry.rank}-${entry.score}`}
+              style={[
+                styles.lbRow,
+                isFirst && styles.lbRowFirst,
+                index > 0 && !isFirst && styles.lbRowBorder,
+              ]}
+            >
+              <Text style={[styles.lbRank, isFirst && styles.lbRankFirst]}>
+                {entry.rank}
+              </Text>
+              {isFirst && <Text style={styles.lbCrown}>♦</Text>}
+              <Text style={[styles.lbName, isFirst && styles.lbNameFirst]} numberOfLines={1}>
+                {entry.name ?? t('daily.anonymousName')}
+              </Text>
+              <Text style={[styles.lbScore, isFirst && styles.lbScoreFirst]}>
+                {entry.score.toLocaleString('en-US')}
+              </Text>
+            </View>
+          );
+        })
+      )}
+    </View>
+  );
+}
+
+/**
+ * Ranking da Liga (ADR 0010, ticket 02): Tier + Divisão do dispositivo e o
+ * ranking completo da própria Divisão (não um top 10 — a Divisão inteira já
+ * é do tamanho certo). `top` já vem ordenado por rank; o destaque de "1º
+ * lugar" é o primeiro da lista (melhor da Divisão), não necessariamente rank
+ * global 1 — Divisões diferentes de Diamante nunca têm o rank 1 da semana.
+ */
+function LeagueStandingView({ standing }: { standing: LeagueStanding }) {
+  const { t } = useTranslation();
+  const ownName = standing.own?.name ?? t('daily.anonymousName');
+  return (
+    <View style={styles.leaderboard}>
+      <View style={styles.leagueHeader}>
+        <Text style={styles.leagueTierText}>{leagueTierName(standing.tier)}</Text>
+        {standing.division !== null && (
+          <Text style={styles.leagueDivisionText}>
+            {t('daily.leagueDivision', { number: standing.division })}
+          </Text>
+        )}
+      </View>
+      <View style={styles.yourBest}>
+        <Text style={styles.yourBestLabel}>{t('daily.yourBest')}</Text>
+        <Text style={styles.yourBestValue}>
+          {standing.own === null
+            ? t('daily.noScoreYet')
+            : `${ownName} · #${standing.own.rank} · ${standing.own.score.toLocaleString('en-US')}`}
+        </Text>
+      </View>
+      {standing.top.length === 0 ? (
+        <Text style={styles.emptyTop}>{t('daily.noScoresWeek')}</Text>
+      ) : (
+        standing.top.map((entry, index) => {
+          const isFirst = index === 0;
           return (
             <View
               key={`${entry.rank}-${entry.score}`}
@@ -430,6 +496,29 @@ const styles = StyleSheet.create({
     borderRadius: radius[14],
     overflow: 'hidden',
     alignSelf: 'stretch',
+  },
+  leagueHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    paddingVertical: spacing[10],
+    paddingHorizontal: spacing[14],
+    borderBottomWidth: 1,
+    borderBottomColor: colors.surfaceBorder,
+  },
+  leagueTierText: {
+    fontFamily: fonts.heading,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 1,
+    color: colors.gold,
+    textTransform: 'uppercase',
+  },
+  leagueDivisionText: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.textDim,
   },
   yourBest: {
     flexDirection: 'row',

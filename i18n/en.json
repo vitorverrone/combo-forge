@@ -115,6 +115,8 @@
     "extraReady": "Extra attempt ready.",
     "freeReady": "Free attempt ready today.",
     "thisWeekLeaderboard": "This week's leaderboard",
+    "leagueTitle": "Your league",
+    "leagueDivision": "Division {{number}}",
     "leaderboardLoading": "Loading leaderboard…",
     "noScoresThisWeek": "No scores this week yet.",
     "yourBest": "Your best",
@@ -265,6 +267,13 @@
       "apprentice": "Apprentice",
       "hammer": "Hammer",
       "anvil": "Anvil"
+    },
+    "leagueTier": {
+      "bronze": "Bronze",
+      "silver": "Silver",
+      "gold": "Gold",
+      "platinum": "Platinum",
+      "diamond": "Diamond"
     },
     "deckSkin": {
       "deck-classic": "Classic parchment deck",

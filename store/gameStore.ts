@@ -490,6 +490,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       adLoading: false,
       submitStatus: 'idle',
       leaderboard: null,
+      league: null,
       leaderboardLoading: false,
       leaderboardError: null,
       displayName: dailyStorage.loadDisplayName(),
@@ -646,7 +647,23 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       const result = await runDailyCommand(get().daily, dailyFlowDeps(get(), now), {
         type: 'fetchLeaderboard',
       });
-      set({ daily: result.daily });
+      // Aplica só os campos que este comando possui (Liga, ticket 02: a
+      // busca agora encadeia 2 chamadas ao backend — fetchLeagueLeaderboard
+      // e, em fallback, fetchLeaderboard — então essa promise passa mais
+      // tempo em voo). Um `set({ daily: result.daily })` substituindo o
+      // objeto inteiro reintroduziria os campos do snapshot capturado no
+      // início desta função, apagando qualquer mutação concorrente
+      // (attempts/status/etc.) que outro comando já tenha aplicado nesse
+      // meio-tempo (ex.: startDailyChallenge rodando em paralelo).
+      set((state) => ({
+        daily: {
+          ...state.daily,
+          leaderboard: result.daily.leaderboard,
+          league: result.daily.league,
+          leaderboardLoading: result.daily.leaderboardLoading,
+          leaderboardError: result.daily.leaderboardError,
+        },
+      }));
     },
 
     setDisplayName: async (name: string) => {

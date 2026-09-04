@@ -65,3 +65,78 @@ export interface WeeklyLeaderboard {
   /** Top 10 da semana, ordenado por rank. */
   readonly top: readonly LeaderboardEntry[];
 }
+
+// ── Liga (ADR 0010, ticket 02) ──────────────────────────────────────────
+
+/** Um dos 5 patamares nomeados da Liga — bronze é piso, diamond é teto. */
+export type LeagueTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
+
+const LEAGUE_TIERS: readonly LeagueTier[] = ['bronze', 'silver', 'gold', 'platinum', 'diamond'];
+
+/** Tamanho-alvo de uma Divisão — espelho de `v_division_size` em `get_league_leaderboard`. */
+export const LEAGUE_DIVISION_SIZE = 30;
+/** Tamanho da zona de subida/descida — espelho de `v_zone_size`. */
+export const LEAGUE_ZONE_SIZE = 5;
+/** Participantes mínimos na semana pra Liga ativar — espelho de `v_threshold`. */
+export const LEAGUE_POPULATION_THRESHOLD = 300;
+
+/** Sobe um Tier; sem efeito em 'diamond' (teto) — espelho de `_league_tier_promote`. */
+export function promoteLeagueTier(tier: LeagueTier): LeagueTier {
+  const index = LEAGUE_TIERS.indexOf(tier);
+  return LEAGUE_TIERS[Math.min(LEAGUE_TIERS.length - 1, index + 1)];
+}
+
+/** Desce um Tier; sem efeito em 'bronze' (piso) — espelho de `_league_tier_demote`. */
+export function demoteLeagueTier(tier: LeagueTier): LeagueTier {
+  const index = LEAGUE_TIERS.indexOf(tier);
+  return LEAGUE_TIERS[Math.max(0, index - 1)];
+}
+
+/** Número da Divisão (1-based) de um rank dentro do Tier, em blocos de `divisionSize`. */
+export function leagueDivisionNumber(rank: number, divisionSize: number = LEAGUE_DIVISION_SIZE): number {
+  return Math.floor((rank - 1) / divisionSize) + 1;
+}
+
+/** Posição (1-based) dentro da própria Divisão — mesma fórmula do módulo em `_resolve_league_tier`. */
+export function leagueDivisionPosition(rank: number, divisionSize: number = LEAGUE_DIVISION_SIZE): number {
+  return ((rank - 1) % divisionSize) + 1;
+}
+
+/**
+ * Resolve o novo Tier a partir da posição do dispositivo na Divisão da
+ * semana anterior — espelho puro de `_resolve_league_tier` (SQL), sem a
+ * parte de leitura do banco (resolvida por quem chama, com o rank/tamanho de
+ * Divisão já calculados). Promoção tem prioridade sobre rebaixamento quando
+ * a Divisão é pequena demais pra caber as duas zonas sem sobrepor.
+ */
+export function resolveLeagueTierFromDivision(
+  previousTier: LeagueTier,
+  positionInDivision: number,
+  actualDivisionSize: number,
+  zoneSize: number = LEAGUE_ZONE_SIZE,
+): LeagueTier {
+  if (positionInDivision <= zoneSize) return promoteLeagueTier(previousTier);
+  if (positionInDivision > actualDivisionSize - zoneSize) return demoteLeagueTier(previousTier);
+  return previousTier;
+}
+
+/** Resposta de `get_league_leaderboard` quando a Liga ainda não ativou (abaixo da massa crítica). */
+export interface LeagueInactive {
+  readonly active: false;
+}
+
+/** Resposta de `get_league_leaderboard` quando a Liga está ativa. */
+export interface LeagueStanding {
+  readonly active: true;
+  /** Segunda-feira da semana (ISO), `YYYY-MM-DD`. */
+  readonly week: string;
+  readonly tier: LeagueTier;
+  /** Número da Divisão (1-based); null se o dispositivo não pontuou na semana. */
+  readonly division: number | null;
+  /** Posição própria na Divisão (null se o dispositivo não pontuou na semana). */
+  readonly own: LeaderboardEntry | null;
+  /** Ranking completo da Divisão (não só um top 10) — vazio se `own` for null. */
+  readonly top: readonly LeaderboardEntry[];
+}
+
+export type LeagueLeaderboardResponse = LeagueInactive | LeagueStanding;

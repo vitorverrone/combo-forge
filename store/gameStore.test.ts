@@ -58,6 +58,7 @@ function makeFakeDailyBackend(seed = 424242): DailyBackend & {
         top: [{ rank: 1, score: 4242, name: 'Fulano' }],
       };
     },
+    fetchLeagueLeaderboard: async () => null, // Liga inativa por padrão nos testes deste arquivo
     setDisplayName: async (_deviceId: string, name: string) => name,
   };
   return fake;
@@ -723,6 +724,24 @@ describe('Desafio Diário (ticket 13)', () => {
     expect(failing.getState().daily.leaderboard).toBeNull();
   });
 
+  test('fetchLeaderboard mostra a Liga quando ativa, sem leaderboard único (ADR 0010, ticket 02)', async () => {
+    const store = createGameStore({
+      dailyBackend: {
+        ...makeFakeDailyBackend(),
+        fetchLeagueLeaderboard: async () => ({
+          week: '2026-09-07',
+          tier: 'gold',
+          division: 1,
+          own: { rank: 3, score: 5000, name: 'Ana' },
+          top: [{ rank: 3, score: 5000, name: 'Ana' }],
+        }),
+      },
+    });
+    await store.getState().fetchLeaderboard();
+    expect(store.getState().daily.league?.tier).toBe('gold');
+    expect(store.getState().daily.leaderboard).toBeNull();
+  });
+
   test('fetchLeaderboard mostra loading enquanto busca (ticket 03)', async () => {
     let resolveFetch!: (value: DailyLeaderboard) => void;
     const backend: DailyBackend = {
@@ -735,6 +754,9 @@ describe('Desafio Diário (ticket 13)', () => {
     const store = createGameStore({ dailyBackend: backend });
     const pending = store.getState().fetchLeaderboard();
     expect(store.getState().daily.leaderboardLoading).toBe(true);
+    // fetchLeagueLeaderboard (Liga, ticket 02) resolve primeiro — cede um
+    // microtask antes que o fallback (fetchLeaderboard) seja de fato chamado.
+    await Promise.resolve();
     resolveFetch({ week: '2026-08-10', own: null, top: [] });
     await pending;
     expect(store.getState().daily.leaderboardLoading).toBe(false);

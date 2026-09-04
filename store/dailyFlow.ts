@@ -28,6 +28,7 @@ import {
   dailyAttemptsForDay,
   DailyLeaderboard,
   DEFAULT_DDA_CONFIG,
+  LeagueStanding,
   Rng,
   RunState,
   startRun as engineStartRun,
@@ -54,8 +55,15 @@ export interface DailyState {
   readonly adLoading: boolean;
   /** Submissão da pontuação ao fim da Run. */
   readonly submitStatus: 'idle' | 'submitting' | 'submitted' | 'failed';
-  /** Leaderboard semanal (opt-in; null até o jogador abrir). */
+  /**
+   * Leaderboard semanal (opt-in; null até o jogador abrir) OU posição na
+   * Liga (ADR 0010, ticket 02) — exclusivos entre si: `league` não-null
+   * significa que a Liga está ativa pra semana e `leaderboard` fica null;
+   * `leaderboard` só é preenchido quando a Liga ainda não atingiu a massa
+   * crítica (fallback pro leaderboard único).
+   */
   readonly leaderboard: DailyLeaderboard | null;
+  readonly league: LeagueStanding | null;
   readonly leaderboardLoading: boolean;
   readonly leaderboardError: string | null;
   /**
@@ -225,7 +233,12 @@ async function submitDailyScore(
   }
 }
 
-/** Opt-in: busca o leaderboard semanal (posição própria + top 10). */
+/**
+ * Opt-in: busca a posição na Liga (ADR 0010, ticket 02) e só cai para o
+ * leaderboard único (posição própria + top 10) quando a Liga ainda não
+ * ativou pra semana (fetchLeagueLeaderboard devolve null). Nunca busca os
+ * dois — são exclusivos entre si na tela.
+ */
 async function fetchLeaderboard(
   state: DailyState,
   deps: DailyFlowDeps,
@@ -233,9 +246,17 @@ async function fetchLeaderboard(
   const attempts = dailyAttemptsForDay(state.attempts, utcDateIso(deps.now()));
   const loading = { ...state, attempts, leaderboardLoading: true, leaderboardError: null };
   try {
+    const league = await deps.backend.fetchLeagueLeaderboard(state.deviceId);
+    if (league !== null) {
+      return {
+        daily: { ...loading, league, leaderboard: null, leaderboardLoading: false },
+        run: null,
+        rng: null,
+      };
+    }
     const leaderboard = await deps.backend.fetchLeaderboard(state.deviceId);
     return {
-      daily: { ...loading, leaderboard, leaderboardLoading: false },
+      daily: { ...loading, leaderboard, league: null, leaderboardLoading: false },
       run: null,
       rng: null,
     };
