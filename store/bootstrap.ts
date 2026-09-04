@@ -10,7 +10,7 @@ import {
   createDeviceId,
   createInitialDailyAttempts,
   dailyAttemptsForDay,
-  DEFAULT_PROGRESSION,
+  normalizeProgression,
   normalizeShopState,
   utcDateIso,
 } from '../engine';
@@ -54,7 +54,7 @@ export function initializeSqlitePersistence(): void {
       telemetry,
       shopStorage,
       shopProvider: createAppShopProvider(),
-      progression: saved ?? DEFAULT_PROGRESSION,
+      progression: normalizeProgression(saved),
       tutorialStorage,
       tutorial: loadTutorialState(tutorialStorage),
       daily: {

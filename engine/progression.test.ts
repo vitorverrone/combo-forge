@@ -4,6 +4,7 @@ import { createSeededRng } from './random';
 import { RELIC_POOL } from './relics';
 import {
   ALL_UNLOCKS,
+  applyUnlockKind,
   claimOption,
   claimReachedSingles,
   computeUnlocks,
@@ -13,11 +14,14 @@ import {
   isForgerUnlocked,
   isOptionClaimable,
   milestoneOptionTitle,
+  normalizeProgression,
   pendingMilestones,
+  PersistedProgression,
   poolsFor,
   recordPlay,
   recordRunEnd,
   unlockStatuses,
+  UnlocksDraft,
   UnlocksState,
 } from './progression';
 import { makePlay, PLAYS_PER_ROUND, RunState, startRun } from './run';
@@ -73,6 +77,12 @@ describe('desbloqueios derivados (computeUnlocks)', () => {
     expect(unlocks.extraEffects).toContain('value-bonus-7');
     expect(unlocks.rareRelics).toBe(true);
     expect(p.claimedOptions).toHaveLength(4); // não muta o original
+  });
+
+  test('applyUnlockKind trata kind "title" como no-op — não concede forger/efeito/rareRelics (ADR 0009)', () => {
+    const draft: UnlocksDraft = { forgers: ['apprentice'], extraEffects: [], rareRelics: false };
+    applyUnlockKind(draft, { kind: 'title' });
+    expect(draft).toEqual({ forgers: ['apprentice'], extraEffects: [], rareRelics: false });
   });
 });
 
@@ -256,6 +266,33 @@ describe('persistência via port injetado', () => {
 
   test('storage vazio devolve null', () => {
     expect(createMemoryProgressionStorage().load()).toBeNull();
+  });
+});
+
+describe('normalizeProgression (saves antigos — ADR 0009)', () => {
+  test('sem save (null) devolve o estado inicial', () => {
+    expect(normalizeProgression(null)).toEqual(DEFAULT_PROGRESSION);
+  });
+
+  test('save com stats parcial (campo novo ausente) recebe os defaults sem perder o resto', () => {
+    const oldSave = {
+      stats: { runsWon: 3, bestRunScore: 1200 },
+      claimedOptions: ['unlock-forger-hammer'],
+    } as unknown as PersistedProgression;
+    const normalized = normalizeProgression(oldSave);
+    expect(normalized.stats.runsWon).toBe(3);
+    expect(normalized.stats.bestRunScore).toBe(1200);
+    expect(normalized.stats.runsStarted).toBe(DEFAULT_PROFILE_STATS.runsStarted);
+    expect(normalized.stats.maxMultiplier).toBe(DEFAULT_PROFILE_STATS.maxMultiplier);
+    expect(normalized.claimedOptions).toEqual(['unlock-forger-hammer']);
+  });
+
+  test('save completo passa sem alteração', () => {
+    const p: PersistedProgression = {
+      stats: statsWith({ runsWon: 5 }),
+      claimedOptions: ['unlock-forger-hammer'],
+    };
+    expect(normalizeProgression(p)).toEqual(p);
   });
 });
 
