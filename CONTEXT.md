@@ -87,8 +87,26 @@ O sistema de desbloqueio permanente entre Runs, sem moeda — por Conquista. Dua
 _Evitar_: Marco (nome antigo do termo), Progressão, unlocks, meta-jogo (meta-jogo é o sistema mais amplo)
 
 **Título**:
-Uma Conquista de Meta-Progressão cosmética — texto exibido na tela de Perfil, sem afetar poder de jogo, reivindicada automaticamente ao fim da Run assim que a condição é atingida (sempre opção única, nunca há escolha de ordem). O MVP tem 10, em 5 eixos: contagem de vitórias (10ª/15ª/25ª Run vencida), recorde de pontuação (4.000/6.000/9.000 pts), Multiplicador de Combo (×8/×12 numa Jogada), maestria de Forjador (vencer ao menos 1 Run com cada um dos 3 Forjadores) e maestria de Baralho (jogar as 40 cartas do Baralho ao menos uma vez cada). Existe pra esticar a curva de Meta-Progressão até o D30 sem produzir conteúdo mecânico novo balanceado — ver ADR 0009.
+Uma Conquista de Meta-Progressão cosmética — texto exibido na tela de Perfil, sem afetar poder de jogo, reivindicada automaticamente ao fim da Run assim que a condição é atingida (sempre opção única, nunca há escolha de ordem). O MVP tem 10, em 5 eixos: contagem de vitórias (10ª/15ª/25ª Run vencida), recorde de pontuação (4.000/6.000/9.000 pts), Multiplicador de Combo (×8/×12 numa Jogada), maestria de Forjador (vencer ao menos 1 Run com cada um dos 3 Forjadores) e maestria de Baralho (jogar as 40 cartas do Baralho ao menos uma vez cada). Existe pra esticar a curva de Meta-Progressão até o D30 sem produzir conteúdo mecânico novo balanceado — ver ADR 0009. ADR 0010 planeja mais dois eixos — progressão de Tier na Liga e Sequência do Desafio Diário — numa spec futura.
 _Evitar_: Badge, emblema (é texto, não ícone), troféu — Título é um dos dois tipos de Conquista (o outro é Conquista de poder), não um sinônimo de Conquista
+
+### Competição Social
+
+**Liga**:
+O sistema de ranqueamento semanal do Desafio Diário quando a base de jogadores atinge massa crítica (~300 participantes numa semana): substitui o leaderboard único (top 10 + posição própria) por Tiers e Divisões. Antes da massa crítica, a Liga não está ativa e o Desafio Diário usa o leaderboard único de sempre.
+_Evitar_: Ranking (usado tanto pro leaderboard único quanto pra Liga — não confundir os dois estados)
+
+**Tier**:
+Um dos 5 patamares nomeados da Liga — Bronze, Prata, Ouro, Platina, Diamante, em ordem crescente. Bronze é piso (sem rebaixamento abaixo dele); Diamante é teto (sem promoção acima — os melhores de Diamante disputam entre si a cada semana, sem "subir" a lugar nenhum).
+_Evitar_: Rank, patente — Liga é o sistema, Tier é o patamar dentro dele
+
+**Divisão**:
+O grupo de ~30 dispositivos que competem entre si dentro de um Tier, na mesma semana ISO do leaderboard do Desafio Diário. Ao fim da semana, os 5 melhores colocados sobem de Tier e os 5 piores descem — exceto nos extremos (Bronze não desce, Diamante não sobe). Jogadores empatados na fronteira de subida/descida se movem juntos, mesmo que isso resulte em mais ou menos de 5 movimentos naquela semana.
+_Evitar_: Grupo, bracket, sala
+
+**Sequência**:
+A contagem de dias consecutivos (fronteira UTC, mesma de `daily_submissions.day`) em que o dispositivo submeteu ao menos uma pontuação ao Desafio Diário, independente do desempenho ou de qual tentativa (grátis ou via anúncio recompensado) gerou a submissão. Zera ao pular um dia — sem congelamento ou proteção nesta versão. Gera Títulos nos marcos de 3, 7, 15 e 30 dias.
+_Evitar_: Streak (em inglês), ofensiva — e não confundir com Multiplicador de Combo, que é outro termo já definido
 
 **Run**:
 Uma sessão completa de jogo, da Rodada 1 até a derrota ou até vencer a 6ª Rodada. Ao falhar, reinicia-se imediatamente uma nova Run.
