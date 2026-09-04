@@ -626,9 +626,13 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
         // em playSelection: o Desafio Diário não conta para runsWon/
         // bestRunScore/etc.) — a Sequência é o único stat que o Desafio
         // Diário tem permissão de alterar.
-        const { progression, recentUnlocks, telemetry } = get();
         set(
-          advanceDailyStreak(utcDateIso(now()), progression, recentUnlocks, progressionStorage, telemetry),
+          advanceDailyStreak(utcDateIso(now()), {
+            progression: get().progression,
+            recentUnlocks: get().recentUnlocks,
+            storage: progressionStorage,
+            telemetry: get().telemetry,
+          }),
         );
         void get().fetchLeaderboard();
       }
@@ -934,6 +938,14 @@ function advanceProgression(
   };
 }
 
+/** O que advanceDailyStreak precisa do state atual — mesmo padrão de ProgressionAdvanceContext, sem unlockChoice (a Sequência nunca gera marco multi-opção). */
+interface DailyStreakContext {
+  readonly progression: PersistedProgression;
+  readonly recentUnlocks: readonly string[];
+  readonly storage: ProgressionStorage;
+  readonly telemetry: TelemetryProvider;
+}
+
 /**
  * Sequência do Desafio Diário (ADR 0010, ticket 01): soma o dia à Sequência
  * e reivindica automaticamente os Títulos de constância atingidos (mesmo
@@ -943,22 +955,19 @@ function advanceProgression(
  */
 function advanceDailyStreak(
   todayIso: string,
-  progression: PersistedProgression,
-  recentUnlocks: readonly string[],
-  storage: ProgressionStorage,
-  telemetry: TelemetryProvider,
+  context: DailyStreakContext,
 ): Pick<GameState, 'progression' | 'recentUnlocks'> {
-  const stats = recordDailySubmission(progression.stats, todayIso);
-  const singles = claimReachedSingles({ ...progression, stats });
-  let nextRecentUnlocks = recentUnlocks;
+  const stats = recordDailySubmission(context.progression.stats, todayIso);
+  const singles = claimReachedSingles({ ...context.progression, stats });
+  let recentUnlocks = context.recentUnlocks;
   if (singles.claimed.length > 0) {
-    nextRecentUnlocks = singles.claimed.map(milestoneOptionTitle);
+    recentUnlocks = singles.claimed.map(milestoneOptionTitle);
     for (const optionId of singles.claimed) {
-      void telemetry.logEvent('milestone_unlocked', milestoneUnlockedParams(optionId));
+      void context.telemetry.logEvent('milestone_unlocked', milestoneUnlockedParams(optionId));
     }
   }
-  saveProgression(storage, singles.persisted);
-  return { progression: singles.persisted, recentUnlocks: nextRecentUnlocks };
+  saveProgression(context.storage, singles.persisted);
+  return { progression: singles.persisted, recentUnlocks };
 }
 
 /** Ports da Loja a partir do estado atual do store (mesmo padrão do dailyFlow). */

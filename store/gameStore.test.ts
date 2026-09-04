@@ -596,16 +596,23 @@ describe('Desafio Diário (ticket 13)', () => {
     expect(backend.leaderboardFetches).toBe(1);
   });
 
-  test('submissão bem-sucedida soma a Sequência do Desafio Diário (ADR 0010, ticket 01)', async () => {
+  test('submissão bem-sucedida soma a Sequência do Desafio Diário e persiste no storage (ADR 0010, ticket 01)', async () => {
     let now = new Date('2026-09-04T12:00:00Z');
-    const store = createGameStore({ dailyBackend: makeFakeDailyBackend(), now: () => now });
+    const storage = createMemoryProgressionStorage();
+    const store = createGameStore({
+      dailyBackend: makeFakeDailyBackend(),
+      now: () => now,
+      progressionStorage: storage,
+    });
     await store.getState().submitDailyScore(500);
     expect(store.getState().progression.stats.dailyStreakCurrent).toBe(1);
     expect(store.getState().progression.stats.dailyStreakBest).toBe(1);
+    expect(storage.load()?.stats.dailyStreakCurrent).toBe(1);
 
     now = new Date('2026-09-05T09:00:00Z');
     await store.getState().submitDailyScore(600);
     expect(store.getState().progression.stats.dailyStreakCurrent).toBe(2);
+    expect(storage.load()?.stats.dailyStreakCurrent).toBe(2);
   });
 
   test('resubmissão no mesmo dia não soma a Sequência de novo (ADR 0010, ticket 01)', async () => {
@@ -628,13 +635,15 @@ describe('Desafio Diário (ticket 13)', () => {
     expect(store.getState().progression.stats.dailyStreakCurrent).toBe(0);
   });
 
-  test('marco de Sequência de 3 dias é reivindicado ao submeter o 3º dia seguido e dispara milestone_unlocked (ADR 0010, ticket 01)', async () => {
+  test('marco de Sequência de 3 dias é reivindicado ao submeter o 3º dia seguido, persiste no storage e dispara milestone_unlocked (ADR 0010, ticket 01)', async () => {
     const telemetry = makeFakeTelemetry();
     const now = new Date('2026-09-04T12:00:00Z');
+    const storage = createMemoryProgressionStorage();
     const store = createGameStore({
       telemetry,
       dailyBackend: makeFakeDailyBackend(),
       now: () => now,
+      progressionStorage: storage,
       initialProgression: {
         ...DEFAULT_PROGRESSION,
         stats: {
@@ -648,10 +657,36 @@ describe('Desafio Diário (ticket 13)', () => {
     await store.getState().submitDailyScore(500);
     expect(store.getState().progression.stats.dailyStreakCurrent).toBe(3);
     expect(store.getState().progression.claimedOptions).toContain('title-daily-spark');
+    expect(storage.load()?.claimedOptions).toContain('title-daily-spark');
     expect(telemetry.events).toContainEqual({
       name: 'milestone_unlocked',
       params: { optionId: 'title-daily-spark', milestoneId: 'dailyStreak3' },
     });
+  });
+
+  test('Título de Sequência permanece reivindicado mesmo depois de a Sequência atual zerar (ticket 01)', async () => {
+    let now = new Date('2026-09-04T12:00:00Z'); // 3º dia seguido: reivindica o Título
+    const store = createGameStore({
+      dailyBackend: makeFakeDailyBackend(),
+      now: () => now,
+      initialProgression: {
+        ...DEFAULT_PROGRESSION,
+        stats: {
+          ...DEFAULT_PROFILE_STATS,
+          dailyStreakCurrent: 2,
+          dailyStreakBest: 2,
+          dailyStreakLastDate: '2026-09-03',
+        },
+      },
+    });
+    await store.getState().submitDailyScore(500);
+    expect(store.getState().progression.claimedOptions).toContain('title-daily-spark');
+
+    now = new Date('2026-09-10T12:00:00Z'); // pulou vários dias: a Sequência atual reinicia em 1
+    await store.getState().submitDailyScore(600);
+    expect(store.getState().progression.stats.dailyStreakCurrent).toBe(1);
+    expect(store.getState().progression.stats.dailyStreakBest).toBe(3);
+    expect(store.getState().progression.claimedOptions).toContain('title-daily-spark');
   });
 
   test('submissão que falha NÃO busca o ranking de novo (ticket 03)', async () => {
