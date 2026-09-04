@@ -41,6 +41,10 @@ coverage/
 # Google Play service account key (eas submit) — secret, never commit
 google-play-service-account.json
 
+# Firebase Analytics config (ADR 0007) — não é segredo crítico, mas fica fora
+# do git pra não acoplar o repo a um projeto Firebase específico
+google-services.json
+
 # TypeScript
 *.tsbuildinfo
 
