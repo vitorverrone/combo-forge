@@ -83,8 +83,12 @@ O apelido público do dispositivo no ranking do Desafio Diário. Obrigatório �
 _Evitar_: Nickname, username
 
 **Meta-Progressão**:
-O sistema de desbloqueio permanente entre Runs, sem moeda — por conquista. Marcos: 1ª Run vencida (desbloqueia o Forjador Martelo), 3ª (desbloqueia a Bigorna), 5ª (2 novos Efeitos de Forja entram no pool de ofertas) e recorde de pontuação ≥ 2.500 numa Run (Relíquias raras entram no pool). Quando um marco oferece mais de um desbloqueio, o jogador escolhe a ordem.
+O sistema de desbloqueio permanente entre Runs, sem moeda — por conquista. Duas camadas de marco: os 4 marcos de poder originais (1ª Run vencida desbloqueia o Forjador Martelo, 3ª a Bigorna, 5ª libera 2 Efeitos de Forja bônus no pool, recorde ≥ 2.500 numa Run libera Relíquias raras no pool — quando um marco oferece mais de um desbloqueio, o jogador escolhe a ordem) e os 10 Títulos (ver termo próprio), todos de opção única — 14 marcos no total. ADR 0009 documenta a adição dos Títulos.
 _Evitar_: Progressão, unlocks, meta-jogo (meta-jogo é o sistema mais amplo)
+
+**Título**:
+Um marco de Meta-Progressão cosmético — texto exibido na tela de Perfil, sem afetar poder de jogo, reivindicado automaticamente ao fim da Run assim que a condição é atingida (sempre opção única, nunca há escolha de ordem). O MVP tem 10, em 5 eixos: contagem de vitórias (10ª/15ª/25ª Run vencida), recorde de pontuação (4.000/6.000/9.000 pts), Multiplicador de Combo (×8/×12 numa Jogada), maestria de Forjador (vencer ao menos 1 Run com cada um dos 3 Forjadores) e maestria de Baralho (jogar as 40 cartas do Baralho ao menos uma vez cada). Existe pra esticar a curva de Meta-Progressão até o D30 sem produzir conteúdo mecânico novo balanceado — ver ADR 0009.
+_Evitar_: Badge, emblema (é texto, não ícone), conquista (achievement de plataforma é outro sistema), troféu
 
 **Run**:
 Uma sessão completa de jogo, da Rodada 1 até a derrota ou até vencer a 6ª Rodada. Ao falhar, reinicia-se imediatamente uma nova Run.
