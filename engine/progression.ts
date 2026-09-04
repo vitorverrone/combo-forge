@@ -27,6 +27,7 @@
 
 import { assertNever } from './assert';
 import { Card, cardKey, ForgeEffect } from './cards';
+import { LeagueTier, LEAGUE_TIER_ORDER } from './daily';
 import { BONUS_FORGE_EFFECTS, FORGE_EFFECT_POOL, ForgeEffectOption } from './forge';
 import { ForgerId } from './forgers';
 import { Relic, RELIC_POOL } from './relics';
@@ -54,6 +55,8 @@ export interface ProfileStats {
   readonly dailyStreakBest: number;
   /** Última data (YYYY-MM-DD, UTC) com submissão contabilizada na Sequência; null se nunca submeteu. */
   readonly dailyStreakLastDate: string | null;
+  /** Maior Tier da Liga já alcançado (ADR 0010, ticket 03); nunca decresce, mesmo após um rebaixamento. Null se o dispositivo nunca consultou a Liga. */
+  readonly bestLeagueTierReached: LeagueTier | null;
 }
 
 export const DEFAULT_PROFILE_STATS: ProfileStats = {
@@ -66,6 +69,7 @@ export const DEFAULT_PROFILE_STATS: ProfileStats = {
   dailyStreakCurrent: 0,
   dailyStreakBest: 0,
   dailyStreakLastDate: null,
+  bestLeagueTierReached: null,
 };
 
 /** Registra uma Jogada nas estatísticas: contagem de cartas + maior combo. */
@@ -129,6 +133,24 @@ export function recordDailySubmission(stats: ProfileStats, todayIso: string): Pr
     dailyStreakBest: Math.max(stats.dailyStreakBest, current),
     dailyStreakLastDate: todayIso,
   };
+}
+
+/** True se `tier` já alcançou `target` (mesma ordem ou acima) — null nunca alcança nada. */
+function isTierAtLeast(tier: LeagueTier | null, target: LeagueTier): boolean {
+  if (tier === null) return false;
+  return LEAGUE_TIER_ORDER.indexOf(tier) >= LEAGUE_TIER_ORDER.indexOf(target);
+}
+
+/**
+ * Registra uma observação do Tier da Liga (ADR 0010, ticket 03): atualiza
+ * `bestLeagueTierReached` só se `tier` for mais alto que o já registrado —
+ * nunca decresce, mesmo que o dispositivo seja rebaixado depois. É esse
+ * "recorde histórico" (não o Tier atual) que alimenta os Títulos de
+ * progressão de Tier, mesmo padrão de `dailyStreakBest`.
+ */
+export function recordLeagueTier(stats: ProfileStats, tier: LeagueTier): ProfileStats {
+  if (isTierAtLeast(stats.bestLeagueTierReached, tier)) return stats;
+  return { ...stats, bestLeagueTierReached: tier };
 }
 
 // ---------------------------------------------------------------------------
@@ -321,6 +343,39 @@ export const MILESTONES: readonly Milestone[] = [
     description: 'Play the Daily Challenge 30 days in a row.',
     condition: (stats) => stats.dailyStreakBest >= 30,
     options: [{ id: 'title-unbroken-forge', title: 'Unbroken Forge', unlock: { kind: 'title' } }],
+  },
+  // Progressão de Tier da Liga (ADR 0010, ticket 03): Bronze não tem marco —
+  // é o Tier de entrada, não uma conquista. Condição usa "já alcançou ao
+  // menos" (não igualdade), mesmo padrão dos demais Títulos por limiar —
+  // alcançar Diamante direto também reivindica os marcos de Prata/Ouro/
+  // Platina, já que claimReachedSingles roda todos os marcos a cada checagem.
+  {
+    id: 'leagueTierSilver',
+    title: 'Silver League',
+    description: 'Reach the Silver league tier.',
+    condition: (stats) => isTierAtLeast(stats.bestLeagueTierReached, 'silver'),
+    options: [{ id: 'title-silver-league', title: 'Silver League', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'leagueTierGold',
+    title: 'Gold League',
+    description: 'Reach the Gold league tier.',
+    condition: (stats) => isTierAtLeast(stats.bestLeagueTierReached, 'gold'),
+    options: [{ id: 'title-gold-league', title: 'Gold League', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'leagueTierPlatinum',
+    title: 'Platinum League',
+    description: 'Reach the Platinum league tier.',
+    condition: (stats) => isTierAtLeast(stats.bestLeagueTierReached, 'platinum'),
+    options: [{ id: 'title-platinum-league', title: 'Platinum League', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'leagueTierDiamond',
+    title: 'Diamond League',
+    description: 'Reach the Diamond league tier.',
+    condition: (stats) => isTierAtLeast(stats.bestLeagueTierReached, 'diamond'),
+    options: [{ id: 'title-diamond-league', title: 'Diamond League', unlock: { kind: 'title' } }],
   },
 ];
 

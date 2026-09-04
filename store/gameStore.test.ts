@@ -742,6 +742,63 @@ describe('Desafio Diário (ticket 13)', () => {
     expect(store.getState().daily.leaderboard).toBeNull();
   });
 
+  test('fetchLeaderboard reivindica o Título de Tier na primeira vez que a Liga revela um Tier novo (ADR 0010, ticket 03)', async () => {
+    const telemetry = makeFakeTelemetry();
+    const storage = createMemoryProgressionStorage();
+    const store = createGameStore({
+      telemetry,
+      progressionStorage: storage,
+      dailyBackend: {
+        ...makeFakeDailyBackend(),
+        fetchLeagueLeaderboard: async () => ({
+          week: '2026-09-07',
+          tier: 'gold',
+          division: 1,
+          own: { rank: 3, score: 5000, name: 'Ana' },
+          top: [{ rank: 3, score: 5000, name: 'Ana' }],
+        }),
+      },
+    });
+    await store.getState().fetchLeaderboard();
+    expect(store.getState().progression.stats.bestLeagueTierReached).toBe('gold');
+    expect(store.getState().progression.claimedOptions).toContain('title-silver-league');
+    expect(store.getState().progression.claimedOptions).toContain('title-gold-league');
+    expect(storage.load()?.claimedOptions).toContain('title-gold-league');
+    expect(telemetry.events).toContainEqual({
+      name: 'milestone_unlocked',
+      params: { optionId: 'title-gold-league', milestoneId: 'leagueTierGold' },
+    });
+  });
+
+  test('fetchLeaderboard com Tier repetido ou mais baixo não reivindica nada de novo (ADR 0010, ticket 03)', async () => {
+    const store = createGameStore({
+      initialProgression: {
+        ...DEFAULT_PROGRESSION,
+        stats: { ...DEFAULT_PROFILE_STATS, bestLeagueTierReached: 'gold' },
+        claimedOptions: ['title-silver-league', 'title-gold-league'],
+      },
+      dailyBackend: {
+        ...makeFakeDailyBackend(),
+        fetchLeagueLeaderboard: async () => ({
+          week: '2026-09-07',
+          tier: 'silver', // rebaixado nesta semana
+          division: 2,
+          own: { rank: 40, score: 900, name: 'Ana' },
+          top: [{ rank: 40, score: 900, name: 'Ana' }],
+        }),
+      },
+    });
+    await store.getState().fetchLeaderboard();
+    expect(store.getState().progression.stats.bestLeagueTierReached).toBe('gold'); // recorde não decresce
+    expect(store.getState().progression.claimedOptions).toEqual(['title-silver-league', 'title-gold-league']);
+  });
+
+  test('fetchLeaderboard com a Liga inativa não toca bestLeagueTierReached (ADR 0010, ticket 03)', async () => {
+    const store = createGameStore({ dailyBackend: makeFakeDailyBackend() }); // fetchLeagueLeaderboard → null por padrão
+    await store.getState().fetchLeaderboard();
+    expect(store.getState().progression.stats.bestLeagueTierReached).toBeNull();
+  });
+
   test('fetchLeaderboard mostra loading enquanto busca (ticket 03)', async () => {
     let resolveFetch!: (value: DailyLeaderboard) => void;
     const backend: DailyBackend = {

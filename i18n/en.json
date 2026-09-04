@@ -360,6 +360,22 @@
     "dailyStreak30": {
       "title": "Unbroken Forge",
       "description": "Play the Daily Challenge 30 days in a row."
+    },
+    "leagueTierSilver": {
+      "title": "Silver League",
+      "description": "Reach the Silver league tier."
+    },
+    "leagueTierGold": {
+      "title": "Gold League",
+      "description": "Reach the Gold league tier."
+    },
+    "leagueTierPlatinum": {
+      "title": "Platinum League",
+      "description": "Reach the Platinum league tier."
+    },
+    "leagueTierDiamond": {
+      "title": "Diamond League",
+      "description": "Reach the Diamond league tier."
     }
   },
   "milestoneOptions": {
@@ -419,6 +435,18 @@
     },
     "title-unbroken-forge": {
       "title": "Unbroken Forge"
+    },
+    "title-silver-league": {
+      "title": "Silver League"
+    },
+    "title-gold-league": {
+      "title": "Gold League"
+    },
+    "title-platinum-league": {
+      "title": "Platinum League"
+    },
+    "title-diamond-league": {
+      "title": "Diamond League"
     }
   },
   "ad": {

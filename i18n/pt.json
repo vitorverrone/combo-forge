@@ -360,6 +360,22 @@
     "dailyStreak30": {
       "title": "Forja Inquebrável",
       "description": "Jogue o Desafio Diário 30 dias seguidos."
+    },
+    "leagueTierSilver": {
+      "title": "Liga de Prata",
+      "description": "Alcance o Tier Prata da Liga."
+    },
+    "leagueTierGold": {
+      "title": "Liga de Ouro",
+      "description": "Alcance o Tier Ouro da Liga."
+    },
+    "leagueTierPlatinum": {
+      "title": "Liga de Platina",
+      "description": "Alcance o Tier Platina da Liga."
+    },
+    "leagueTierDiamond": {
+      "title": "Liga de Diamante",
+      "description": "Alcance o Tier Diamante da Liga."
     }
   },
   "milestoneOptions": {
@@ -419,6 +435,18 @@
     },
     "title-unbroken-forge": {
       "title": "Forja Inquebrável"
+    },
+    "title-silver-league": {
+      "title": "Liga de Prata"
+    },
+    "title-gold-league": {
+      "title": "Liga de Ouro"
+    },
+    "title-platinum-league": {
+      "title": "Liga de Platina"
+    },
+    "title-diamond-league": {
+      "title": "Liga de Diamante"
     }
   },
   "ad": {
