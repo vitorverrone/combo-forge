@@ -4,11 +4,11 @@
 
 **Blocked by:** None — pode começar imediatamente.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `UnlockKind` (`engine/progression.ts`) ganha a variante `{ readonly kind: 'title' }`.
-- [ ] `computeUnlocks` trata `kind: 'title'` como no-op explícito (não adiciona a `forgers`/`extraEffects`, não marca `rareRelics: true`) — com teste cobrindo uma `MilestoneOption` sintética `kind: 'title'` reivindicada.
-- [ ] `normalizeProgression(state, null)` retorna `DEFAULT_PROGRESSION`.
-- [ ] `normalizeProgression` com um `PersistedProgression` "antigo" (cast, sem `winsByForger` em `stats` — ainda que o campo só exista de fato a partir da ticket 03, o teste desta ticket já cobre o merge profundo com um `stats` parcial arbitrário) preserva o resto de `stats` e `claimedOptions` sem perdê-los.
-- [ ] `store/bootstrap.ts` usa `normalizeProgression(saved)` no lugar de `saved ?? DEFAULT_PROGRESSION`.
-- [ ] Typecheck, testes (`engine/progression.test.ts`, e os testes existentes de `store/bootstrap.ts` se houver) e lint passam.
+- [x] `UnlockKind` (`engine/progression.ts`) ganha a variante `{ readonly kind: 'title' }`.
+- [x] `computeUnlocks` trata `kind: 'title'` como no-op explícito (não adiciona a `forgers`/`extraEffects`, não marca `rareRelics: true`) — a lógica do switch foi extraída pra `applyUnlockKind(draft, unlock)`, testada direto com uma `UnlockKind` sintética `{ kind: 'title' }` (achado do code-review: `OPTION_INDEX` é privado e só existe a partir dos `MILESTONES` reais, não dava pra injetar uma `MilestoneOption` sintética sem essa extração).
+- [x] `normalizeProgression(state, null)` retorna `DEFAULT_PROGRESSION`.
+- [x] `normalizeProgression` com um `PersistedProgression` "antigo" (cast, sem `winsByForger` em `stats`) preserva o resto de `stats` e `claimedOptions` sem perdê-los.
+- [x] `store/bootstrap.ts` usa `normalizeProgression(saved)` no lugar de `saved ?? DEFAULT_PROGRESSION`.
+- [x] Typecheck, testes (`engine/progression.test.ts`) e lint passam — 455 testes, suíte inteira verde.
