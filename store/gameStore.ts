@@ -521,8 +521,10 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     openShop: () => {
       // shop_opened (ticket 04/ADR 0007): openShop() é o único ponto que
       // define screen: 'shop' — dispara aqui em vez de um useEffect na
-      // ShopScreen, mesmo padrão de todo telemetry.logEvent já disparado
-      // deste feature (store/services, nunca componente React).
+      // ShopScreen, mesmo padrão de store action usado em run_started/
+      // dda_adjustment/milestone_unlocked (a única exceção deste feature é
+      // AdBanner.tsx, que dispara direto de um componente porque o
+      // LOADED/FAILED do <BannerAd> não passa por nenhum port).
       void get().telemetry.logEvent('shop_opened');
       set({ screen: 'shop' });
       void get().loadShop();
