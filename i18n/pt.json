@@ -291,6 +291,42 @@
     "scoreRecord2500": {
       "title": "Forja Lendária",
       "description": "Marque 2.500+ pontos em uma única run."
+    },
+    "run10Won": {
+      "title": "Ferreiro Experiente",
+      "description": "Vença 10 runs."
+    },
+    "run15Won": {
+      "title": "Ferreiro Veterano",
+      "description": "Vença 15 runs."
+    },
+    "run25Won": {
+      "title": "Lenda da Forja",
+      "description": "Vença 25 runs."
+    },
+    "scoreRecord4000": {
+      "title": "Grande Pontuador",
+      "description": "Marque 4.000+ pontos em uma única run."
+    },
+    "scoreRecord6000": {
+      "title": "Quebra-Recordes",
+      "description": "Marque 6.000+ pontos em uma única run."
+    },
+    "scoreRecord9000": {
+      "title": "Forja Mítica",
+      "description": "Marque 9.000+ pontos em uma única run."
+    },
+    "multiplierRecord8": {
+      "title": "Mestre da Corrente",
+      "description": "Alcance um Multiplicador de Combo de ×8 em uma única jogada."
+    },
+    "multiplierRecord12": {
+      "title": "Corrente Imparável",
+      "description": "Alcance um Multiplicador de Combo de ×12 em uma única jogada."
+    },
+    "deckMastery": {
+      "title": "Baralho Completo",
+      "description": "Jogue as 40 cartas do Baralho ao menos uma vez cada."
     }
   },
   "milestoneOptions": {
@@ -308,6 +344,33 @@
     },
     "unlock-rare-relics": {
       "title": "Relíquias raras na forja"
+    },
+    "title-seasoned-smith": {
+      "title": "Ferreiro Experiente"
+    },
+    "title-veteran-smith": {
+      "title": "Ferreiro Veterano"
+    },
+    "title-forge-legend": {
+      "title": "Lenda da Forja"
+    },
+    "title-high-scorer": {
+      "title": "Grande Pontuador"
+    },
+    "title-score-breaker": {
+      "title": "Quebra-Recordes"
+    },
+    "title-mythic-forge": {
+      "title": "Forja Mítica"
+    },
+    "title-chain-master": {
+      "title": "Mestre da Corrente"
+    },
+    "title-unstoppable-chain": {
+      "title": "Corrente Imparável"
+    },
+    "title-full-deck": {
+      "title": "Baralho Completo"
     }
   },
   "ad": {

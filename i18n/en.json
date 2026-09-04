@@ -291,6 +291,42 @@
     "scoreRecord2500": {
       "title": "Legendary Forge",
       "description": "Score 2,500+ points in a single run."
+    },
+    "run10Won": {
+      "title": "Seasoned Smith",
+      "description": "Win 10 runs."
+    },
+    "run15Won": {
+      "title": "Veteran Smith",
+      "description": "Win 15 runs."
+    },
+    "run25Won": {
+      "title": "Forge Legend",
+      "description": "Win 25 runs."
+    },
+    "scoreRecord4000": {
+      "title": "High Scorer",
+      "description": "Score 4,000+ points in a single run."
+    },
+    "scoreRecord6000": {
+      "title": "Score Breaker",
+      "description": "Score 6,000+ points in a single run."
+    },
+    "scoreRecord9000": {
+      "title": "Mythic Forge",
+      "description": "Score 9,000+ points in a single run."
+    },
+    "multiplierRecord8": {
+      "title": "Chain Master",
+      "description": "Reach a ×8 Combo Multiplier in a single play."
+    },
+    "multiplierRecord12": {
+      "title": "Unstoppable Chain",
+      "description": "Reach a ×12 Combo Multiplier in a single play."
+    },
+    "deckMastery": {
+      "title": "Full Deck",
+      "description": "Play all 40 cards in the Deck at least once."
     }
   },
   "milestoneOptions": {
@@ -308,6 +344,33 @@
     },
     "unlock-rare-relics": {
       "title": "Rare relics in the forge"
+    },
+    "title-seasoned-smith": {
+      "title": "Seasoned Smith"
+    },
+    "title-veteran-smith": {
+      "title": "Veteran Smith"
+    },
+    "title-forge-legend": {
+      "title": "Forge Legend"
+    },
+    "title-high-scorer": {
+      "title": "High Scorer"
+    },
+    "title-score-breaker": {
+      "title": "Score Breaker"
+    },
+    "title-mythic-forge": {
+      "title": "Mythic Forge"
+    },
+    "title-chain-master": {
+      "title": "Chain Master"
+    },
+    "title-unstoppable-chain": {
+      "title": "Unstoppable Chain"
+    },
+    "title-full-deck": {
+      "title": "Full Deck"
     }
   },
   "ad": {
