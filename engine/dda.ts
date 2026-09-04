@@ -165,3 +165,34 @@ export function persistDda(storage: DdaStorage, dda: DdaState, outcome: DdaRound
   saveDda(storage, next);
   return next;
 }
+
+export type DdaAdjustmentTrigger = 'consecutiveFailures' | 'easyWins';
+
+export interface DdaAdjustment {
+  readonly direction: 'reduced' | 'increased';
+  readonly trigger: DdaAdjustmentTrigger;
+}
+
+/**
+ * Classifica se a Meta muda de fato entre dois estados de DDA consecutivos
+ * (ticket 03/ADR 0007 — telemetria): null na maioria das Rodadas, mesmo
+ * quando falhas/vitórias fáceis se acumulam — só quando a sequência cruza o
+ * limiar que adjustTarget usa (mesmos failureThreshold/easyWinThreshold),
+ * não a cada passo depois dele (adjustTarget não escala além do limiar).
+ */
+export function ddaAdjustment(
+  previous: DdaState,
+  next: DdaState,
+  config: DdaConfig = DEFAULT_DDA_CONFIG,
+): DdaAdjustment | null {
+  if (
+    previous.consecutiveFailures < config.failureThreshold &&
+    next.consecutiveFailures >= config.failureThreshold
+  ) {
+    return { direction: 'reduced', trigger: 'consecutiveFailures' };
+  }
+  if (previous.easyWins < config.easyWinThreshold && next.easyWins >= config.easyWinThreshold) {
+    return { direction: 'increased', trigger: 'easyWins' };
+  }
+  return null;
+}

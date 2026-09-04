@@ -2,6 +2,7 @@ import {
   adjustTarget,
   attemptNumberForRound,
   createMemoryDdaStorage,
+  ddaAdjustment,
   DEFAULT_DDA_CONFIG,
   DEFAULT_DDA_STATE,
   isEasyWin,
@@ -61,6 +62,48 @@ describe('attemptNumberForRound (ticket 02/ADR 0007 — número da tentativa na 
   test('outra Rodada que não a da última derrota é sempre a 1ª tentativa', () => {
     const dda = { lastFailedRound: 3, consecutiveFailures: 2, easyWins: 0 };
     expect(attemptNumberForRound(dda, 4)).toBe(1);
+  });
+});
+
+describe('ddaAdjustment (ticket 03/ADR 0007 — Meta ajustada de fato, pra telemetria)', () => {
+  test('cruzar o limiar de 3 falhas consecutivas é um ajuste "reduced"', () => {
+    const previous = { lastFailedRound: 3, consecutiveFailures: 2, easyWins: 0 };
+    const next = { lastFailedRound: 3, consecutiveFailures: 3, easyWins: 0 };
+    expect(ddaAdjustment(previous, next, DEFAULT_DDA_CONFIG)).toEqual({
+      direction: 'reduced',
+      trigger: 'consecutiveFailures',
+    });
+  });
+
+  test('1ª ou 2ª falha consecutiva (ainda abaixo do limiar) não é um ajuste', () => {
+    const previous = { lastFailedRound: 3, consecutiveFailures: 0, easyWins: 0 };
+    const next = { lastFailedRound: 3, consecutiveFailures: 1, easyWins: 0 };
+    expect(ddaAdjustment(previous, next, DEFAULT_DDA_CONFIG)).toBeNull();
+  });
+
+  test('4ª falha consecutiva (Meta já reduzida desde a 3ª) não dispara de novo', () => {
+    const previous = { lastFailedRound: 3, consecutiveFailures: 3, easyWins: 0 };
+    const next = { lastFailedRound: 3, consecutiveFailures: 4, easyWins: 0 };
+    expect(ddaAdjustment(previous, next, DEFAULT_DDA_CONFIG)).toBeNull();
+  });
+
+  test('cruzar o limiar de 5 vitórias fáceis consecutivas é um ajuste "increased"', () => {
+    const previous = { lastFailedRound: 0, consecutiveFailures: 0, easyWins: 4 };
+    const next = { lastFailedRound: 0, consecutiveFailures: 0, easyWins: 5 };
+    expect(ddaAdjustment(previous, next, DEFAULT_DDA_CONFIG)).toEqual({
+      direction: 'increased',
+      trigger: 'easyWins',
+    });
+  });
+
+  test('6ª vitória fácil (Meta já aumentada desde a 5ª) não dispara de novo', () => {
+    const previous = { lastFailedRound: 0, consecutiveFailures: 0, easyWins: 5 };
+    const next = { lastFailedRound: 0, consecutiveFailures: 0, easyWins: 6 };
+    expect(ddaAdjustment(previous, next, DEFAULT_DDA_CONFIG)).toBeNull();
+  });
+
+  test('histórico neutro sem transição nenhuma não é um ajuste', () => {
+    expect(ddaAdjustment(DEFAULT_DDA_STATE, DEFAULT_DDA_STATE, DEFAULT_DDA_CONFIG)).toBeNull();
   });
 });
 

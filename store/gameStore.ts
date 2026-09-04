@@ -41,6 +41,8 @@ import {
   DEFAULT_DDA_CONFIG,
   DEFAULT_PROGRESSION,
   discard,
+  DdaAdjustment,
+  ddaAdjustment,
   DdaStorage,
   applyForgeOffer as engineApplyForgeOffer,
   evaluatePlay,
@@ -316,20 +318,44 @@ export function selectionPreview(
  * Persiste o histórico DDA a partir dos eventos de fim de Rodada do motor.
  * Runs "sem DDA" (ddaConfig.enabled false, Desafio Diário) não tocam o
  * histórico — a carga já devolve o estado neutro e nada deve ser salvo.
+ *
+ * Devolve os ajustes de Meta que de fato aconteceram (ticket 03/ADR 0007 —
+ * telemetria: dda_adjustment), classificados por ddaAdjustment (engine/dda.ts)
+ * a partir do dda antes/depois de cada evento — vazio na maioria das
+ * Rodadas, mesmo com DDA ligado.
  */
 export function persistRoundEnd(
   run: RunState,
   events: readonly RunEvent[],
   storage: DdaStorage,
-): void {
-  if (!run.ddaConfig.enabled) return;
+): readonly DdaAdjustment[] {
+  if (!run.ddaConfig.enabled) return [];
+  const adjustments: DdaAdjustment[] = [];
   for (const event of events) {
     if (event.type === 'roundWon') {
       const easyWin = isEasyWin(event.score, event.target, run.playsRemaining, DEFAULT_DDA_CONFIG);
-      persistDda(storage, run.dda, { roundNumber: event.roundNumber, won: true, easyWin });
+      const next = persistDda(storage, run.dda, { roundNumber: event.roundNumber, won: true, easyWin });
+      const adjustment = ddaAdjustment(run.dda, next, run.ddaConfig);
+      if (adjustment !== null) adjustments.push(adjustment);
     } else if (event.type === 'roundLost') {
-      persistDda(storage, run.dda, { roundNumber: event.roundNumber, won: false, easyWin: false });
+      const next = persistDda(storage, run.dda, { roundNumber: event.roundNumber, won: false, easyWin: false });
+      const adjustment = ddaAdjustment(run.dda, next, run.ddaConfig);
+      if (adjustment !== null) adjustments.push(adjustment);
     }
+  }
+  return adjustments;
+}
+
+/** Dispara dda_adjustment pra cada ajuste real que persistRoundEnd detectou (ticket 03/ADR 0007). */
+function emitDdaAdjustmentTelemetry(
+  adjustments: readonly DdaAdjustment[],
+  telemetry: TelemetryProvider,
+): void {
+  for (const adjustment of adjustments) {
+    void telemetry.logEvent('dda_adjustment', {
+      direction: adjustment.direction,
+      trigger: adjustment.trigger,
+    });
   }
 }
 
@@ -634,7 +660,8 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
             recentUnlocks: [],
           });
         } else {
-          persistRoundEnd(result.run, result.events, storage);
+          const adjustments = persistRoundEnd(result.run, result.events, storage);
+          emitDdaAdjustmentTelemetry(adjustments, get().telemetry);
           emitRoundAndRunTelemetry(result.run, result.events, get().telemetry);
           const endedEvent = result.events.find(
             (event) => event.type === 'runWon' || event.type === 'runLost',
@@ -661,7 +688,15 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
             };
           }
           set({
-            ...advanceProgression(result, played, progression, get().unlockChoice, get().recentUnlocks, progressionStorage),
+            ...advanceProgression(
+              result,
+              played,
+              progression,
+              get().unlockChoice,
+              get().recentUnlocks,
+              progressionStorage,
+              get().telemetry,
+            ),
             ...interstitialPatch,
             ...lastRunLostAtPatch,
           });
@@ -715,10 +750,11 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     },
 
     claimUnlock: (optionId) => {
-      const { progression } = get();
+      const { progression, telemetry } = get();
       if (!isOptionClaimable(progression, optionId)) return;
       const next = engineClaimOption(progression, optionId);
       saveProgression(progressionStorage, next);
+      void telemetry.logEvent('milestone_unlocked', { optionId });
       // O modal fecha após a escolha; as opções restantes ficam na Coleção.
       set({
         progression: next,
@@ -808,8 +844,9 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
 /**
  * Avança a meta-progressão após uma ação de Jogada: acumula estatísticas por
  * Jogada, registra o fim da Run (vitória/derrota + recorde), reivindica
- * automaticamente os marcos de opção única e expõe o marco multi-opção
- * (escolha da ordem) como modal. Persiste o resultado no storage.
+ * automaticamente os marcos de opção única (disparando milestone_unlocked
+ * pra cada um — ticket 03/ADR 0007) e expõe o marco multi-opção (escolha da
+ * ordem) como modal. Persiste o resultado no storage.
  */
 function advanceProgression(
   result: { run: RunState; events: readonly RunEvent[] },
@@ -818,6 +855,7 @@ function advanceProgression(
   currentChoice: PendingMilestone | null,
   currentUnlocks: readonly string[],
   storage: ProgressionStorage,
+  telemetry: TelemetryProvider,
 ): Partial<GameState> {
   let next: PersistedProgression = progression;
   let unlockChoice = currentChoice;
@@ -837,6 +875,9 @@ function advanceProgression(
     next = singles.persisted;
     if (singles.claimed.length > 0) {
       recentUnlocks = singles.claimed.map(milestoneOptionTitle);
+      for (const optionId of singles.claimed) {
+        void telemetry.logEvent('milestone_unlocked', { optionId });
+      }
     }
     const multi = pendingMilestones(next).find((candidate) => candidate.milestone.options.length > 1);
     if (multi !== undefined) {
