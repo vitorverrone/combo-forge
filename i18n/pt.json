@@ -406,6 +406,7 @@
     "applyEffect": "Aplicar {{effect}}",
     "takeRelic": "Pegar relíquia {{name}}",
     "chooseRelicToReplace": "Substituir {{name}}",
+    "confirmReplace": "Confirmar troca",
     "forgeEffect": "Efeito de forja {{effect}}",
     "unlockItem": "Desbloquear {{name}}",
     "watchAdExtraAttempt": "Assistir anúncio para tentativa extra",

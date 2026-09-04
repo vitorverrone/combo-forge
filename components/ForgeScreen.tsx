@@ -37,7 +37,8 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
   const [activeOffer, setActiveOffer] = useState<number | null>(null);
   const [targetKey, setTargetKey] = useState<string | null>(null);
   const [cardEffectConfirmed, setCardEffectConfirmed] = useState(false);
-  const [replaceRelicId, setReplaceRelicId] = useState<string | null>(null);
+  const [replaceCandidateId, setReplaceCandidateId] = useState<string | null>(null);
+  const [replaceConfirmed, setReplaceConfirmed] = useState(false);
 
   const forgeActiveStep = useGameStore((state) => state.tutorial.forgeActiveStep);
   const checkForgeTutorialTrigger = useGameStore((state) => state.checkForgeTutorialTrigger);
@@ -65,12 +66,14 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
       setActiveOffer(null);
       setTargetKey(null);
       setCardEffectConfirmed(false);
-      setReplaceRelicId(null);
+      setReplaceCandidateId(null);
+      setReplaceConfirmed(false);
     } else {
       setActiveOffer(index);
       setTargetKey(null);
       setCardEffectConfirmed(false);
-      setReplaceRelicId(null);
+      setReplaceCandidateId(null);
+      setReplaceConfirmed(false);
     }
   };
 
@@ -78,6 +81,12 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
     if (active === undefined || activeOffer === null || active.type !== 'cardEffect') return;
     if (targetKey === null) return;
     setCardEffectConfirmed(true);
+  };
+
+  const handleApplyReplace = () => {
+    if (active === undefined || activeOffer === null || active.type !== 'relic') return;
+    if (replaceCandidateId === null) return;
+    setReplaceConfirmed(true);
   };
 
   const handleConfirm = () => {
@@ -88,15 +97,16 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
       if (target === undefined) return;
       applyForgeOffer(activeOffer, target);
     } else if (relicAtCap) {
-      if (replaceRelicId === null) return;
-      applyForgeOffer(activeOffer, undefined, replaceRelicId);
+      if (replaceCandidateId === null) return;
+      applyForgeOffer(activeOffer, undefined, replaceCandidateId);
     } else {
       applyForgeOffer(activeOffer);
     }
     setActiveOffer(null);
     setTargetKey(null);
     setCardEffectConfirmed(false);
-    setReplaceRelicId(null);
+    setReplaceCandidateId(null);
+    setReplaceConfirmed(false);
   };
 
   return (
@@ -146,7 +156,7 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
           const forgeDisabled =
             activeOffer === null ||
             (active !== undefined && active.type === 'cardEffect' && !cardEffectConfirmed) ||
-            (relicAtCap && replaceRelicId === null);
+            (relicAtCap && !replaceConfirmed);
           return (
             <Pressable
               accessibilityRole="button"
@@ -231,37 +241,63 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
         </View>
       )}
 
-      {/* Relic replace picker overlay — teto de Relíquias atingido */}
-      {active !== undefined && active.type === 'relic' && relicAtCap && replaceRelicId === null && (
+      {/* Relic replace picker overlay — teto de Relíquias atingido. Mesmo
+          fluxo de dois passos do picker de Efeito de Carta acima: seleciona
+          (destaca) → confirma dentro do overlay → o botão "Forge" do rodapé
+          aplica de fato. */}
+      {active !== undefined && active.type === 'relic' && relicAtCap && !replaceConfirmed && (
         <View style={styles.overlay}>
           <View style={styles.pickerPanel}>
             <Text style={styles.pickerTitle}>{t('forge.chooseRelicToReplace')}</Text>
             <Text style={styles.pickerSub}>{t('forge.relicCapReached', { name: active.relic.name })}</Text>
             <ScrollView contentContainerStyle={styles.relicReplaceList}>
-              {run.relics.map((relic) => (
-                <Pressable
-                  key={relic.id}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('a11y.chooseRelicToReplace', { name: relic.name })}
-                  onPress={() => setReplaceRelicId(relic.id)}
-                  style={({ pressed }) => [styles.relicReplaceOption, pressed && styles.btnPressed]}
-                >
-                  <View style={styles.relicGem} />
-                  <View style={styles.offerInfo}>
-                    <Text style={styles.offerName}>{relic.name}</Text>
-                    <Text style={styles.offerDesc}>{relicDescription(relic)}</Text>
-                  </View>
-                </Pressable>
-              ))}
+              {run.relics.map((relic) => {
+                const isSelected = replaceCandidateId === relic.id;
+                return (
+                  <Pressable
+                    key={relic.id}
+                    accessibilityRole="button"
+                    accessibilityLabel={t('a11y.chooseRelicToReplace', { name: relic.name })}
+                    onPress={() => setReplaceCandidateId(relic.id)}
+                    style={({ pressed }) => [
+                      styles.relicReplaceOption,
+                      isSelected && styles.offerSelected,
+                      pressed && styles.btnPressed,
+                    ]}
+                  >
+                    <View style={styles.relicGem} />
+                    <View style={styles.offerInfo}>
+                      <Text style={styles.offerName}>{relic.name}</Text>
+                      <Text style={styles.offerDesc}>{relicDescription(relic)}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
             </ScrollView>
             <View style={styles.pickerActions}>
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={t('common.cancel')}
-                onPress={() => { setActiveOffer(null); setReplaceRelicId(null); }}
+                onPress={() => { setActiveOffer(null); setReplaceCandidateId(null); }}
                 style={({ pressed }) => [styles.btnDanger, pressed && styles.btnPressed]}
               >
                 <Text style={styles.btnDangerText}>{t('common.cancel')}</Text>
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ disabled: replaceCandidateId === null }}
+                accessibilityLabel={t('a11y.confirmReplace')}
+                disabled={replaceCandidateId === null}
+                onPress={handleApplyReplace}
+                style={({ pressed }) => [
+                  styles.btnPrimarySmall,
+                  replaceCandidateId === null && styles.btnDisabledSmall,
+                  pressed && replaceCandidateId !== null && styles.btnPressed,
+                ]}
+              >
+                <Text style={[styles.btnPrimaryText, replaceCandidateId === null && styles.btnDisabledText]}>
+                  {t('common.apply')}
+                </Text>
               </Pressable>
             </View>
           </View>

@@ -406,6 +406,7 @@
     "applyEffect": "Apply {{effect}}",
     "takeRelic": "Take relic {{name}}",
     "chooseRelicToReplace": "Replace {{name}}",
+    "confirmReplace": "Confirm swap",
     "forgeEffect": "Forge effect {{effect}}",
     "unlockItem": "Unlock {{name}}",
     "watchAdExtraAttempt": "Watch ad for extra attempt",
