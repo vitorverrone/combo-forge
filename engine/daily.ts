@@ -152,6 +152,9 @@ export interface DailyLeaderboard {
  */
 export type LeagueTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'diamond';
 
+/** Ordem dos Tiers (bronze é piso, diamond é teto) — mesma ordem do espelho em supabase/contract.ts. */
+export const LEAGUE_TIER_ORDER: readonly LeagueTier[] = ['bronze', 'silver', 'gold', 'platinum', 'diamond'];
+
 /**
  * Posição do dispositivo na Liga (Tier + Divisão), quando ativa. `division`
  * e `own` são null quando o dispositivo ainda não pontuou na semana — sem

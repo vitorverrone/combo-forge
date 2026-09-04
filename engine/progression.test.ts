@@ -20,6 +20,7 @@ import {
   PersistedProgression,
   poolsFor,
   recordDailySubmission,
+  recordLeagueTier,
   recordPlay,
   recordRunEnd,
   unlockStatuses,
@@ -484,6 +485,102 @@ describe('Títulos: Sequência do Desafio Diário (ADR 0010, ticket 01)', () => 
     expect(unlocks.forgers).toEqual(['apprentice']);
     expect(unlocks.rareRelics).toBe(false);
     expect(unlocks.extraEffects).toEqual([]);
+  });
+});
+
+describe('Liga: maior Tier já alcançado (recordLeagueTier, ADR 0010, ticket 03)', () => {
+  test('primeira observação registra o Tier', () => {
+    const stats = recordLeagueTier(DEFAULT_PROFILE_STATS, 'bronze');
+    expect(stats.bestLeagueTierReached).toBe('bronze');
+  });
+
+  test('Tier mais alto atualiza o recorde', () => {
+    let stats = recordLeagueTier(DEFAULT_PROFILE_STATS, 'bronze');
+    stats = recordLeagueTier(stats, 'gold');
+    expect(stats.bestLeagueTierReached).toBe('gold');
+  });
+
+  test('Tier mais baixo (rebaixamento) NÃO diminui o recorde', () => {
+    let stats = recordLeagueTier(DEFAULT_PROFILE_STATS, 'gold');
+    stats = recordLeagueTier(stats, 'silver');
+    expect(stats.bestLeagueTierReached).toBe('gold');
+  });
+
+  test('mesmo Tier de novo não altera nada (referência estável)', () => {
+    const stats = recordLeagueTier(DEFAULT_PROFILE_STATS, 'platinum');
+    const again = recordLeagueTier(stats, 'platinum');
+    expect(again).toBe(stats);
+  });
+
+  test('teto do Diamante: nada supera', () => {
+    let stats = recordLeagueTier(DEFAULT_PROFILE_STATS, 'diamond');
+    stats = recordLeagueTier(stats, 'diamond');
+    expect(stats.bestLeagueTierReached).toBe('diamond');
+  });
+});
+
+describe('Títulos: progressão de Tier da Liga (ADR 0010, ticket 03)', () => {
+  test.each([
+    ['leagueTierSilver', 'silver'] as const,
+    ['leagueTierGold', 'gold'] as const,
+    ['leagueTierPlatinum', 'platinum'] as const,
+    ['leagueTierDiamond', 'diamond'] as const,
+  ])('%s: falso sem Tier registrado e sempre que o recorde fica abaixo de %s', (id, targetTier) => {
+    const milestone = MILESTONES.find((m) => m.id === id);
+    expect(milestone).toBeDefined();
+    expect(milestone?.condition(statsWith({ bestLeagueTierReached: null }))).toBe(false);
+    expect(milestone?.condition(statsWith({ bestLeagueTierReached: targetTier }))).toBe(true);
+  });
+
+  test('leagueTierGold: verdadeiro também quando o recorde já passou do Ouro (Platina/Diamante)', () => {
+    const milestone = MILESTONES.find((m) => m.id === 'leagueTierGold');
+    expect(milestone?.condition(statsWith({ bestLeagueTierReached: 'silver' }))).toBe(false);
+    expect(milestone?.condition(statsWith({ bestLeagueTierReached: 'gold' }))).toBe(true);
+    expect(milestone?.condition(statsWith({ bestLeagueTierReached: 'platinum' }))).toBe(true);
+    expect(milestone?.condition(statsWith({ bestLeagueTierReached: 'diamond' }))).toBe(true);
+  });
+
+  test('Bronze não tem Título — não existe marco de Liga para ele', () => {
+    const bronzeMilestone = MILESTONES.find(
+      (m) => m.id.startsWith('leagueTier') && m.id.toLowerCase().includes('bronze'),
+    );
+    expect(bronzeMilestone).toBeUndefined();
+  });
+
+  test('cada Título de Tier é reivindicado automaticamente (opção única) e não concede poder', () => {
+    const p: typeof DEFAULT_PROGRESSION = {
+      ...DEFAULT_PROGRESSION,
+      stats: statsWith({ bestLeagueTierReached: 'diamond' }),
+    };
+    const result = claimReachedSingles(p);
+    const titleOptionIds = [
+      'title-silver-league',
+      'title-gold-league',
+      'title-platinum-league',
+      'title-diamond-league',
+    ];
+    for (const optionId of titleOptionIds) {
+      expect(result.claimed).toContain(optionId);
+    }
+    const unlocks = computeUnlocks(result.persisted);
+    expect(unlocks.forgers).toEqual(['apprentice']);
+    expect(unlocks.rareRelics).toBe(false);
+    expect(unlocks.extraEffects).toEqual([]);
+  });
+
+  test('Título permanece reivindicado mesmo depois de o recorde não poder mais decrescer visivelmente (rebaixamento)', () => {
+    let p: typeof DEFAULT_PROGRESSION = {
+      ...DEFAULT_PROGRESSION,
+      stats: statsWith({ bestLeagueTierReached: 'gold' }),
+    };
+    p = claimReachedSingles(p).persisted;
+    expect(p.claimedOptions).toContain('title-gold-league');
+    // Rebaixado de volta a silver: bestLeagueTierReached nunca decresce
+    // (recordLeagueTier), então o Título de Ouro não pode ser "perdido".
+    const stats = recordLeagueTier(p.stats, 'silver');
+    expect(stats.bestLeagueTierReached).toBe('gold');
+    p = { ...p, stats };
+    expect(p.claimedOptions).toContain('title-gold-league');
   });
 });
 

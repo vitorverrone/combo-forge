@@ -50,6 +50,7 @@ import {
   isEasyWin,
   isForgerUnlocked,
   isOptionClaimable,
+  LeagueTier,
   loadDda,
   makePlay,
   milestoneOfOption,
@@ -59,8 +60,10 @@ import {
   PersistedProgression,
   persistDda,
   PlayEvaluation,
+  ProfileStats,
   ProgressionStorage,
   recordDailySubmission,
+  recordLeagueTier,
   recordPlay,
   recordRunEnd,
   Rng,
@@ -674,6 +677,20 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
           leaderboardError: result.daily.leaderboardError,
         },
       }));
+      // Título de progressão de Tier (ADR 0010, ticket 03): só quando a Liga
+      // está ativa. recordLeagueTier ignora sozinho qualquer Tier que não
+      // supere o recorde, então chamar isso toda vez que a Liga responde
+      // (mesmo sem um Tier novo) é seguro.
+      if (result.daily.league !== null) {
+        set(
+          advanceLeagueTier(result.daily.league.tier, {
+            progression: get().progression,
+            recentUnlocks: get().recentUnlocks,
+            storage: progressionStorage,
+            telemetry: get().telemetry,
+          }),
+        );
+      }
     },
 
     setDisplayName: async (name: string) => {
@@ -965,8 +982,8 @@ function advanceProgression(
   };
 }
 
-/** O que advanceDailyStreak precisa do state atual — mesmo padrão de ProgressionAdvanceContext, sem unlockChoice (a Sequência nunca gera marco multi-opção). */
-interface DailyStreakContext {
+/** O que advanceDailyStreak/advanceLeagueTier precisam do state atual — mesmo padrão de ProgressionAdvanceContext, sem unlockChoice (nenhum dos dois gera marco multi-opção). */
+interface SingleClaimContext {
   readonly progression: PersistedProgression;
   readonly recentUnlocks: readonly string[];
   readonly storage: ProgressionStorage;
@@ -974,17 +991,18 @@ interface DailyStreakContext {
 }
 
 /**
- * Sequência do Desafio Diário (ADR 0010, ticket 01): soma o dia à Sequência
- * e reivindica automaticamente os Títulos de constância atingidos (mesmo
- * mecanismo de claimReachedSingles que advanceProgression já usa). Não toca
- * runsWon/bestRunScore/etc — o Desafio Diário não conta para essas
- * estatísticas (ver playSelection), só para a Sequência.
+ * Aplica uma atualização pontual de estatísticas (ex.: recordDailySubmission,
+ * recordLeagueTier) e reivindica automaticamente os Títulos de opção única
+ * atingidos — mesmo mecanismo de claimReachedSingles que advanceProgression
+ * já usa, extraído aqui porque ADR 0010 tem duas fontes de Título fora do
+ * fim de Run (Sequência do Desafio Diário e Tier da Liga), cada uma tocando
+ * um stat diferente mas compondo exatamente os mesmos 3 passos.
  */
-function advanceDailyStreak(
-  todayIso: string,
-  context: DailyStreakContext,
+function advanceSingleMilestoneStats(
+  updateStats: (stats: ProfileStats) => ProfileStats,
+  context: SingleClaimContext,
 ): Pick<GameState, 'progression' | 'recentUnlocks'> {
-  const stats = recordDailySubmission(context.progression.stats, todayIso);
+  const stats = updateStats(context.progression.stats);
   const singles = claimReachedSingles({ ...context.progression, stats });
   let recentUnlocks = context.recentUnlocks;
   if (singles.claimed.length > 0) {
@@ -995,6 +1013,33 @@ function advanceDailyStreak(
   }
   saveProgression(context.storage, singles.persisted);
   return { progression: singles.persisted, recentUnlocks };
+}
+
+/**
+ * Sequência do Desafio Diário (ADR 0010, ticket 01): soma o dia à Sequência
+ * e reivindica automaticamente os Títulos de constância atingidos. Não toca
+ * runsWon/bestRunScore/etc — o Desafio Diário não conta para essas
+ * estatísticas (ver playSelection), só para a Sequência.
+ */
+function advanceDailyStreak(
+  todayIso: string,
+  context: SingleClaimContext,
+): Pick<GameState, 'progression' | 'recentUnlocks'> {
+  return advanceSingleMilestoneStats((stats) => recordDailySubmission(stats, todayIso), context);
+}
+
+/**
+ * Tier da Liga (ADR 0010, ticket 03): registra o maior Tier já alcançado e
+ * reivindica automaticamente os Títulos de progressão atingidos. Chamado a
+ * cada consulta à Liga que devolver um Tier (fetchLeaderboard) — recordLeagueTier
+ * já ignora observações que não superam o recorde, então chamar de novo com o
+ * mesmo Tier (ou um mais baixo, após rebaixamento) é seguro e não reivindica nada.
+ */
+function advanceLeagueTier(
+  tier: LeagueTier,
+  context: SingleClaimContext,
+): Pick<GameState, 'progression' | 'recentUnlocks'> {
+  return advanceSingleMilestoneStats((stats) => recordLeagueTier(stats, tier), context);
 }
 
 /** Ports da Loja a partir do estado atual do store (mesmo padrão do dailyFlow). */
