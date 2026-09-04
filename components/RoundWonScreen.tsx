@@ -1,8 +1,9 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { activeRelics, getForger, RunState } from '../engine';
+import { activeRelics, RunState } from '../engine';
 
 import { useTranslation } from '../i18n';
+import { forgerName } from './format';
 import { RelicRow } from './RelicRow';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
@@ -48,7 +49,7 @@ export function RoundWonScreen({ run }: RoundWonScreenProps) {
 
       {/* Forger note */}
       <Text style={styles.forgerNote}>
-        {t('roundWon.runTotal', { forger: getForger(run.forger).name, pts: run.runScore })}
+        {t('roundWon.runTotal', { forger: forgerName(run.forger), pts: run.runScore })}
       </Text>
 
       {/* Relics */}
