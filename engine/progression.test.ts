@@ -315,22 +315,23 @@ describe('Títulos: Vitórias, Recorde de Pontuação, Multiplicador e Maestria 
     expect(milestone?.condition(statsWith({ [field]: threshold + 1 }))).toBe(true);
   });
 
+  const allCardKeys = SUITS.flatMap((suit) =>
+    Array.from({ length: 10 }, (_, i) => cardKey({ suit, value: i + 1 })),
+  );
+  const fortyCardPlays = Object.fromEntries(allCardKeys.map((key) => [key, 1]));
+
   test('deckMastery: falso com 39 cartas distintas jogadas, verdadeiro com as 40', () => {
     const milestone = MILESTONES.find((m) => m.id === 'deckMastery');
-    const allKeys = SUITS.flatMap((suit) =>
-      Array.from({ length: 10 }, (_, i) => cardKey({ suit, value: i + 1 })),
-    );
-    expect(allKeys).toHaveLength(40);
-    const thirtyNine = Object.fromEntries(allKeys.slice(0, 39).map((key) => [key, 1]));
-    const forty = Object.fromEntries(allKeys.map((key) => [key, 1]));
+    expect(allCardKeys).toHaveLength(40);
+    const thirtyNine = Object.fromEntries(allCardKeys.slice(0, 39).map((key) => [key, 1]));
     expect(milestone?.condition(statsWith({ cardPlays: thirtyNine }))).toBe(false);
-    expect(milestone?.condition(statsWith({ cardPlays: forty }))).toBe(true);
+    expect(milestone?.condition(statsWith({ cardPlays: fortyCardPlays }))).toBe(true);
   });
 
   test('cada Título é reivindicado automaticamente (opção única) e não concede poder', () => {
     const p: typeof DEFAULT_PROGRESSION = {
       ...DEFAULT_PROGRESSION,
-      stats: statsWith({ runsWon: 25, bestRunScore: 9000, maxMultiplier: 12 }),
+      stats: statsWith({ runsWon: 25, bestRunScore: 9000, maxMultiplier: 12, cardPlays: fortyCardPlays }),
     };
     const result = claimReachedSingles(p);
     const titleOptionIds = [
@@ -340,6 +341,7 @@ describe('Títulos: Vitórias, Recorde de Pontuação, Multiplicador e Maestria 
       'title-high-scorer',
       'title-score-breaker',
       'title-mythic-forge',
+      'title-full-deck',
       'title-chain-master',
       'title-unstoppable-chain',
     ];
