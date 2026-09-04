@@ -1061,15 +1061,28 @@ describe('persistRoundEnd (DDA persistido ao fim da Rodada)', () => {
     const run = makeRunWithHand([spades(7)]);
     const storage = createMemoryDdaStorage();
     const event: RunEvent = { type: 'roundLost', roundNumber: 2, score: 30, target: 50 };
-    persistRoundEnd(run, [event], storage);
+    const adjustments = persistRoundEnd(run, [event], storage);
     expect(loadDda(storage, DEFAULT_DDA_CONFIG)).toEqual({
       lastFailedRound: 2,
       consecutiveFailures: 1,
       easyWins: 0,
     });
+    // 1ª falha, ainda abaixo do limiar de 3 — nenhum ajuste de fato.
+    expect(adjustments).toEqual([]);
   });
 
-  test('Run sem DDA (Desafio Diário) não toca o histórico persistido', () => {
+  test('a 3ª derrota seguida na mesma Rodada retorna o ajuste "reduced" (ticket 03)', () => {
+    const run = {
+      ...makeRunWithHand([spades(7)]),
+      dda: { lastFailedRound: 2, consecutiveFailures: 2, easyWins: 0 },
+    };
+    const storage = createMemoryDdaStorage(run.dda);
+    const event: RunEvent = { type: 'roundLost', roundNumber: 2, score: 30, target: 50 };
+    const adjustments = persistRoundEnd(run, [event], storage);
+    expect(adjustments).toEqual([{ direction: 'reduced', trigger: 'consecutiveFailures' }]);
+  });
+
+  test('Run sem DDA (Desafio Diário) não toca o histórico persistido nem retorna ajuste', () => {
     const run = {
       ...makeRunWithHand([spades(7)]),
       ddaConfig: { ...DEFAULT_DDA_CONFIG, enabled: false },
@@ -1080,7 +1093,9 @@ describe('persistRoundEnd (DDA persistido ao fim da Rodada)', () => {
       easyWins: 4,
     });
     const event: RunEvent = { type: 'roundLost', roundNumber: 1, score: 30, target: 50 };
-    persistRoundEnd(run, [event], storage);
+    const adjustments = persistRoundEnd(run, [event], storage);
+    // Sem DDA, mesmo uma transição que cruzaria o limiar (2→3) não conta.
+    expect(adjustments).toEqual([]);
     expect(loadDda(storage, DEFAULT_DDA_CONFIG)).toEqual({
       lastFailedRound: 1,
       consecutiveFailures: 2,
@@ -1238,5 +1253,109 @@ describe('telemetria: funil de Run (ticket 02)', () => {
     now = new Date(now.getTime() + 2000); // 2s depois da vitória — dentro do limiar
     store.getState().restartRun();
     expect(telemetry.events.some((event) => event.name === 'restart_immediate')).toBe(false);
+  });
+});
+
+describe('telemetria: DDA e progressão (ticket 03)', () => {
+  const WINNING_HAND = [clubs(10), spades(10), hearts(10), diamonds(10)];
+
+  test('a 3ª derrota seguida na mesma Rodada dispara dda_adjustment (reduced)', () => {
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({ telemetry });
+    store.getState().startRun();
+    store.setState({
+      run: {
+        ...makeRunWithHand([spades(1)]),
+        playsRemaining: 1,
+        dda: { lastFailedRound: 1, consecutiveFailures: 2, easyWins: 0 },
+      },
+    });
+    store.getState().toggleCard(cardKey(spades(1)));
+    store.getState().playSelection();
+
+    expect(telemetry.events).toContainEqual({
+      name: 'dda_adjustment',
+      params: { direction: 'reduced', trigger: 'consecutiveFailures' },
+    });
+  });
+
+  test('a 1ª derrota (ainda abaixo do limiar de 3) NÃO dispara dda_adjustment', () => {
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({ telemetry });
+    store.getState().startRun();
+    store.setState({ run: { ...makeRunWithHand([spades(1)]), playsRemaining: 1 } });
+    store.getState().toggleCard(cardKey(spades(1)));
+    store.getState().playSelection();
+
+    expect(telemetry.events.some((event) => event.name === 'dda_adjustment')).toBe(false);
+  });
+
+  test('a 5ª vitória fácil seguida dispara dda_adjustment (increased)', () => {
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({ telemetry });
+    store.getState().startRun();
+    store.setState({
+      run: {
+        ...makeRunWithHand(WINNING_HAND),
+        dda: { lastFailedRound: 0, consecutiveFailures: 0, easyWins: 4 },
+      },
+    });
+    for (const card of WINNING_HAND) store.getState().toggleCard(cardKey(card));
+    store.getState().playSelection();
+
+    expect(telemetry.events).toContainEqual({
+      name: 'dda_adjustment',
+      params: { direction: 'increased', trigger: 'easyWins' },
+    });
+  });
+
+  test('vitória fácil isolada (1ª da sequência, longe do limiar) NÃO dispara dda_adjustment', () => {
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({ telemetry });
+    store.getState().startRun();
+    store.setState({ run: makeRunWithHand(WINNING_HAND) });
+    for (const card of WINNING_HAND) store.getState().toggleCard(cardKey(card));
+    store.getState().playSelection();
+
+    expect(telemetry.events.some((event) => event.name === 'dda_adjustment')).toBe(false);
+  });
+
+  test('marco de opção única auto-reivindicado (1ª vitória) dispara milestone_unlocked', () => {
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({ telemetry });
+    store.getState().startRun();
+    store.setState({ run: { ...makeRunWithHand(WINNING_HAND), roundNumber: 6 } });
+    for (const card of WINNING_HAND) store.getState().toggleCard(cardKey(card));
+    store.getState().playSelection();
+
+    expect(store.getState().run?.phase).toBe('runWon');
+    expect(telemetry.events).toContainEqual({
+      name: 'milestone_unlocked',
+      params: { optionId: 'unlock-forger-hammer', milestoneId: 'firstRunWon' },
+    });
+  });
+
+  test('claimUnlock (escolha da ordem num marco multi-opção) dispara milestone_unlocked', () => {
+    const telemetry = makeFakeTelemetry();
+    const store = createGameStore({
+      telemetry,
+      initialProgression: {
+        ...DEFAULT_PROGRESSION,
+        stats: { ...DEFAULT_PROFILE_STATS, runsWon: 4 },
+        claimedOptions: ['unlock-forger-hammer', 'unlock-forger-anvil'],
+      },
+    });
+    store.getState().startRun();
+    store.setState({ run: { ...makeRunWithHand(WINNING_HAND), roundNumber: 6 } });
+    for (const card of WINNING_HAND) store.getState().toggleCard(cardKey(card));
+    store.getState().playSelection();
+    expect(store.getState().unlockChoice).not.toBeNull(); // marco multi-opção pendente
+
+    telemetry.clear(); // só interessa a escolha da ordem a partir daqui
+    store.getState().claimUnlock('value-bonus-7');
+    expect(telemetry.events).toContainEqual({
+      name: 'milestone_unlocked',
+      params: { optionId: 'value-bonus-7', milestoneId: 'fifthRunWon' },
+    });
   });
 });
