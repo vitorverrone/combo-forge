@@ -165,6 +165,74 @@ export const MILESTONES: readonly Milestone[] = [
     condition: (stats) => stats.bestRunScore >= 2500,
     options: [{ id: 'unlock-rare-relics', title: 'Rare relics in the forge', unlock: { kind: 'rareRelics' } }],
   },
+  // Títulos (ADR 0009, ticket 02): marcos cosméticos — reempacotam estatísticas
+  // de perfil já rastreadas em vez de conteúdo mecânico novo, esticando a
+  // curva de Meta-Progressão até o D30. Opção única, reivindicação automática
+  // (mesmo mecanismo dos marcos de opção única acima), sem UnlockKind que
+  // altere UnlocksState (kind: 'title' é no-op — ver applyUnlockKind).
+  {
+    id: 'run10Won',
+    title: 'Seasoned Smith',
+    description: 'Win 10 runs.',
+    condition: (stats) => stats.runsWon >= 10,
+    options: [{ id: 'title-seasoned-smith', title: 'Seasoned Smith', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'run15Won',
+    title: 'Veteran Smith',
+    description: 'Win 15 runs.',
+    condition: (stats) => stats.runsWon >= 15,
+    options: [{ id: 'title-veteran-smith', title: 'Veteran Smith', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'run25Won',
+    title: 'Forge Legend',
+    description: 'Win 25 runs.',
+    condition: (stats) => stats.runsWon >= 25,
+    options: [{ id: 'title-forge-legend', title: 'Forge Legend', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'scoreRecord4000',
+    title: 'High Scorer',
+    description: 'Score 4,000+ points in a single run.',
+    condition: (stats) => stats.bestRunScore >= 4000,
+    options: [{ id: 'title-high-scorer', title: 'High Scorer', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'scoreRecord6000',
+    title: 'Score Breaker',
+    description: 'Score 6,000+ points in a single run.',
+    condition: (stats) => stats.bestRunScore >= 6000,
+    options: [{ id: 'title-score-breaker', title: 'Score Breaker', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'scoreRecord9000',
+    title: 'Mythic Forge',
+    description: 'Score 9,000+ points in a single run.',
+    condition: (stats) => stats.bestRunScore >= 9000,
+    options: [{ id: 'title-mythic-forge', title: 'Mythic Forge', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'multiplierRecord8',
+    title: 'Chain Master',
+    description: 'Reach a ×8 Combo Multiplier in a single play.',
+    condition: (stats) => stats.maxMultiplier >= 8,
+    options: [{ id: 'title-chain-master', title: 'Chain Master', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'multiplierRecord12',
+    title: 'Unstoppable Chain',
+    description: 'Reach a ×12 Combo Multiplier in a single play.',
+    condition: (stats) => stats.maxMultiplier >= 12,
+    options: [{ id: 'title-unstoppable-chain', title: 'Unstoppable Chain', unlock: { kind: 'title' } }],
+  },
+  {
+    id: 'deckMastery',
+    title: 'Full Deck',
+    description: 'Play all 40 cards in the Deck at least once.',
+    condition: (stats) => Object.keys(stats.cardPlays).length >= 40,
+    options: [{ id: 'title-full-deck', title: 'Full Deck', unlock: { kind: 'title' } }],
+  },
 ];
 
 interface IndexedOption {

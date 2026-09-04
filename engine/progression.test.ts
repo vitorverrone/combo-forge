@@ -1,4 +1,4 @@
-import { Card, cardKey } from './cards';
+import { Card, cardKey, SUITS } from './cards';
 import { BONUS_FORGE_EFFECTS, generateForgeOffers } from './forge';
 import { createSeededRng } from './random';
 import { RELIC_POOL } from './relics';
@@ -13,6 +13,7 @@ import {
   DEFAULT_PROGRESSION,
   isForgerUnlocked,
   isOptionClaimable,
+  MILESTONES,
   milestoneOptionTitle,
   normalizeProgression,
   pendingMilestones,
@@ -293,6 +294,64 @@ describe('normalizeProgression (saves antigos — ADR 0009)', () => {
       claimedOptions: ['unlock-forger-hammer'],
     };
     expect(normalizeProgression(p)).toEqual(p);
+  });
+});
+
+describe('Títulos: Vitórias, Recorde de Pontuação, Multiplicador e Maestria de Baralho (ticket 02, ADR 0009)', () => {
+  test.each([
+    ['run10Won', 'runsWon', 10] as const,
+    ['run15Won', 'runsWon', 15] as const,
+    ['run25Won', 'runsWon', 25] as const,
+    ['scoreRecord4000', 'bestRunScore', 4000] as const,
+    ['scoreRecord6000', 'bestRunScore', 6000] as const,
+    ['scoreRecord9000', 'bestRunScore', 9000] as const,
+    ['multiplierRecord8', 'maxMultiplier', 8] as const,
+    ['multiplierRecord12', 'maxMultiplier', 12] as const,
+  ])('%s: condição falsa abaixo do limiar, verdadeira no limiar exato e acima dele', (id, field, threshold) => {
+    const milestone = MILESTONES.find((m) => m.id === id);
+    expect(milestone).toBeDefined();
+    expect(milestone?.condition(statsWith({ [field]: threshold - 1 }))).toBe(false);
+    expect(milestone?.condition(statsWith({ [field]: threshold }))).toBe(true);
+    expect(milestone?.condition(statsWith({ [field]: threshold + 1 }))).toBe(true);
+  });
+
+  test('deckMastery: falso com 39 cartas distintas jogadas, verdadeiro com as 40', () => {
+    const milestone = MILESTONES.find((m) => m.id === 'deckMastery');
+    const allKeys = SUITS.flatMap((suit) =>
+      Array.from({ length: 10 }, (_, i) => cardKey({ suit, value: i + 1 })),
+    );
+    expect(allKeys).toHaveLength(40);
+    const thirtyNine = Object.fromEntries(allKeys.slice(0, 39).map((key) => [key, 1]));
+    const forty = Object.fromEntries(allKeys.map((key) => [key, 1]));
+    expect(milestone?.condition(statsWith({ cardPlays: thirtyNine }))).toBe(false);
+    expect(milestone?.condition(statsWith({ cardPlays: forty }))).toBe(true);
+  });
+
+  test('cada Título é reivindicado automaticamente (opção única) e não concede poder', () => {
+    const p: typeof DEFAULT_PROGRESSION = {
+      ...DEFAULT_PROGRESSION,
+      stats: statsWith({ runsWon: 25, bestRunScore: 9000, maxMultiplier: 12 }),
+    };
+    const result = claimReachedSingles(p);
+    const titleOptionIds = [
+      'title-seasoned-smith',
+      'title-veteran-smith',
+      'title-forge-legend',
+      'title-high-scorer',
+      'title-score-breaker',
+      'title-mythic-forge',
+      'title-chain-master',
+      'title-unstoppable-chain',
+    ];
+    for (const optionId of titleOptionIds) {
+      expect(result.claimed).toContain(optionId);
+    }
+    const unlocks = computeUnlocks(result.persisted);
+    // Os poderes vêm dos marcos originais (1ª/3ª vitória, recorde ≥ 2.500),
+    // não dos Títulos — que não concedem Forjador/Efeito/Relíquia nenhum.
+    expect(unlocks.forgers).toEqual(['apprentice', 'hammer', 'anvil']);
+    expect(unlocks.rareRelics).toBe(true);
+    expect(unlocks.extraEffects).toEqual([]);
   });
 });
 
