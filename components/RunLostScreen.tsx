@@ -5,6 +5,7 @@ import { Trans } from 'react-i18next';
 import { activeRelics, RunState } from '../engine';
 
 import { useTranslation } from '../i18n';
+import { AchievementToast } from './AchievementToast';
 import { DailySubmitStatus } from './DailySubmitStatus';
 import { forgerName } from './format';
 import { RelicRow } from './RelicRow';
@@ -22,7 +23,6 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
   const { t } = useTranslation();
   const restartRun = useGameStore((state) => state.restartRun);
   const backToStart = useGameStore((state) => state.backToStart);
-  const recentUnlocks = useGameStore((state) => state.recentUnlocks);
   const runMode = useGameStore((state) => state.runMode);
   const daily = useGameStore((state) => state.daily);
   const openDaily = useGameStore((state) => state.openDaily);
@@ -61,6 +61,8 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
 
   return (
     <View style={styles.container}>
+      <AchievementToast />
+
       <Text style={styles.eyebrow}>
         {dailyEnd ? `${t('runLost.dailyChallenge')} · ` : ''}
         {t('runLost.eyebrowRound', { number: run.roundNumber, forger: forgerName(run.forger) })}
@@ -77,14 +79,6 @@ export function RunLostScreen({ run }: RunLostScreenProps) {
         </Text>
       ) : (
         <Text style={styles.missingText}>{t('runLost.targetSlipped')}</Text>
-      )}
-
-      {!dailyEnd && recentUnlocks.length > 0 && (
-        <View style={styles.unlockBanner}>
-          <Text style={styles.unlockBannerText}>
-            {recentUnlocks.length > 1 ? t('runWon.newUnlocks') : t('runWon.newUnlock')}: {recentUnlocks.join(' · ')}
-          </Text>
-        </View>
       )}
 
       {dailyEnd && (
@@ -176,24 +170,6 @@ const styles = StyleSheet.create({
   missingValue: {
     color: colors.danger,
     fontWeight: '800',
-  },
-  unlockBanner: {
-    alignSelf: 'stretch',
-    borderRadius: radius[10],
-    backgroundColor: 'rgba(224,165,62,0.15)',
-    borderWidth: 1,
-    borderColor: colors.gold,
-    paddingVertical: spacing[10],
-    paddingHorizontal: spacing[12],
-    alignItems: 'center',
-    marginTop: spacing[16],
-  },
-  unlockBannerText: {
-    fontFamily: fonts.heading,
-    color: colors.gold,
-    fontSize: 13,
-    fontWeight: '800',
-    letterSpacing: 1,
   },
   progressTrack: {
     alignSelf: 'stretch',

@@ -62,7 +62,7 @@
   "profile": {
     "eyebrow": "Estatísticas do jogador",
     "title": "Perfil",
-    "desc": "Seu recorde em cada run, suas cartas favoritas e seu progresso de marcos.",
+    "desc": "Seu recorde em cada run, suas cartas favoritas e seu progresso de conquistas.",
     "bestRunScore": "Melhor pontuação de run",
     "runsWon": "Runs ganhas",
     "winRate": "Taxa de vitória",
@@ -70,7 +70,7 @@
     "favoriteCards": "Cartas favoritas",
     "noCardsYet": "Nenhuma carta jogada ainda — comece uma run!",
     "plays": "jogadas",
-    "milestones": "Marcos",
+    "milestones": "Conquistas",
     "forgersUnlocked": "Forjadores desbloqueados: {{count}}/3",
     "language": "Idioma",
     "displayName": "Nome de Exibição"
@@ -83,7 +83,9 @@
     "relic": "Relíquia",
     "cardEffect": "Efeito de Carta",
     "chooseCard": "Escolha uma carta",
-    "forgeButton": "Forjar"
+    "forgeButton": "Forjar",
+    "chooseRelicToReplace": "Escolha uma Relíquia para substituir",
+    "relicCapReached": "Você atingiu o limite de Relíquias — escolha uma para trocar por {{name}}."
   },
   "collection": {
     "eyebrow": "Meta-progressão",
@@ -91,7 +93,7 @@
     "subtitle": "Tudo que você conquistou nas runs. Itens trancados mostram sua condição de desbloqueio.",
     "runsWon": "Runs ganhas",
     "bestScore": "Melhor pontuação",
-    "milestones": "Marcos",
+    "milestones": "Conquistas",
     "forgers": "Forjadores",
     "relics": "Relíquias",
     "forgeEffects": "Efeitos de Forja",
@@ -202,7 +204,7 @@
     "forgeCallout": "Escolha uma Relíquia (efeito permanente pro resto da Run) ou um Efeito de Carta (fortalece uma carta específica). Toque em qualquer oferta para continuar."
   },
   "unlockChoice": {
-    "milestoneReached": "Marco alcançado",
+    "milestoneReached": "Conquista alcançada",
     "pickUnlock": "Escolha qual desbloqueio vem primeiro — os outros ficam disponíveis na Coleção.",
     "new": "Novo"
   },
@@ -403,6 +405,7 @@
     "cardOfSuit": "{{value}} de {{suit}}",
     "applyEffect": "Aplicar {{effect}}",
     "takeRelic": "Pegar relíquia {{name}}",
+    "chooseRelicToReplace": "Substituir {{name}}",
     "forgeEffect": "Efeito de forja {{effect}}",
     "unlockItem": "Desbloquear {{name}}",
     "watchAdExtraAttempt": "Assistir anúncio para tentativa extra",

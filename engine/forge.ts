@@ -2,8 +2,11 @@
  * Forja e Cartas Forjadas.
  *
  * Ao vencer uma Rodada (da 1ª à 5ª), o motor gera 3 ofertas de Forja
- * distintas: 2 de Efeito de Forja + 1 de Relíquia (ou uma terceira oferta de
- * carta quando o teto de 3 Relíquias ativas foi atingido). Aplicar um efeito
+ * distintas: 2 de Efeito de Forja + 1 de Relíquia — sempre, mesmo com o teto
+ * de RELIC_CAP Relíquias ativas já atingido (ajuste de UX: a oferta de
+ * Relíquia deixou de virar uma terceira oferta de carta; ver
+ * applyForgeOffer em run.ts, que passa a exigir escolher qual Relíquia já
+ * adquirida substituir quando o teto está cheio). Aplicar um efeito
  * transforma a carta do Baralho numa Carta Forjada, permanente na Run, que
  * pode ser forjada de novo em Forjas futuras (empilhamento; a resolução
  * sempre soma antes de multiplicar — ver patterns.ts).
@@ -17,16 +20,14 @@
 import { Card, cardKey, ForgeEffect, ForgedCard } from './cards';
 import { shuffle } from './deck';
 import { Rng } from './random';
-import { Relic, RELIC_CAP, RELIC_POOL } from './relics';
+import { Relic, RELIC_POOL } from './relics';
 
 export type ForgeOffer =
   | { readonly type: 'cardEffect'; readonly effect: ForgeEffect }
   | { readonly type: 'relic'; readonly relic: Relic };
 
-/** Quantidade padrão de ofertas de Efeito de Forja por Forja (2). */
+/** Quantidade de ofertas de Efeito de Forja por Forja — sempre 2, mesmo no teto de Relíquias. */
 export const CARD_EFFECT_OFFERS = 2;
-/** Quantidade quando a oferta de Relíquia vira carta (teto de Relíquias atingido). */
-export const MAX_CARD_EFFECT_OFFERS = 3;
 
 /**
  * Pool de Efeitos de Forja ofertáveis (sintonizável — os números são dados,
@@ -96,9 +97,10 @@ export interface ForgeOfferOptions {
 export const RARE_RELIC_BOOST_RATE = 0.5;
 
 /**
- * Gera as 3 ofertas da Forja: 2 de Efeito de Forja + 1 de Relíquia. Com o
- * teto de RELIC_CAP Relíquias ativas, a oferta de Relíquia vira uma terceira
- * oferta de carta. Determinístico para uma mesma stream.
+ * Gera as 3 ofertas da Forja: 2 de Efeito de Forja + 1 de Relíquia, sempre —
+ * mesmo com o teto de RELIC_CAP Relíquias ativas já atingido (a escolha de
+ * qual Relíquia substituir fica pra applyForgeOffer, em run.ts).
+ * Determinístico para uma mesma stream.
  */
 export function generateForgeOffers(
   rng: Rng,
@@ -107,30 +109,26 @@ export function generateForgeOffers(
 ): ForgeOffer[] {
   const effectPool = options.forgeEffects ?? FORGE_EFFECT_POOL;
   const relicPool = options.relics ?? RELIC_POOL;
-  const hasRelicSlot = ownedRelics.length < RELIC_CAP;
-  const effectCount = hasRelicSlot ? CARD_EFFECT_OFFERS : MAX_CARD_EFFECT_OFFERS;
-  const offers: ForgeOffer[] = pickDistinct(effectPool, effectCount, rng).map((option) => ({
+  const offers: ForgeOffer[] = pickDistinct(effectPool, CARD_EFFECT_OFFERS, rng).map((option) => ({
     type: 'cardEffect',
     effect: option.effect,
   }));
-  if (hasRelicSlot) {
-    const available = relicPool.filter((relic) => !ownedRelics.some((owned) => owned.id === relic.id));
-    // Exclui categoria combo do subconjunto raro do boost (rebalance pós
-    // health-check, ADR 0006): o próprio boost de Relíquia rara do DDA não
-    // deve mais alimentar o desequilíbrio de Combo que o DDA existe pra
-    // conter. Sem raras fora de combo, o boost simplesmente não tem efeito
-    // nesta chamada — cai para o sorteio normal entre `available`.
-    const boostableRares = available.filter((relic) => relic.rarity === 'rare' && relic.category !== 'combo');
-    let candidates = available;
-    if (options.rareRelicBoost && boostableRares.length > 0 && rng() < RARE_RELIC_BOOST_RATE) {
-      candidates = boostableRares;
-    }
-    const [relic] = pickDistinct(candidates, 1, rng);
-    if (relic === undefined) {
-      throw new Error('Nenhuma Relíquia disponível para a oferta de Forja.');
-    }
-    offers.push({ type: 'relic', relic });
+  const available = relicPool.filter((relic) => !ownedRelics.some((owned) => owned.id === relic.id));
+  // Exclui categoria combo do subconjunto raro do boost (rebalance pós
+  // health-check, ADR 0006): o próprio boost de Relíquia rara do DDA não
+  // deve mais alimentar o desequilíbrio de Combo que o DDA existe pra
+  // conter. Sem raras fora de combo, o boost simplesmente não tem efeito
+  // nesta chamada — cai para o sorteio normal entre `available`.
+  const boostableRares = available.filter((relic) => relic.rarity === 'rare' && relic.category !== 'combo');
+  let candidates = available;
+  if (options.rareRelicBoost && boostableRares.length > 0 && rng() < RARE_RELIC_BOOST_RATE) {
+    candidates = boostableRares;
   }
+  const [relic] = pickDistinct(candidates, 1, rng);
+  if (relic === undefined) {
+    throw new Error('Nenhuma Relíquia disponível para a oferta de Forja.');
+  }
+  offers.push({ type: 'relic', relic });
   return offers;
 }
 

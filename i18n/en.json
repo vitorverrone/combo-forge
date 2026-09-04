@@ -62,7 +62,7 @@
   "profile": {
     "eyebrow": "Player stats",
     "title": "Profile",
-    "desc": "Your record across every run, your favorite cards and your milestone progress.",
+    "desc": "Your record across every run, your favorite cards and your achievement progress.",
     "bestRunScore": "Best run score",
     "runsWon": "Runs won",
     "winRate": "Win rate",
@@ -70,7 +70,7 @@
     "favoriteCards": "Favorite cards",
     "noCardsYet": "No cards played yet — start a run!",
     "plays": "plays",
-    "milestones": "Milestones",
+    "milestones": "Achievements",
     "forgersUnlocked": "Forgers unlocked: {{count}}/3",
     "language": "Language",
     "displayName": "Display Name"
@@ -83,7 +83,9 @@
     "relic": "Relic",
     "cardEffect": "Card Effect",
     "chooseCard": "Choose a card",
-    "forgeButton": "Forge"
+    "forgeButton": "Forge",
+    "chooseRelicToReplace": "Choose a Relic to replace",
+    "relicCapReached": "You've reached the Relic limit — pick one to swap for {{name}}."
   },
   "collection": {
     "eyebrow": "Meta-progression",
@@ -91,7 +93,7 @@
     "subtitle": "Everything you've earned across runs. Locked items show their unlock condition.",
     "runsWon": "Runs won",
     "bestScore": "Best score",
-    "milestones": "Milestones",
+    "milestones": "Achievements",
     "forgers": "Forgers",
     "relics": "Relics",
     "forgeEffects": "Forge Effects",
@@ -202,7 +204,7 @@
     "forgeCallout": "Choose a Relic (a permanent effect for the rest of the run) or a Card Effect (strengthens one specific card). Tap any offer to continue."
   },
   "unlockChoice": {
-    "milestoneReached": "Milestone reached",
+    "milestoneReached": "Achievement reached",
     "pickUnlock": "Pick which unlock comes first — the rest stay available in the Collection.",
     "new": "New"
   },
@@ -403,6 +405,7 @@
     "cardOfSuit": "{{value}} of {{suit}}",
     "applyEffect": "Apply {{effect}}",
     "takeRelic": "Take relic {{name}}",
+    "chooseRelicToReplace": "Replace {{name}}",
     "forgeEffect": "Forge effect {{effect}}",
     "unlockItem": "Unlock {{name}}",
     "watchAdExtraAttempt": "Watch ad for extra attempt",

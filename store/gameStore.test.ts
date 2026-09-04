@@ -301,20 +301,26 @@ describe('fim de Rodada e derrota', () => {
     expect(state.run?.relics.map((candidate) => candidate.id)).toContain(relic.id);
   });
 
-  test('applyForgeOffer respeita o teto de 3 Relíquias: sem slot, só ofertas de carta', () => {
+  test('applyForgeOffer no teto de 3 Relíquias: a oferta de Relíquia continua aparecendo e substitui a escolhida', () => {
     const store = createGameStore({ seed: () => 23 });
     store.getState().startRun();
-    // Teto cheio: o motor gera 3 ofertas de carta, sem oferta de Relíquia.
     const fullRelics = RELIC_POOL.slice(0, 3);
     const offers = generateForgeOffers(createSeededRng(7), fullRelics);
-    expect(offers.every((offer) => offer.type === 'cardEffect')).toBe(true);
+    expect(offers.filter((offer) => offer.type === 'relic')).toHaveLength(1);
     store.setState({
-      run: { ...store.getState().run!, phase: 'forging', forgeOffers: offers },
+      run: { ...store.getState().run!, phase: 'forging', forgeOffers: offers, relics: fullRelics },
     });
-    // Aplicar a primeira oferta (de carta) segue o fluxo normal.
-    store.getState().applyForgeOffer(0, createDeck()[5]);
-    expect(store.getState().run?.phase).toBe('roundWon');
-    expect(store.getState().run?.relics).toHaveLength(0);
+    const relicIndex = offers.findIndex((offer) => offer.type === 'relic');
+    const newRelic = (offers[relicIndex] as Extract<(typeof offers)[number], { type: 'relic' }>).relic;
+    // Sem escolher qual substituir, a oferta é recusada e o estado não muda.
+    const runBefore = store.getState().run;
+    store.getState().applyForgeOffer(relicIndex);
+    expect(store.getState().run).toBe(runBefore);
+    // Escolhendo qual substituir, a troca acontece.
+    store.getState().applyForgeOffer(relicIndex, undefined, fullRelics[1].id);
+    const state = store.getState();
+    expect(state.run?.phase).toBe('roundWon');
+    expect(state.run?.relics.map((r) => r.id)).toEqual([fullRelics[0].id, newRelic.id, fullRelics[2].id]);
   });
 
   test('applyForgeOffer ignora fases que não sejam forging', () => {
