@@ -1331,7 +1331,7 @@ describe('telemetria: DDA e progressão (ticket 03)', () => {
     expect(store.getState().run?.phase).toBe('runWon');
     expect(telemetry.events).toContainEqual({
       name: 'milestone_unlocked',
-      params: { optionId: 'unlock-forger-hammer' },
+      params: { optionId: 'unlock-forger-hammer', milestoneId: 'firstRunWon' },
     });
   });
 
@@ -1355,7 +1355,7 @@ describe('telemetria: DDA e progressão (ticket 03)', () => {
     store.getState().claimUnlock('value-bonus-7');
     expect(telemetry.events).toContainEqual({
       name: 'milestone_unlocked',
-      params: { optionId: 'value-bonus-7' },
+      params: { optionId: 'value-bonus-7', milestoneId: 'fifthRunWon' },
     });
   });
 });

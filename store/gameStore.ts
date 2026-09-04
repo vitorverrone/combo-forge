@@ -52,6 +52,7 @@ import {
   isOptionClaimable,
   loadDda,
   makePlay,
+  milestoneOfOption,
   milestoneOptionTitle,
   PendingMilestone,
   pendingMilestones,
@@ -76,6 +77,7 @@ import {
   ShopProvider,
   ShopStorage,
   createDevTelemetryProvider,
+  TelemetryParams,
   TelemetryProvider,
 } from '../engine';
 
@@ -357,6 +359,17 @@ function emitDdaAdjustmentTelemetry(
       trigger: adjustment.trigger,
     });
   }
+}
+
+/**
+ * Parâmetros do milestone_unlocked (ticket 03/ADR 0007): milestoneId (ex.:
+ * "fifthRunWon") identifica QUAL marco, optionId (ex.: "value-bonus-7")
+ * identifica qual desbloqueio dentro dele — sem os dois, medir quantas
+ * sessões até esgotar cada marco (o motivo do ticket) exigiria um mapa
+ * optionId → milestone fora da telemetria.
+ */
+function milestoneUnlockedParams(optionId: string): TelemetryParams {
+  return { optionId, milestoneId: milestoneOfOption(optionId)?.id ?? optionId };
 }
 
 /**
@@ -688,15 +701,13 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
             };
           }
           set({
-            ...advanceProgression(
-              result,
-              played,
+            ...advanceProgression(result, played, {
               progression,
-              get().unlockChoice,
-              get().recentUnlocks,
-              progressionStorage,
-              get().telemetry,
-            ),
+              unlockChoice: get().unlockChoice,
+              recentUnlocks: get().recentUnlocks,
+              storage: progressionStorage,
+              telemetry: get().telemetry,
+            }),
             ...interstitialPatch,
             ...lastRunLostAtPatch,
           });
@@ -754,7 +765,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       if (!isOptionClaimable(progression, optionId)) return;
       const next = engineClaimOption(progression, optionId);
       saveProgression(progressionStorage, next);
-      void telemetry.logEvent('milestone_unlocked', { optionId });
+      void telemetry.logEvent('milestone_unlocked', milestoneUnlockedParams(optionId));
       // O modal fecha após a escolha; as opções restantes ficam na Coleção.
       set({
         progression: next,
@@ -841,6 +852,15 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
   }));
 }
 
+/** O que advanceProgression precisa do state atual — sempre viajam juntos no call site (mesmo padrão de ShopFlowDeps/ShopFlowState). */
+interface ProgressionAdvanceContext {
+  readonly progression: PersistedProgression;
+  readonly unlockChoice: PendingMilestone | null;
+  readonly recentUnlocks: readonly string[];
+  readonly storage: ProgressionStorage;
+  readonly telemetry: TelemetryProvider;
+}
+
 /**
  * Avança a meta-progressão após uma ação de Jogada: acumula estatísticas por
  * Jogada, registra o fim da Run (vitória/derrota + recorde), reivindica
@@ -851,15 +871,11 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
 function advanceProgression(
   result: { run: RunState; events: readonly RunEvent[] },
   played: readonly Card[],
-  progression: PersistedProgression,
-  currentChoice: PendingMilestone | null,
-  currentUnlocks: readonly string[],
-  storage: ProgressionStorage,
-  telemetry: TelemetryProvider,
+  context: ProgressionAdvanceContext,
 ): Partial<GameState> {
-  let next: PersistedProgression = progression;
-  let unlockChoice = currentChoice;
-  let recentUnlocks = currentUnlocks;
+  let next: PersistedProgression = context.progression;
+  let unlockChoice = context.unlockChoice;
+  let recentUnlocks = context.recentUnlocks;
 
   const playedEvent = result.events.find((event) => event.type === 'played');
   if (playedEvent !== undefined) {
@@ -876,7 +892,7 @@ function advanceProgression(
     if (singles.claimed.length > 0) {
       recentUnlocks = singles.claimed.map(milestoneOptionTitle);
       for (const optionId of singles.claimed) {
-        void telemetry.logEvent('milestone_unlocked', { optionId });
+        void context.telemetry.logEvent('milestone_unlocked', milestoneUnlockedParams(optionId));
       }
     }
     const multi = pendingMilestones(next).find((candidate) => candidate.milestone.options.length > 1);
@@ -887,7 +903,7 @@ function advanceProgression(
 
   // Grava a cada Jogada: o blob é pequeno (estatísticas + ids) e o port do
   // SQLite é síncrono via KV store — aceitável no MVP.
-  saveProgression(storage, next);
+  saveProgression(context.storage, next);
   return {
     run: result.run,
     selectedKeys: [],
