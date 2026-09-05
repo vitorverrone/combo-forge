@@ -2,12 +2,26 @@
  * Testes do serviço Supabase (candidato B da revisão de arquitetura,
  * 2026-09-04): o resto do arquivo é composto de casts de uma linha sem
  * lógica (sem teste dedicado, correção garantida via verify-contract.mjs
- * contra Postgres real); toEngineLeagueStanding é a única conversão com
- * lógica de verdade (active → null ou objeto) e por isso a única testada
+ * contra Postgres real); toEngineLeagueStanding e roundScoreForSubmission são
+ * as únicas conversões com lógica de verdade e por isso as únicas testadas
  * aqui.
  */
 import { LeagueLeaderboardResponse } from '../supabase/contract';
-import { toEngineLeagueStanding } from './supabase';
+import { roundScoreForSubmission, toEngineLeagueStanding } from './supabase';
+
+describe('roundScoreForSubmission', () => {
+  test('arredonda pontuação fracionária de Relíquias com multiplicador não-inteiro (ex.: Chain Reaction ×1.5)', () => {
+    expect(roundScoreForSubmission(2367.5)).toBe(2368);
+  });
+
+  test('arredonda pra baixo quando a fração é menor que 0.5', () => {
+    expect(roundScoreForSubmission(100.4)).toBe(100);
+  });
+
+  test('pontuação já inteira passa direto', () => {
+    expect(roundScoreForSubmission(1500)).toBe(1500);
+  });
+});
 
 describe('toEngineLeagueStanding', () => {
   test('Liga inativa (active: false) vira null', () => {
