@@ -8,14 +8,13 @@
     "scheme": "comboforge",
     "userInterfaceStyle": "light",
     "icon": "./assets/icon.png",
-    "splash": {
-      "backgroundColor": "#161120"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.combocardforge.app",
       "infoPlist": {
-        "LSApplicationQueriesSchemes": ["itms-apps"]
+        "LSApplicationQueriesSchemes": [
+          "itms-apps"
+        ]
       }
     },
     "android": {
@@ -58,7 +57,15 @@
       "./plugins/withOrientationLockCompat",
       "expo-font",
       "expo-localization",
-      "expo-updates"
+      "expo-updates",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#161120",
+          "image": "./assets/icon.png",
+          "imageWidth": 200
+        }
+      ]
     ],
     "extra": {
       "eas": {

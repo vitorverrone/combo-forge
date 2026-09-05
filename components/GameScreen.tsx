@@ -86,13 +86,8 @@ export function GameScreen() {
               active={gameScreenActiveStep === 4}
               text={t('tutorial.step4Callout')}
               spotlightRadius={radius[10]}
-              leftAction={{
-                label: t('tutorial.skip'),
-                accessibilityLabel: t('a11y.skipTutorial'),
-                onPress: tutorialGameScreenSkipPressed,
-              }}
               rightAction={{
-                label: t('common.done'),
+                label: t('tutorial.complete'),
                 accessibilityLabel: t('a11y.completeTutorial'),
                 onPress: tutorialGameScreenSkipPressed,
               }}
