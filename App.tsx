@@ -15,6 +15,7 @@ import { ProfileScreen } from './components/ProfileScreen';
 import { ShopScreen } from './components/ShopScreen';
 import { StartScreen } from './components/StartScreen';
 import { UnlockChoiceModal } from './components/UnlockChoiceModal';
+import { UpdatePrompt } from './components/UpdatePrompt';
 import { colors } from './components/theme';
 import { initializeSqlitePersistence } from './store/bootstrap';
 import { useGameStore } from './store/gameStore';
@@ -65,6 +66,7 @@ function AppShell() {
         <AdBanner />
         <UnlockChoiceModal />
         <GameFeedback />
+        <UpdatePrompt />
         <StatusBar style="light" />
       </View>
     </TutorialProvider>

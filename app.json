@@ -12,7 +12,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.combocardforge.app"
+      "bundleIdentifier": "com.combocardforge.app",
+      "infoPlist": {
+        "LSApplicationQueriesSchemes": ["itms-apps"]
+      }
     },
     "android": {
       "predictiveBackGestureEnabled": false,
@@ -49,13 +52,21 @@
       "./plugins/withAndroidResizable",
       "./plugins/withOrientationLockCompat",
       "expo-font",
-      "expo-localization"
+      "expo-localization",
+      "expo-updates"
     ],
     "extra": {
       "eas": {
         "projectId": "e1c84c4c-b160-4fa8-ae87-4054fd87299c"
       }
     },
-    "owner": "vitorverrones-team"
+    "owner": "vitorverrones-team",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/e1c84c4c-b160-4fa8-ae87-4054fd87299c",
+      "checkAutomatically": "NEVER"
+    }
   }
 }
