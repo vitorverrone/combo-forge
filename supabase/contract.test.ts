@@ -188,8 +188,8 @@ describe('Liga: resolução de Tier a partir da Divisão (resolveLeagueTierFromD
 });
 
 describe('Liga: constantes do contrato (ADR 0010, ticket 02)', () => {
-  test('limiar de massa crítica documentado em 300 participantes/semana', () => {
-    expect(LEAGUE_POPULATION_THRESHOLD).toBe(300);
+  test('limiar de massa crítica documentado em 30 participantes/semana', () => {
+    expect(LEAGUE_POPULATION_THRESHOLD).toBe(30);
   });
 });
 
@@ -222,8 +222,8 @@ function extractScriptProhibitedTerms(script: string): string[] {
 }
 
 describe('Nome de Exibição — termos proibidos sem drift entre SQL, script e espelho TS (sem Postgres, ao contrário de npm run verify:backend)', () => {
-  test('lista embutida na migração 0003_display_name.sql bate com o espelho TS (engine/displayName.ts)', () => {
-    const sql = readFileSync(join(__dirname, 'migrations', '0003_display_name.sql'), 'utf8');
+  test('lista embutida na migração 0006_display_name_prohibited_terms.sql (redefinição mais recente) bate com o espelho TS (engine/displayName.ts)', () => {
+    const sql = readFileSync(join(__dirname, 'migrations', '0006_display_name_prohibited_terms.sql'), 'utf8');
     expect(extractSqlProhibitedTerms(sql).sort()).toEqual([...PROHIBITED_DISPLAY_NAME_TERMS].sort());
   });
 

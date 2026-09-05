@@ -77,8 +77,15 @@ const LEAGUE_TIERS: readonly LeagueTier[] = ['bronze', 'silver', 'gold', 'platin
 export const LEAGUE_DIVISION_SIZE = 30;
 /** Tamanho da zona de subida/descida — espelho de `v_zone_size`. */
 export const LEAGUE_ZONE_SIZE = 5;
-/** Participantes mínimos na semana pra Liga ativar — espelho de `v_threshold`. */
-export const LEAGUE_POPULATION_THRESHOLD = 300;
+/**
+ * Participantes mínimos na semana pra Liga ativar — espelho de `v_threshold`
+ * em `get_league_leaderboard` (supabase/migrations/0005_league_threshold.sql).
+ * Era 300 (ADR 0010), baixado pra 30 pra ativar a Liga sem depender de uma
+ * base de jogadores grande logo após o lançamento — igual a
+ * `LEAGUE_DIVISION_SIZE` por coincidência (uma Divisão cheia já é o
+ * suficiente pra ativar), não a mesma constante.
+ */
+export const LEAGUE_POPULATION_THRESHOLD = 30;
 
 /** Sobe um Tier; sem efeito em 'diamond' (teto) — espelho de `_league_tier_promote`. */
 export function promoteLeagueTier(tier: LeagueTier): LeagueTier {

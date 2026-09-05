@@ -6,6 +6,8 @@ O Desafio Diário hoje só tem leaderboard único (top 10 + posição própria, 
 
 Quando o Desafio Diário atingir massa crítica (~300 participantes numa semana ISO), o leaderboard único dá lugar a uma **Liga**: 5 **Tiers** nomeados (Bronze, Prata, Ouro, Platina, Diamante), cada um dividido em **Divisões** de ~30 dispositivos. Ao fim de cada semana, os 5 melhores de cada Divisão sobem de Tier e os 5 piores descem — exceto Bronze (piso, sem descida) e Diamante (teto, sem subida; os melhores do Tier disputam entre si semana a semana, sem "subir" a lugar nenhum). Empate na fronteira de subida/descida (herdando o ranking "competition" 1,1,3 já usado em `get_weekly_leaderboard`) move todos os empatados juntos, sem critério de desempate adicional — pode dar mais ou menos que 5 movimentos numa semana. Todo jogador novo entra em Bronze, sem seed pela pontuação de estreia. A recompensa de progressão de Tier é um novo eixo de Título (ADR 0009), sem item visual/cosmético novo.
 
+> **Atualização (2026-09-05):** limiar baixado de ~300 para ~30 participantes/semana (`supabase/migrations/0005_league_threshold.sql`) — o jogo ainda não tinha lançado e não havia como estimar quanto tempo levaria pra acumular 300 participantes reais; com ~30 (igual a uma Divisão cheia), a Liga ativa assim que existir gente suficiente pra preencher uma única Divisão, em vez de ficar invisível por tempo indeterminado. Mesmo espírito do "Gatilho de revisão" abaixo: número de design revisitável, não travado por dado real.
+
 Antes da massa crítica, o comportamento atual (leaderboard único) continua valendo — ver "Alternativas consideradas" pro motivo de não forçar Divisões desde o dia 1.
 
 ## Decisão: Sequência

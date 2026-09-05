@@ -38,7 +38,7 @@ const DISPLAY_NAME_CHARSET_REGEX =
 export const PROHIBITED_DISPLAY_NAME_TERMS: readonly string[] = [
   'porra', 'caralho', 'merda', 'buceta', 'cacete', 'piroca', 'cuzao',
   'arrombado', 'arrombada', 'punheta', 'xoxota', 'putinha', 'corno',
-  'fdp', 'desgracado', 'desgracada', 'viadinho', 'bosta',
+  'fdp', 'desgracado', 'desgracada', 'viadinho', 'bosta', 'puta', 'pinto', 'retardado',
   'fuck', 'shit', 'bitch', 'asshole', 'bastard', 'cunt', 'whore',
   'faggot', 'nigger', 'nigga', 'motherfucker', 'dickhead', 'slut',
   'retard', 'pussy',

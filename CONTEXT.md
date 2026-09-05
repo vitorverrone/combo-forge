@@ -93,7 +93,7 @@ _Evitar_: Badge, emblema (é texto, não ícone), troféu — Título é um dos 
 ### Competição Social
 
 **Liga**:
-O sistema de ranqueamento semanal do Desafio Diário quando a base de jogadores atinge massa crítica (~300 participantes numa semana): substitui o leaderboard único (top 10 + posição própria) por Tiers e Divisões. Antes da massa crítica, a Liga não está ativa e o Desafio Diário usa o leaderboard único de sempre.
+O sistema de ranqueamento semanal do Desafio Diário quando a base de jogadores atinge massa crítica (~30 participantes numa semana — baixado de ~300, ADR 0010): substitui o leaderboard único (top 10 + posição própria) por Tiers e Divisões. Antes da massa crítica, a Liga não está ativa e o Desafio Diário usa o leaderboard único de sempre.
 _Evitar_: Ranking (usado tanto pro leaderboard único quanto pra Liga — não confundir os dois estados)
 
 **Tier**:
