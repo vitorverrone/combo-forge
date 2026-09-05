@@ -16,7 +16,6 @@
  */
 import { Platform } from 'react-native';
 
-/** Baixou um update OTA e ele está pronto pra aplicar no próximo reload? */
 export async function checkForOtaUpdate(): Promise<boolean> {
   try {
     const Updates = await import('expo-updates');
@@ -30,7 +29,6 @@ export async function checkForOtaUpdate(): Promise<boolean> {
   }
 }
 
-/** Reinicia o app pra aplicar o update OTA já baixado por checkForOtaUpdate. */
 export async function reloadAppForUpdate(): Promise<void> {
   try {
     const Updates = await import('expo-updates');
@@ -47,18 +45,36 @@ export async function reloadAppForUpdate(): Promise<void> {
  */
 export async function checkForStoreUpdate(): Promise<void> {
   try {
-    const { default: SpInAppUpdates, IAUUpdateKind } = await import(
+    const { default: SpInAppUpdates, IAUUpdateKind, IAUInstallStatus } = await import(
       'sp-react-native-in-app-updates'
     );
     const inAppUpdates = new SpInAppUpdates(__DEV__);
-    const result = await inAppUpdates.checkNeedsUpdate();
+
+    // No Android, a loja reporta `versionCode` (um inteiro que só cresce a
+    // cada build, ex.: 2, 3, 4…) — comparar contra o `version` semver do
+    // app.json ("1.0.0") sempre dá "loja é maior" e dispara o prompt à toa.
+    // `nativeBuildVersion` lê o versionCode real do build instalado, na
+    // mesma escala do que a loja devolve. iOS já compara certo por padrão
+    // (a lib usa a versão semver de marketing dos dois lados).
+    const curVersion =
+      Platform.OS === 'android'
+        ? (await import('expo-application')).nativeBuildVersion ?? undefined
+        : undefined;
+    const result = await inAppUpdates.checkNeedsUpdate({ curVersion });
     if (!result.shouldUpdate) return;
 
-    await inAppUpdates.startUpdate(
-      Platform.OS === 'android'
-        ? { updateType: IAUUpdateKind.FLEXIBLE }
-        : { forceUpgrade: false },
-    );
+    if (Platform.OS === 'android') {
+      // FLEXIBLE só baixa em background; sem isso o download nunca é
+      // instalado e a checagem nunca termina de fato.
+      inAppUpdates.addStatusUpdateListener((status) => {
+        if (status.status === IAUInstallStatus.DOWNLOADED) {
+          inAppUpdates.installUpdate();
+        }
+      });
+      await inAppUpdates.startUpdate({ updateType: IAUUpdateKind.FLEXIBLE });
+    } else {
+      await inAppUpdates.startUpdate({ forceUpgrade: false });
+    }
   } catch {
     // Módulo nativo ausente (Expo Go/web/testes) ou loja indisponível — no-op.
   }
