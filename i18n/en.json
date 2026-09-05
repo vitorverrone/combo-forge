@@ -217,6 +217,12 @@
     "submitted": "✓ Score submitted",
     "failed": "Score not submitted"
   },
+  "update": {
+    "title": "Update ready",
+    "message": "A new version of Combo Forge has been downloaded. Restart now to apply it?",
+    "restartNow": "Restart Now",
+    "later": "Later"
+  },
   "format": {
     "noRelic": "No starting relic — pure skill.",
     "pattern": {
@@ -489,6 +495,8 @@
     "forgerOptionLocked": "{{name}} forger (locked)",
     "relicSummary": "Relic: {{name}} — {{description}}",
     "displayNameInput": "Display name input",
-    "saveDisplayName": "Save display name"
+    "saveDisplayName": "Save display name",
+    "restartNow": "Restart now to update",
+    "dismissUpdatePrompt": "Dismiss update prompt"
   }
 }

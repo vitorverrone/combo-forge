@@ -217,6 +217,12 @@
     "submitted": "✓ Pontuação enviada",
     "failed": "Pontuação não enviada"
   },
+  "update": {
+    "title": "Atualização pronta",
+    "message": "Uma nova versão do Combo Forge foi baixada. Reiniciar agora para aplicá-la?",
+    "restartNow": "Reiniciar Agora",
+    "later": "Depois"
+  },
   "format": {
     "noRelic": "Sem relíquia inicial — puro skill.",
     "pattern": {
@@ -489,6 +495,8 @@
     "forgerOptionLocked": "Forjador {{name}} (trancado)",
     "relicSummary": "Relíquia: {{name}} — {{description}}",
     "displayNameInput": "Campo de nome de exibição",
-    "saveDisplayName": "Salvar nome de exibição"
+    "saveDisplayName": "Salvar nome de exibição",
+    "restartNow": "Reiniciar agora para atualizar",
+    "dismissUpdatePrompt": "Dispensar aviso de atualização"
   }
 }
