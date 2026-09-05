@@ -7,6 +7,7 @@
     "orientation": "portrait",
     "scheme": "comboforge",
     "userInterfaceStyle": "light",
+    "icon": "./assets/icon.png",
     "splash": {
       "backgroundColor": "#161120"
     },
@@ -21,6 +22,10 @@
       "predictiveBackGestureEnabled": false,
       "package": "com.combocardforge.app",
       "backgroundColor": "#161120",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icon.png",
+        "backgroundColor": "#161120"
+      },
       "googleServicesFile": "./google-services.json",
       "permissions": [
         "android.permission.RECORD_AUDIO",
