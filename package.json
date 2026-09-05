@@ -17,6 +17,7 @@
     "expo-haptics": "~57.0.1",
     "expo-localization": "~57.0.1",
     "expo-screen-orientation": "~57.0.2",
+    "expo-splash-screen": "~57.0.8",
     "expo-sqlite": "~57.0.1",
     "expo-status-bar": "~57.0.1",
     "expo-updates": "~57.0.21",
