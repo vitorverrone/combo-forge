@@ -28,6 +28,20 @@ export function isSupabaseConfigured(): boolean {
 }
 
 /**
+ * `run.runScore` (engine/run.ts) pode ser fracionário — Relíquias com
+ * multiplicador não-inteiro (comboStart/comboGrowth, ex.: ×1.5 do Anvil e da
+ * Chain Reaction, engine/relics.ts) — mas `submit_daily_score` declara
+ * `p_score integer`: o PostgREST rejeita qualquer número com casa decimal
+ * antes mesmo de a função rodar (erro 22P02). Arredonda na borda com o
+ * backend, não no engine (a matemática fracionária de combo é intencional e
+ * teste próprio em relics.test.ts) nem no ranking (que já é um inteiro por
+ * natureza, sem perda de informação relevante pra competir).
+ */
+export function roundScoreForSubmission(score: number): number {
+  return Math.round(score);
+}
+
+/**
  * Converte a resposta do contrato (`get_league_leaderboard` — supabase/contract.ts)
  * pra forma que o engine usa (`LeagueStanding | null`): a Liga inativa vira
  * null (mesma convenção de "sem dado" que fetchLeaderboard já usa pro
@@ -76,7 +90,7 @@ export function createSupabaseDailyBackend(): DailyBackend | null {
     submitScore: async (deviceId: string, score: number): Promise<number> => {
       const { data, error } = await client.rpc('submit_daily_score', {
         p_device_id: deviceId,
-        p_score: score,
+        p_score: roundScoreForSubmission(score),
       });
       if (error) throw new Error(error.message);
       return data as number;
