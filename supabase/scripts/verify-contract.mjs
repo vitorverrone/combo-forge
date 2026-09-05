@@ -41,7 +41,7 @@ const DISPLAY_NAME_CHARSET_REGEX =
 const PROHIBITED_DISPLAY_NAME_TERMS = [
   'porra', 'caralho', 'merda', 'buceta', 'cacete', 'piroca', 'cuzao',
   'arrombado', 'arrombada', 'punheta', 'xoxota', 'putinha', 'corno',
-  'fdp', 'desgracado', 'desgracada', 'viadinho', 'bosta',
+  'fdp', 'desgracado', 'desgracada', 'viadinho', 'bosta', 'puta', 'pinto', 'retardado',
   'fuck', 'shit', 'bitch', 'asshole', 'bastard', 'cunt', 'whore',
   'faggot', 'nigger', 'nigga', 'motherfucker', 'dickhead', 'slut',
   'retard', 'pussy',
@@ -82,6 +82,8 @@ const migrations = [
   join(root, 'supabase', 'migrations', '0002_daily_challenge_access.sql'),
   join(root, 'supabase', 'migrations', '0003_display_name.sql'),
   join(root, 'supabase', 'migrations', '0004_league.sql'),
+  join(root, 'supabase', 'migrations', '0005_league_threshold.sql'),
+  join(root, 'supabase', 'migrations', '0006_display_name_prohibited_terms.sql'),
 ];
 const IMAGE = 'postgres:16-alpine';
 const CONTAINER = 'combo-forge-pg-verify';
@@ -303,12 +305,12 @@ try {
   const belowThreshold = JSON.parse(psql(`select public.get_league_leaderboard('dev-a', '2026-08-13 12:00:00+00')`));
   check(belowThreshold.active === false, 'abaixo da massa crítica (poucos participantes na semana) → active: false');
 
-  // Massa crítica: 300 dispositivos genéricos pontuando na semana de
+  // Massa crítica: 30 dispositivos genéricos pontuando na semana de
   // 2026-08-31 (segunda) — liga a Liga só pra essa semana em diante.
   psql(`
     insert into public.daily_submissions (day, device_id, score)
     select '2026-08-31'::date, 'bulk-' || i, 100 + i
-    from generate_series(1, 300) as i
+    from generate_series(1, 30) as i
   `);
 
   const newDevice = JSON.parse(psql(`select public.get_league_leaderboard('dev-lg-new', '2026-08-31 12:00:00+00')`));
