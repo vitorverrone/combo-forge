@@ -6,6 +6,8 @@
 import i18n from '../i18n';
 import {
   Card,
+  DailyAttempts,
+  dailyCallToActionState,
   DeckSkinItem,
   DisplayNameValidation,
   ForgeEffect,
@@ -188,6 +190,18 @@ export function leagueTierName(tier: LeagueTier): string {
 /** Translated Deck skin description (Loja). Nome do Deck continua em inglês. */
 export function deckSkinDescription(item: DeckSkinItem): string {
   return i18n.t(`format.deckSkin.${item.id}`);
+}
+
+/** Texto de convite do Desafio Diário por estado do CTA (ticket 01) — translated via i18n. */
+const DAILY_CALL_TO_ACTION_I18N_KEY: Readonly<Record<ReturnType<typeof dailyCallToActionState>, string>> = {
+  'free-ready': 'daily.freeReady',
+  'extra-ready': 'daily.extraReady',
+  'watch-ad': 'daily.watchAdHint',
+};
+
+/** Translated texto de convite para o estado atual do CTA do Desafio Diário. */
+export function dailyCallToActionText(attempts: DailyAttempts): string {
+  return i18n.t(DAILY_CALL_TO_ACTION_I18N_KEY[dailyCallToActionState(attempts)]);
 }
 
 /** Translated Marco (Meta-Progressão) title, por id estável (engine/progression.ts). */

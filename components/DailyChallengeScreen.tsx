@@ -5,7 +5,6 @@ import {
   canPlayDaily,
   canWatchExtraAd,
   dailyAttemptsForDay,
-  dailyCallToActionState,
   DailyLeaderboard,
   DailyLeaderboardEntry,
   LeagueStanding,
@@ -14,7 +13,7 @@ import {
 } from '../engine';
 
 import { useTranslation } from '../i18n';
-import { leagueTierName } from './format';
+import { dailyCallToActionText, leagueTierName } from './format';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
@@ -62,12 +61,7 @@ export function DailyChallengeScreen() {
   const rem = attempts.unlockedTotal - attempts.attemptsUsed;
   const availableNow = 1;
 
-  const ctaState = dailyCallToActionState(attempts);
-  const hintText = {
-    'watch-ad': t('daily.watchAdHint'),
-    'extra-ready': t('daily.extraReady'),
-    'free-ready': t('daily.freeReady'),
-  }[ctaState];
+  const hintText = dailyCallToActionText(attempts);
 
   return (
     <View style={styles.container}>

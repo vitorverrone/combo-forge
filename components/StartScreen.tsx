@@ -16,6 +16,7 @@ import {
 } from '../engine';
 
 import { useTranslation } from '../i18n';
+import { DailyChallengePanel } from './DailyChallengePanel';
 import { forgerName, milestoneDescription } from './format';
 import { completeOnboarding, hasSeenOnboarding, OnboardingOverlay } from './OnboardingOverlay';
 import { PlayingCard } from './PlayingCard';
@@ -39,6 +40,7 @@ export function StartScreen() {
 
   const unlocks = computeUnlocks(progression);
   const dailyAttempts = dailyAttemptsForDay(daily.attempts, utcDateIso());
+  const dailyStreakCurrent = progression.stats.dailyStreakCurrent;
 
   const handleOnboardingComplete = () => {
     completeOnboarding();
@@ -113,6 +115,12 @@ export function StartScreen() {
               </View>
             </View>
 
+            <DailyChallengePanel
+              attempts={dailyAttempts}
+              streakCurrent={dailyStreakCurrent}
+              onPress={openDaily}
+            />
+
             {/* Forger section */}
             <View>
               <Text style={styles.sectionLabel}>{t('start.forger')}</Text>
@@ -163,21 +171,9 @@ export function StartScreen() {
                 accessibilityLabel={t('start.startRun')}
                 accessibilityRole="button"
                 onPress={startRun}
-                style={({ pressed }) => [styles.btnPrimary, pressed && styles.btnPrimaryPressed]}
-              >
-                <Text style={styles.btnPrimaryText}>{t('start.startRun')}</Text>
-              </Pressable>
-
-              <Pressable
-                accessibilityLabel={t('start.dailyChallenge')}
-                accessibilityRole="button"
-                onPress={openDaily}
                 style={({ pressed }) => [styles.btnSecondary, pressed && styles.btnSecondaryPressed]}
               >
-                <Text style={styles.btnSecondaryText}>{t('start.dailyChallenge')}</Text>
-                <Text style={styles.btnSecondaryHint}>
-                  {t('start.attemptsUsed', { used: dailyAttempts.attemptsUsed, max: dailyAttempts.unlockedTotal })}
-                </Text>
+                <Text style={styles.btnSecondaryText}>{t('start.startRun')}</Text>
               </Pressable>
 
               <View style={styles.bottomNav}>
@@ -391,35 +387,14 @@ const styles = StyleSheet.create({
     marginTop: spacing[28],
     paddingBottom: spacing[10],
   },
-  btnPrimary: {
-    borderRadius: radius[12],
-    backgroundColor: colors.gold,
-    paddingVertical: spacing[16],
-    alignItems: 'center',
-  },
-  btnPrimaryPressed: {
-    backgroundColor: colors.goldDark,
-    opacity: 0.85,
-  },
-  btnPrimaryText: {
-    fontFamily: fonts.heading,
-    color: colors.textOnPrimary,
-    fontSize: 14,
-    fontWeight: '900',
-    letterSpacing: 1.5,
-    textTransform: 'uppercase',
-  },
   btnSecondary: {
-    marginTop: spacing[10],
     borderRadius: radius[12],
     backgroundColor: colors.surface,
     borderWidth: 1,
     borderColor: colors.surfaceBorder,
     paddingVertical: spacing[14],
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing[4],
   },
   btnSecondaryPressed: {
     opacity: 0.8,
@@ -431,14 +406,6 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 1.5,
     textTransform: 'uppercase',
-  },
-  btnSecondaryHint: {
-    fontFamily: fonts.body,
-    fontSize: 10,
-    fontWeight: '700',
-    letterSpacing: 0.3,
-    color: colors.textDim,
-    textTransform: 'none',
   },
   bottomNav: {
     flexDirection: 'row',
