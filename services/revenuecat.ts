@@ -2,8 +2,12 @@
  * Provider de compras real (ticket 14): implementa o port ShopProvider
  * (engine/shop.ts) com o SDK react-native-purchases (RevenueCat).
  *
- * Config via EXPO_PUBLIC_REVENUECAT_API_KEY (embutida no bundle; ver
- * .env.example). Sem a chave, devolve o provider dev (compra simulada) — a
+ * Config via env, uma chave por plataforma (apps separados no RevenueCat —
+ * "Combo Forge (Play Store)" e "Combo Forge (App Store)" — cada um com sua
+ * própria chave pública): EXPO_PUBLIC_REVENUECAT_API_KEY (Android, `goog_...`,
+ * nome sem sufixo por já existir desde quando só havia Android) e
+ * EXPO_PUBLIC_REVENUECAT_API_KEY_IOS (`appl_...`). Ver .env.example. Sem a
+ * chave da plataforma atual, devolve o provider dev (compra simulada) — a
  * loja continua navegável em desenvolvimento/testes. A compra de verdade
  * exige um development build (o SDK roda em "Preview API Mode" no Expo Go,
  * com mocks JS — ver README do react-native-purchases).
@@ -12,6 +16,7 @@
  * porque esta versão do SDK não embute app.plugin.js.
  */
 
+import { Platform } from 'react-native';
 import Purchases from 'react-native-purchases';
 
 import {
@@ -22,7 +27,10 @@ import {
   ShopProvider,
 } from '../engine';
 
-const API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_API_KEY;
+const API_KEY =
+  Platform.OS === 'ios'
+    ? process.env.EXPO_PUBLIC_REVENUECAT_API_KEY_IOS
+    : process.env.EXPO_PUBLIC_REVENUECAT_API_KEY;
 
 /** Chave do RevenueCat configurada? */
 export function isRevenueCatConfigured(): boolean {
