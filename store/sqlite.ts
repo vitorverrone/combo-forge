@@ -17,10 +17,12 @@ import {
   PersistedProgression,
   PersistedShop,
   ProgressionStorage,
+  PushSoftAskState,
   ShopStorage,
 } from '../engine';
 
 import { kv } from '../services/sqliteKv';
+import { PushFlowStorage } from './pushFlow';
 import { TutorialStorage } from './tutorialFlow';
 
 const DDA_KEY = 'combo-forge:dda';
@@ -31,6 +33,7 @@ const DAILY_DISPLAY_NAME_KEY = 'combo-forge:daily-display-name';
 const SHOP_KEY = 'combo-forge:shop';
 const TUTORIAL_GAMESCREEN_SEEN_KEY = 'combo-forge:tutorial-gamescreen-seen';
 const TUTORIAL_FORGE_SEEN_KEY = 'combo-forge:tutorial-forge-seen';
+const PUSH_SOFT_ASK_STATE_KEY = 'combo-forge:push-soft-ask-state';
 
 function readJson<T>(key: string): T | null {
   const raw = kv.getItemSync(key);
@@ -97,13 +100,22 @@ export function createSqliteTutorialStorage(): TutorialStorage {
   };
 }
 
-/** Persistência completa do app (DDA + meta + diário + loja + tutorial). */
+/** Port de storage do soft-ask de push sobre SQLite (ADR 0012, ticket 02). */
+export function createSqlitePushFlowStorage(): PushFlowStorage {
+  return {
+    loadSoftAskState: () => readJson<PushSoftAskState>(PUSH_SOFT_ASK_STATE_KEY),
+    saveSoftAskState: (state) => writeJson(PUSH_SOFT_ASK_STATE_KEY, state),
+  };
+}
+
+/** Persistência completa do app (DDA + meta + diário + loja + tutorial + push). */
 export function createSqlitePersistence(): {
   readonly ddaStorage: DdaStorage;
   readonly progressionStorage: ProgressionStorage;
   readonly dailyStorage: DailyChallengeStorage;
   readonly shopStorage: ShopStorage;
   readonly tutorialStorage: TutorialStorage;
+  readonly pushStorage: PushFlowStorage;
 } {
   return {
     ddaStorage: createSqliteDdaStorage(),
@@ -111,5 +123,6 @@ export function createSqlitePersistence(): {
     dailyStorage: createSqliteDailyChallengeStorage(),
     shopStorage: createSqliteShopStorage(),
     tutorialStorage: createSqliteTutorialStorage(),
+    pushStorage: createSqlitePushFlowStorage(),
   };
 }

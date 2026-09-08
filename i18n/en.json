@@ -117,6 +117,10 @@
     "thisWeekLeaderboard": "This week's leaderboard",
     "leagueTitle": "Your league",
     "leagueDivision": "Division {{number}}",
+    "pushSoftAskTitle": "Get notified about your League Tier?",
+    "pushSoftAskBody": "We'll let you know if you drop a Tier at the end of the week.",
+    "pushSoftAskAccept": "Notify me",
+    "pushSoftAskDecline": "Not now",
     "leaderboardLoading": "Loading leaderboard…",
     "noScoresThisWeek": "No scores this week yet.",
     "yourBest": "Your best",
@@ -497,6 +501,8 @@
     "displayNameInput": "Display name input",
     "saveDisplayName": "Save display name",
     "restartNow": "Restart now to update",
-    "dismissUpdatePrompt": "Dismiss update prompt"
+    "dismissUpdatePrompt": "Dismiss update prompt",
+    "acceptPushSoftAsk": "Accept Tier drop notifications",
+    "declinePushSoftAsk": "Decline Tier drop notifications"
   }
 }

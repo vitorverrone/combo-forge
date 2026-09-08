@@ -16,17 +16,19 @@ import {
 } from '../engine';
 
 import { createAppAdProvider } from '../services/ads';
-import { createAppDailyBackend } from '../services/supabase';
+import { createAppPushProvider } from '../services/push';
+import { createAppDailyBackend, createAppPushBackend } from '../services/supabase';
 import { createAppShopProvider } from '../services/revenuecat';
 import { createAppTelemetryProvider } from '../services/firebaseAnalytics';
 
 import { gameStore } from './gameStore';
+import { loadPushState, registerNotificationTapListener } from './pushFlow';
 import { createSqlitePersistence } from './sqlite';
 import { loadTutorialState } from './tutorialFlow';
 
 export function initializeSqlitePersistence(): void {
   try {
-    const { ddaStorage, progressionStorage, dailyStorage, shopStorage, tutorialStorage } =
+    const { ddaStorage, progressionStorage, dailyStorage, shopStorage, tutorialStorage, pushStorage } =
       createSqlitePersistence();
     const saved = progressionStorage.load();
     const savedAttempts = dailyStorage.loadAttempts();
@@ -46,6 +48,12 @@ export function initializeSqlitePersistence(): void {
     // Loja persistida (comprados + equipados + remoção de anúncios), com
     // default aplicado a saves antigos sem o campo adsRemoved.
     const loadedShop = normalizeShopState(shopStorage.load());
+    // Provider real de push (ADR 0012, ticket 02): construído aqui (não em
+    // gameStore.ts) porque o listener de toque em notificação já foi ligado
+    // à construção do store singleton (com o provider em memória, padrão) —
+    // trocar só o campo via setState não moveria a assinatura pro provider
+    // novo, então religamos o listener explicitamente logo abaixo.
+    const pushProvider = createAppPushProvider();
     gameStore.setState({
       ddaStorage,
       dailyStorage,
@@ -70,7 +78,12 @@ export function initializeSqlitePersistence(): void {
         owned: loadedShop,
       },
       adsRemoved: loadedShop.adsRemoved,
+      pushStorage,
+      pushProvider,
+      pushBackend: createAppPushBackend(),
+      push: loadPushState(pushStorage),
     });
+    registerNotificationTapListener(pushProvider, () => gameStore.getState().openDaily());
     // Sincronização automática no launch (ticket 03): o RevenueCat reentrega
     // a entitlement remove_ads ao configurar — reflete adsRemoved sem
     // interação do jogador. Fire-and-forget: falha silenciosa (o botão
