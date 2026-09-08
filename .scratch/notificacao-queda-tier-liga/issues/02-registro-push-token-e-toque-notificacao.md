@@ -4,7 +4,7 @@
 
 **Blocked by:** None — can start immediately (roda em paralelo com o ticket 01).
 
-**Status:** ready-for-human
+**Status:** done
 
 - [x] Tabela `push_tokens` e RPC `register_push_token` existem no Supabase, com o mesmo padrão de segurança (RLS, `SECURITY DEFINER`) das demais funções do contrato — implementado em `supabase/migrations/0007_push_tokens.sql`; **não verificado contra Postgres real** (`npm run verify:backend` foi estendido com a seção 7 cobrindo a RPC, mas o Docker local não estava disponível nesta sessão para rodar — rodar antes do próximo deploy)
 - [x] Porta `PushProvider` existe em `engine/`, com implementação em memória para testes
