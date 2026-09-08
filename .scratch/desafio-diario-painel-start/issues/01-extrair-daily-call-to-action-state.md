@@ -4,10 +4,10 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `dailyCallToActionState` existe em `engine/daily.ts`, exportada, cobrindo os 3 estados a partir de `DailyAttempts`
-- [ ] Testes novos em `engine/daily.test.ts` (mesmo padrão table-driven das funções vizinhas: `canPlayDaily`, `canWatchExtraAd`, `hasFreeAttempt`) cobrindo os 3 estados e as transições entre eles
-- [ ] `DailyChallengeScreen.tsx` usa `dailyCallToActionState` em vez do cálculo inline atual
-- [ ] Verificação manual/visual (emulador) de que o texto renderizado pela `DailyChallengeScreen` é idêntico ao comportamento anterior, nos 3 estados
-- [ ] `tsc --noEmit` limpo, `eslint .` sem problemas, suíte de testes passando
+- [x] `dailyCallToActionState` existe em `engine/daily.ts`, exportada, cobrindo os 3 estados a partir de `DailyAttempts`
+- [x] Testes novos em `engine/daily.test.ts` (mesmo padrão table-driven das funções vizinhas: `canPlayDaily`, `canWatchExtraAd`, `hasFreeAttempt`) cobrindo os 3 estados e as transições entre eles
+- [x] `DailyChallengeScreen.tsx` usa `dailyCallToActionState` em vez do cálculo inline atual
+- [ ] Verificação manual/visual (emulador) de que o texto renderizado pela `DailyChallengeScreen` é idêntico ao comportamento anterior, nos 3 estados — **não realizada**: sem emulador Android disponível no ambiente do agente, e `expo export --platform web` falha por uma dependência nativa pré-existente (`sp-react-native-in-app-updates`), não relacionada a esta mudança. Equivalência confirmada algebricamente (nova função replica exatamente as condições do `if/else` antigo) e por teste automatizado, mas ainda vale uma checagem visual rápida no emulador antes de considerar o ticket totalmente fechado.
+- [x] `tsc --noEmit` limpo, `eslint .` sem problemas, suíte de testes passando
