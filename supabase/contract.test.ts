@@ -13,6 +13,7 @@ import { validateDisplayName as engineValidateDisplayName } from '../engine/disp
 import {
   dailySeed,
   demoteLeagueTier,
+  didLeagueTierDrop,
   isoWeekStart,
   leagueDivisionNumber,
   leagueDivisionPosition,
@@ -124,6 +125,37 @@ describe('Liga: ordem dos Tiers (promoteLeagueTier/demoteLeagueTier, ADR 0010, t
 
   test('demoteLeagueTier não tem efeito no piso (bronze)', () => {
     expect(demoteLeagueTier('bronze')).toBe('bronze');
+  });
+});
+
+describe('Liga: detecção de queda de Tier (didLeagueTierDrop, ticket 01)', () => {
+  const ORDER: readonly LeagueTier[] = ['bronze', 'silver', 'gold', 'platinum', 'diamond'];
+
+  test('queda real: par consecutivo descendo é detectado', () => {
+    for (let i = ORDER.length - 1; i > 0; i -= 1) {
+      expect(didLeagueTierDrop(ORDER[i], ORDER[i - 1])).toBe(true);
+    }
+  });
+
+  test('subida não conta como queda', () => {
+    for (let i = 0; i < ORDER.length - 1; i += 1) {
+      expect(didLeagueTierDrop(ORDER[i], ORDER[i + 1])).toBe(false);
+    }
+  });
+
+  test('mesmo Tier não conta como queda', () => {
+    for (const tier of ORDER) {
+      expect(didLeagueTierDrop(tier, tier)).toBe(false);
+    }
+  });
+
+  test('piso do Bronze: nunca há queda "abaixo" dele', () => {
+    expect(didLeagueTierDrop('bronze', 'bronze')).toBe(false);
+  });
+
+  test('teto do Diamond: cair de diamond é queda como qualquer outra', () => {
+    expect(didLeagueTierDrop('diamond', 'platinum')).toBe(true);
+    expect(didLeagueTierDrop('diamond', 'diamond')).toBe(false);
   });
 });
 
