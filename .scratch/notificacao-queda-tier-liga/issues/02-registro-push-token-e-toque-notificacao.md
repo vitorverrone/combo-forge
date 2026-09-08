@@ -4,15 +4,15 @@
 
 **Blocked by:** None — can start immediately (roda em paralelo com o ticket 01).
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] Tabela `push_tokens` e RPC `register_push_token` existem no Supabase, com o mesmo padrão de segurança (RLS, `SECURITY DEFINER`) das demais funções do contrato
-- [ ] Porta `PushProvider` existe em `engine/`, com implementação em memória para testes
-- [ ] `services/push.ts` implementa `PushProvider` via `expo-notifications`; ambiente sem módulo nativo (Expo Go/web/testes) nunca quebra o app
-- [ ] Soft-ask aparece na `DailyChallengeScreen` na primeira vez que a Liga ativa pro dispositivo (`active: true` pela primeira vez) — nunca no cold start
-- [ ] Soft-ask não aparece de novo depois de recusado, mesmo em sessões futuras
-- [ ] Aceitar o soft-ask dispara o prompt nativo do SO; concedida a permissão, o token é registrado via `register_push_token` (verificável: linha nova/atualizada em `push_tokens`)
-- [ ] Tocar numa notificação de teste (ex.: enviada pela ferramenta de teste do Expo Push) chama `openDaily` e o app abre direto na `DailyChallengeScreen`
-- [ ] Testes de `store/pushFlow.ts` (ou equivalente) usando o `PushProvider` fake, mesmo padrão de `store/dailyFlow.test.ts`/`store/shopFlow.test.ts` — cobrindo soft-ask não repetido após recusa, registro de token ao conceder permissão, e o listener de toque chamando `openDaily`
-- [ ] `tsc --noEmit` limpo, `eslint .` sem problemas, suíte de testes passando
-- [ ] Verificação funcional real em emulador/simulador (soft-ask, prompt do SO, toque em notificação de teste)
+- [x] Tabela `push_tokens` e RPC `register_push_token` existem no Supabase, com o mesmo padrão de segurança (RLS, `SECURITY DEFINER`) das demais funções do contrato — implementado em `supabase/migrations/0007_push_tokens.sql`; **não verificado contra Postgres real** (`npm run verify:backend` foi estendido com a seção 7 cobrindo a RPC, mas o Docker local não estava disponível nesta sessão para rodar — rodar antes do próximo deploy)
+- [x] Porta `PushProvider` existe em `engine/`, com implementação em memória para testes
+- [x] `services/push.ts` implementa `PushProvider` via `expo-notifications`; ambiente sem módulo nativo (Expo Go/web/testes) nunca quebra o app
+- [x] Soft-ask aparece na `DailyChallengeScreen` na primeira vez que a Liga ativa pro dispositivo (`active: true` pela primeira vez) — nunca no cold start
+- [x] Soft-ask não aparece de novo depois de recusado, mesmo em sessões futuras
+- [x] Aceitar o soft-ask dispara o prompt nativo do SO; concedida a permissão, o token é registrado via `register_push_token` (verificável: linha nova/atualizada em `push_tokens`)
+- [x] Tocar numa notificação de teste (ex.: enviada pela ferramenta de teste do Expo Push) chama `openDaily` e o app abre direto na `DailyChallengeScreen` — wiring implementado e testado via `PushProvider` fake (`registerNotificationTapListener`); **não exercitado com uma notificação de teste real**
+- [x] Testes de `store/pushFlow.ts` (ou equivalente) usando o `PushProvider` fake, mesmo padrão de `store/dailyFlow.test.ts`/`store/shopFlow.test.ts` — cobrindo soft-ask não repetido após recusa, registro de token ao conceder permissão, e o listener de toque chamando `openDaily`
+- [x] `tsc --noEmit` limpo, `eslint .` sem problemas, suíte de testes passando
+- [ ] Verificação funcional real em emulador/simulador (soft-ask, prompt do SO, toque em notificação de teste) — **pendente**: sessão sem acesso a emulador/simulador. Precisa de um passo humano antes do próximo release (ver `docs/release-checklist.md`).
