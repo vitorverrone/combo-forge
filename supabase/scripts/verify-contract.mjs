@@ -85,6 +85,7 @@ const migrations = [
   join(root, 'supabase', 'migrations', '0005_league_threshold.sql'),
   join(root, 'supabase', 'migrations', '0006_display_name_prohibited_terms.sql'),
   join(root, 'supabase', 'migrations', '0007_push_tokens.sql'),
+  join(root, 'supabase', 'migrations', '0008_league_tier_drop_notifications.sql'),
 ];
 const IMAGE = 'postgres:16-alpine';
 const CONTAINER = 'combo-forge-pg-verify';
@@ -458,6 +459,120 @@ try {
     pushTokensDirectDenied = true;
   }
   check(pushTokensDirectDenied, 'anon NÃO acessa push_tokens diretamente (RLS sem políticas)');
+
+  console.log('\n8. Job semanal de queda de Tier (_league_tier_drop_notification_candidates, ADR 0012, ticket 03)');
+  // Só a parte testável sem rede (candidates): _run_league_tier_drop_notifications
+  // depende de pg_net (rede real) e fica fora desta verificação — mesma
+  // fronteira de qualquer chamada de rede real no projeto (spec.md, Testing Decisions).
+  const dropCandidates = (nowIso) =>
+    JSON.parse(psql(`select coalesce(jsonb_agg(t order by t.device_id), '[]'::jsonb) from public._league_tier_drop_notification_candidates('${nowIso}') t`));
+
+  // Divisão de 13 dispositivos em 'silver' na semana anterior (2026-09-07),
+  // mesma matemática do cenário de promoção/rebaixamento já verificado na
+  // seção 6 (posições 1-5 promovem, 6-7 mantêm, 8-13 rebaixam) — devices
+  // NOVOS (dropdev-*) pra não colidir com os já usados acima.
+  const dropScores = [
+    ['dropdev-1', 1200], ['dropdev-2', 1100], ['dropdev-3', 1000], ['dropdev-4', 900],
+    ['dropdev-5', 800], ['dropdev-5b', 800],
+    ['dropdev-6', 700], ['dropdev-7', 600],
+    ['dropdev-8', 500], ['dropdev-9', 400], ['dropdev-10', 300], ['dropdev-11', 200], ['dropdev-12', 100],
+  ];
+  for (const [deviceId] of dropScores) {
+    psql(`insert into public.league_placements (device_id, week, tier) values ('${deviceId}', '2026-09-07', 'silver')`);
+  }
+  psql(`
+    insert into public.daily_submissions (day, device_id, score) values
+    ${dropScores.map(([deviceId, score]) => `('2026-09-07', '${deviceId}', ${score})`).join(',\n    ')}
+  `);
+  // Token registrado só pra um subconjunto: dropdev-8/9 (caem E têm token —
+  // devem aparecer), dropdev-1 (promove, tem token — NÃO deve aparecer),
+  // dropdev-6 (mantém, tem token — NÃO deve aparecer). dropdev-10/11/12
+  // caem mas SEM token — não devem aparecer (sem noise).
+  for (const deviceId of ['dropdev-1', 'dropdev-6', 'dropdev-8', 'dropdev-9']) {
+    psql(`select public.register_push_token('${deviceId}', 'ExponentPushToken[${deviceId}]', 'android')`);
+  }
+  const candidates = dropCandidates('2026-09-14 12:00:00+00');
+  check(candidates.length === 2, `só os 2 dispositivos que caíram E têm token aparecem (${JSON.stringify(candidates)})`);
+  const byDevice = Object.fromEntries(candidates.map((c) => [c.device_id, c]));
+  check(
+    byDevice['dropdev-8']?.prev_tier === 'silver' && byDevice['dropdev-8']?.new_tier === 'bronze' && byDevice['dropdev-8']?.expo_push_token === 'ExponentPushToken[dropdev-8]',
+    `dropdev-8: silver → bronze, token correto (${JSON.stringify(byDevice['dropdev-8'])})`,
+  );
+  check(
+    byDevice['dropdev-9']?.prev_tier === 'silver' && byDevice['dropdev-9']?.new_tier === 'bronze',
+    `dropdev-9: silver → bronze (${JSON.stringify(byDevice['dropdev-9'])})`,
+  );
+  check(byDevice['dropdev-1'] === undefined, 'dropdev-1 promoveu (não caiu) e tem token — não gera candidato');
+  check(byDevice['dropdev-6'] === undefined, 'dropdev-6 manteve o Tier e tem token — não gera candidato');
+  check(byDevice['dropdev-10'] === undefined && byDevice['dropdev-11'] === undefined, 'dropdev-10/11 caíram mas SEM token registrado — não geram candidato (sem noise)');
+  // Idempotência: chamar de novo na mesma semana não duplica nem recalcula
+  // (mesmo insert ... on conflict do nothing da RPC preguiçosa).
+  const candidatesAgain = dropCandidates('2026-09-14 18:00:00+00');
+  check(JSON.stringify(candidatesAgain) === JSON.stringify(candidates), 'segunda chamada na mesma semana devolve o mesmo resultado, sem duplicar (idempotente)');
+
+  // Piso do Bronze: Divisão de 8 dispositivos JÁ em 'bronze' (zona de
+  // rebaixamento tentaria descer, mas não há Tier abaixo — _league_tier_demote
+  // já trava em bronze, então o Tier persistido não muda e não é "queda").
+  const bronzeScores = [
+    ['bronzedev-1', 800], ['bronzedev-2', 700], ['bronzedev-3', 600], ['bronzedev-4', 500],
+    ['bronzedev-5', 400], ['bronzedev-6', 300], ['bronzedev-7', 200], ['bronzedev-8', 100],
+  ];
+  for (const [deviceId] of bronzeScores) {
+    psql(`insert into public.league_placements (device_id, week, tier) values ('${deviceId}', '2026-09-07', 'bronze')`);
+    psql(`select public.register_push_token('${deviceId}', 'ExponentPushToken[${deviceId}]', 'android')`);
+  }
+  psql(`
+    insert into public.daily_submissions (day, device_id, score) values
+    ${bronzeScores.map(([deviceId, score]) => `('2026-09-07', '${deviceId}', ${score})`).join(',\n    ')}
+  `);
+  const bronzeCandidates = dropCandidates('2026-09-14 12:00:00+00');
+  const bronzeDropped = bronzeCandidates.filter((c) => c.device_id.startsWith('bronzedev-'));
+  check(bronzeDropped.length === 0, `piso do Bronze: nenhum dos 8 dispositivos (com token) gera candidato, mesmo os na zona de rebaixamento (${JSON.stringify(bronzeDropped)})`);
+
+  // Teto do Diamond (caso trivial): Divisão de 8 dispositivos JÁ em
+  // 'diamond'. Zona de PROMOÇÃO (posições 1-5, checada primeiro em
+  // resolveLeagueTierFromDivision) — _league_tier_promote trava no teto,
+  // Tier persistido não muda, não é "queda". Diferente do piso do Bronze: o
+  // teto só bloqueia SUBIR além de Diamond — DESCER de Diamond é uma queda
+  // real e válida (não há problema de "piso" nesse lado), então a zona de
+  // rebaixamento (posições 6-8) deve continuar gerando candidato normalmente
+  // (diamond → platinum).
+  const diamondScores = [
+    ['diamonddev-1', 800], ['diamonddev-2', 700], ['diamonddev-3', 600], ['diamonddev-4', 500],
+    ['diamonddev-5', 400], ['diamonddev-6', 300], ['diamonddev-7', 200], ['diamonddev-8', 100],
+  ];
+  for (const [deviceId] of diamondScores) {
+    psql(`insert into public.league_placements (device_id, week, tier) values ('${deviceId}', '2026-09-07', 'diamond')`);
+    psql(`select public.register_push_token('${deviceId}', 'ExponentPushToken[${deviceId}]', 'android')`);
+  }
+  psql(`
+    insert into public.daily_submissions (day, device_id, score) values
+    ${diamondScores.map(([deviceId, score]) => `('2026-09-07', '${deviceId}', ${score})`).join(',\n    ')}
+  `);
+  const diamondCandidates = dropCandidates('2026-09-14 12:00:00+00');
+  const diamondByDevice = Object.fromEntries(diamondCandidates.filter((c) => c.device_id.startsWith('diamonddev-')).map((c) => [c.device_id, c]));
+  check(
+    ['diamonddev-1', 'diamonddev-2', 'diamonddev-3', 'diamonddev-4', 'diamonddev-5'].every((id) => diamondByDevice[id] === undefined),
+    `teto do Diamond: zona de promoção (posições 1-5) não gera candidato — teto trava, sem mudança de Tier (${JSON.stringify(diamondByDevice)})`,
+  );
+  check(
+    ['diamonddev-6', 'diamonddev-7', 'diamonddev-8'].every((id) => diamondByDevice[id]?.prev_tier === 'diamond' && diamondByDevice[id]?.new_tier === 'platinum'),
+    `descer de Diamond é uma queda real (não um caso de "piso") — zona de rebaixamento (posições 6-8) gera candidato diamond → platinum (${JSON.stringify(diamondByDevice)})`,
+  );
+
+  check(
+    psql(`select public._league_tier_display_name('silver', 'pt')`) === 'Prata' &&
+      psql(`select public._league_tier_display_name('silver', 'en')`) === 'Silver',
+    'nome de exibição do Tier em pt-br/en bate com o espelho cliente (components/format.ts)',
+  );
+
+  console.log('\n9. get_league_leaderboard sem regressão (RPC preguiçosa continua igual, ADR 0012)');
+  // Mesmo cenário multi-Divisão da seção 6 (dev-lgm-*): o job (seção 8, semana
+  // 2026-09-14) não tocou nem em league_placements nem em daily_submissions
+  // dessas semanas/dispositivos — a RPC preguiçosa continua respondendo
+  // exatamente como antes de 0008 existir.
+  const regressionCheck = JSON.parse(psql(`select public.get_league_leaderboard('dev-lgm-15', '2026-08-31 12:00:00+00')`));
+  check(regressionCheck.tier === 'gold', `get_league_leaderboard sem regressão: dev-lgm-15 continua gold (${regressionCheck.tier})`);
 
   if (failures === 0) {
     console.log('\n✔ Contrato do Desafio Diário verificado contra Postgres real.');
