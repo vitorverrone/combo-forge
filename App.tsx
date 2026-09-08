@@ -4,7 +4,7 @@ import { useFonts } from 'expo-font';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import { AdBanner } from './components/AdBanner';
 import { CollectionScreen } from './components/CollectionScreen';
@@ -20,6 +20,7 @@ import { colors } from './components/theme';
 import { initializeSqlitePersistence } from './store/bootstrap';
 import { useGameStore } from './store/gameStore';
 import { TutorialProvider } from './components/tutorial';
+import { requestTrackingPermission } from './services/tracking';
 
 // Persistência real (SQLite): injeta os ports de storage no store singleton e
 // carrega a meta-progressão salva entre sessões. Uma vez, na avaliação.
@@ -37,6 +38,13 @@ function AppShell() {
 
   const screen = useGameStore((state) => state.screen);
   const insets = useSafeAreaInsets();
+
+  // ATT (iOS): resolve antes do primeiro carregamento de anúncio (banner é o
+  // único sempre montado). Não bloqueia o resto do app — só o banner espera.
+  const [trackingReady, setTrackingReady] = useState(false);
+  useEffect(() => {
+    void requestTrackingPermission().finally(() => setTrackingReady(true));
+  }, []);
 
   // Mantém o splash visível até as fontes carregarem.
   if (!fontsLoaded) {
@@ -63,7 +71,7 @@ function AppShell() {
           {screen === 'daily' && <DailyChallengeScreen />}
           {screen === 'shop' && <ShopScreen />}
         </View>
-        <AdBanner />
+        {trackingReady && <AdBanner />}
         <UnlockChoiceModal />
         <GameFeedback />
         <UpdatePrompt />
