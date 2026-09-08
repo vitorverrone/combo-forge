@@ -64,8 +64,6 @@ returns table (
 )
 language plpgsql
 volatile
-security definer
-set search_path = public
 as $$
 #variable_conflict use_column
 declare
@@ -76,11 +74,21 @@ declare
   v_prev record;
   v_persisted_tier text;
 begin
-  -- `#variable_conflict use_column` acima: sem ela, o parâmetro OUT
-  -- `device_id` (de `returns table`) torna `on conflict (device_id, week)`
-  -- abaixo ambíguo entre a variável e a coluna real de league_placements —
-  -- preferimos sempre a coluna aqui (a função nunca lê o OUT var direto,
-  -- só via `v_prev.device_id`/RETURN QUERY).
+  -- `#variable_conflict use_column` acima: o parâmetro OUT `device_id` (de
+  -- `returns table`) colide com a coluna real de league_placements dentro
+  -- de `on conflict (device_id, week)` logo abaixo — ao contrário de uma
+  -- expressão SQL comum, a lista de colunas de ON CONFLICT só aceita
+  -- identificadores SEM qualificação de tabela/schema (gramática do
+  -- Postgres), então nem `league_placements.device_id` resolveria a
+  -- ambiguidade ali; confirmado batendo em
+  -- "column reference \"device_id\" is ambiguous" sem a pragma, via
+  -- `npm run verify:backend`. Seguro aqui: a função nunca lê o OUT var
+  -- direto, só via `v_prev.device_id`/RETURN QUERY. Sem `security
+  -- definer`/`search_path` (diferente de `_run_league_tier_drop_notifications`
+  -- abaixo): mesmo padrão de `_resolve_league_tier`/`_league_division_view`
+  -- em 0004 — só o ponto de entrada de verdade (chamado de fora, aqui pelo
+  -- pg_cron) precisa de privilégio elevado; chamadas aninhadas herdam o
+  -- contexto de quem chamou.
   for v_prev in
     select lp.device_id as device_id, lp.tier as prev_tier
     from public.league_placements lp

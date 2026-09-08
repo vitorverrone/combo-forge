@@ -69,6 +69,14 @@ function demoteLeagueTier(tier) {
   const i = LEAGUE_TIERS.indexOf(tier);
   return LEAGUE_TIERS[Math.max(0, i - 1)];
 }
+// Nome de exibição do Tier (ADR 0012, ticket 03), duplicado aqui pela mesma
+// razão das fórmulas acima — fonte canônica é components/format.ts /
+// i18n/{pt,en}.json format.leagueTier.*.
+const LEAGUE_TIER_DISPLAY_NAME = {
+  pt: { bronze: 'Bronze', silver: 'Prata', gold: 'Ouro', platinum: 'Platina', diamond: 'Diamante' },
+  en: { bronze: 'Bronze', silver: 'Silver', gold: 'Gold', platinum: 'Platinum', diamond: 'Diamond' },
+};
+
 function resolveLeagueTierFromDivision(previousTier, positionInDivision, actualDivisionSize, zoneSize = 5) {
   if (positionInDivision <= zoneSize) return promoteLeagueTier(previousTier);
   if (positionInDivision > actualDivisionSize - zoneSize) return demoteLeagueTier(previousTier);
@@ -560,11 +568,13 @@ try {
     `descer de Diamond é uma queda real (não um caso de "piso") — zona de rebaixamento (posições 6-8) gera candidato diamond → platinum (${JSON.stringify(diamondByDevice)})`,
   );
 
-  check(
-    psql(`select public._league_tier_display_name('silver', 'pt')`) === 'Prata' &&
-      psql(`select public._league_tier_display_name('silver', 'en')`) === 'Silver',
-    'nome de exibição do Tier em pt-br/en bate com o espelho cliente (components/format.ts)',
-  );
+  for (const tier of LEAGUE_TIERS) {
+    for (const lang of ['pt', 'en']) {
+      const expected = LEAGUE_TIER_DISPLAY_NAME[lang][tier];
+      const sqlValue = psql(`select public._league_tier_display_name('${tier}', '${lang}')`);
+      check(sqlValue === expected, `_league_tier_display_name('${tier}', '${lang}') === '${expected}' (espelho components/format.ts) — SQL devolveu '${sqlValue}'`);
+    }
+  }
 
   console.log('\n9. get_league_leaderboard sem regressão (RPC preguiçosa continua igual, ADR 0012)');
   // Mesmo cenário multi-Divisão da seção 6 (dev-lgm-*): o job (seção 8, semana
