@@ -26,7 +26,6 @@
     "forger": "Forger",
     "startRun": "Start Run",
     "dailyChallenge": "Daily Challenge",
-    "attemptsUsed": "· {{used}}/{{max}} attempts used",
     "collection": "Collection"
   },
   "game": {

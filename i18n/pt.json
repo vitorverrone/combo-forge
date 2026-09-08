@@ -26,7 +26,6 @@
     "forger": "Forjador",
     "startRun": "Iniciar Run",
     "dailyChallenge": "Desafio Diário",
-    "attemptsUsed": "· {{used}}/{{max}} tentativas usadas",
     "collection": "Coleção"
   },
   "game": {
