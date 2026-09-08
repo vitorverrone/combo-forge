@@ -1,13 +1,12 @@
-import { SQLiteStorage } from 'expo-sqlite/kv-store';
 import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useTranslation } from '../i18n';
+import { kv } from '../services/sqliteKv';
 import { PatternList } from './PatternList';
 import { colors, spacing, radius } from './theme';
 
 const STORAGE_KEY = 'combo-forge:onboarding-seen';
-const kv = new SQLiteStorage('combo-forge.db');
 
 interface Step {
   readonly title: string;

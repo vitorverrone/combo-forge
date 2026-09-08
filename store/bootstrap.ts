@@ -76,9 +76,18 @@ export function initializeSqlitePersistence(): void {
     // interação do jogador. Fire-and-forget: falha silenciosa (o botão
     // "Restaurar compras" da Loja e o próximo launch tentam de novo).
     void gameStore.getState().syncRemoveAdsEntitlement();
-  } catch {
-    // SQLite indisponível (ex.: plataforma sem suporte): mantém os ports em
-    // memória do store singleton — a sessão continua jogável, só sem
-    // persistência entre sessões.
+  } catch (error) {
+    // SQLite indisponível ou falhou ao inicializar (ex.: contenção de lock
+    // no cold start): mantém os ports em memória do store singleton — a
+    // sessão continua jogável, mas SEM persistência entre sessões (nome de
+    // exibição, tentativas do dia e meta-progressão "resetam" ao reabrir o
+    // app). Isso não deveria acontecer em uso normal — logamos para poder
+    // diagnosticar via Firebase se voltar a ocorrer, em vez de engolir o
+    // erro sem deixar rastro (era assim antes e tornava o sintoma
+    // inexplicável).
+    console.error('[bootstrap] Falha ao inicializar persistência SQLite:', error);
+    void createAppTelemetryProvider().logEvent('sqlite_persistence_init_failed', {
+      message: error instanceof Error ? error.message : String(error),
+    });
   }
 }

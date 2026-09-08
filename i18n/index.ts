@@ -9,22 +9,16 @@
  *   2. Device locale from expo-localization (auto-detect on first install)
  *   3. Fallback to 'pt'
  */
-import { SQLiteStorage } from 'expo-sqlite/kv-store';
 import { getLocales } from 'expo-localization';
 import i18n from 'i18next';
 import { initReactI18next, useTranslation as useI18NextTranslation } from 'react-i18next';
 
+import { kv } from '../services/sqliteKv';
 import pt from './pt.json';
 import en from './en.json';
 
 // ── Persistence ─────────────────────────────────────────────────────
 const STORAGE_KEY = 'combo-forge:language';
-let kv: SQLiteStorage | null = null;
-try {
-  kv = new SQLiteStorage('combo-forge.db');
-} catch {
-  // SQLite unavailable — language won't persist, app still works
-}
 
 /**
  * Determine the initial language:

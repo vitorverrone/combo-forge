@@ -848,9 +848,9 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       set({ screen: 'start', runMode: 'normal', run: null, selectedKeys: [], lastEvents: [], rng: null }),
 
     checkGameScreenTutorialTrigger: () => {
-      const { run, runMode, tutorial } = get();
+      const { run, tutorial } = get();
       if (run === null) return;
-      const context = { runMode, roundNumber: run.roundNumber, phase: run.phase };
+      const context = { roundNumber: run.roundNumber, phase: run.phase };
       if (!shouldStartGameScreenTutorial(tutorial, context)) return;
       set({ tutorial: startGameScreenTutorial(tutorial) });
     },
@@ -863,9 +863,9 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     },
 
     checkForgeTutorialTrigger: () => {
-      const { run, runMode, tutorial } = get();
+      const { run, tutorial } = get();
       if (run === null) return;
-      if (!shouldStartForgeTutorial(tutorial, { runMode, phase: run.phase })) return;
+      if (!shouldStartForgeTutorial(tutorial, { phase: run.phase })) return;
       set({ tutorial: startForgeTutorial(tutorial) });
     },
 

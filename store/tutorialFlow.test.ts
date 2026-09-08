@@ -201,16 +201,10 @@ describe('abandonGameScreenTutorialIfActive', () => {
 });
 
 describe('shouldStartGameScreenTutorial — gatilho independente', () => {
-  const eligibleContext = { runMode: 'normal' as const, roundNumber: 1, phase: 'playing' as const };
+  const eligibleContext = { roundNumber: 1, phase: 'playing' as const };
 
-  test('true quando Run normal, Rodada 1, fase playing, ainda não vista, seção não ativa', () => {
+  test('true quando Rodada 1, fase playing, ainda não vista, seção não ativa — em qualquer modo de Run (Normal ou Desafio Diário)', () => {
     expect(shouldStartGameScreenTutorial(DEFAULT_TUTORIAL_STATE, eligibleContext)).toBe(true);
-  });
-
-  test('false no Desafio Diário', () => {
-    expect(
-      shouldStartGameScreenTutorial(DEFAULT_TUTORIAL_STATE, { ...eligibleContext, runMode: 'daily' }),
-    ).toBe(false);
   });
 
   test('false fora da Rodada 1', () => {
@@ -242,16 +236,10 @@ describe('shouldStartGameScreenTutorial — gatilho independente', () => {
 });
 
 describe('shouldStartForgeTutorial — gatilho independente', () => {
-  const eligibleContext = { runMode: 'normal' as const, phase: 'forging' as const };
+  const eligibleContext = { phase: 'forging' as const };
 
-  test('true quando Run normal, fase forging, ainda não vista, seção não ativa', () => {
+  test('true quando fase forging, ainda não vista, seção não ativa — em qualquer modo de Run (Normal ou Desafio Diário)', () => {
     expect(shouldStartForgeTutorial(DEFAULT_TUTORIAL_STATE, eligibleContext)).toBe(true);
-  });
-
-  test('false no Desafio Diário', () => {
-    expect(shouldStartForgeTutorial(DEFAULT_TUTORIAL_STATE, { ...eligibleContext, runMode: 'daily' })).toBe(
-      false,
-    );
   });
 
   test('false fora da fase forging', () => {
@@ -327,8 +315,6 @@ describe('persistência (TutorialStorage)', () => {
 
     // Nova "sessão": estado carregado de novo do storage.
     const reloaded = loadTutorialState(storage);
-    expect(
-      shouldStartForgeTutorial(reloaded, { runMode: 'normal', phase: 'forging' }),
-    ).toBe(false);
+    expect(shouldStartForgeTutorial(reloaded, { phase: 'forging' })).toBe(false);
   });
 });

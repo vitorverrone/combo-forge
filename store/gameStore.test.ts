@@ -996,11 +996,11 @@ describe('tutorial contextual (delegação para o tutorialFlow — ticket 03)', 
     expect(store.getState().tutorial.gameScreenActiveStep).toBe(1);
   });
 
-  test('checkGameScreenTutorialTrigger não ativa nada no Desafio Diário', async () => {
+  test('checkGameScreenTutorialTrigger também ativa no Desafio Diário — pode ser a 1ª partida do jogador', async () => {
     const store = createGameStore({ dailyBackend: makeFakeDailyBackend() });
     await store.getState().startDailyChallenge();
     store.getState().checkGameScreenTutorialTrigger();
-    expect(store.getState().tutorial.gameScreenActiveStep).toBeNull();
+    expect(store.getState().tutorial.gameScreenActiveStep).toBe(1);
   });
 
   test('tutorialCardTouched avança do passo 1 pro passo 2', () => {
