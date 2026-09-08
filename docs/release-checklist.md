@@ -91,32 +91,35 @@ opcional e sem prazo mínimo.
    `developers.google.com/admob/ios/3p-skadnetworks` pro `app.json` antes do
    build de produção final (seção 3 "SKAdNetwork" — **deliberadamente não
    automatizado nesta sessão**, ver nota de risco lá).
-5. **RevenueCat → app "Combo Forge (App Store)":** criar os mesmos 4
-   produtos (mesmos productIds do catálogo/Android) + gerar e subir a
-   **In-App Purchase Key** (seção 2 "App iOS real no RevenueCat").
-6. **App Store Connect → Produtos em app:** os 4 IAPs já existem (você
-   confirmou) — falta preencher Tradução da App Store + Review Information
-   (screenshot) de cada um antes de submeter pra revisão (seção 6 "Produtos
-   em app (IAPs)" — conteúdo já redigido, só copiar/colar).
+5. ~~**RevenueCat → app "Combo Forge (App Store)":** criar os mesmos 4
+   produtos + gerar e subir a **In-App Purchase Key**.~~ ✅ Feito em
+   2026-09-08 — key, 4 produtos, entitlement, offering e chave de API
+   (`appl_...`) tudo completo (seção 2 "App iOS real no RevenueCat").
+6. ~~**App Store Connect → Produtos em app:** preencher Tradução da App
+   Store + Review Information (screenshot) dos 4 IAPs.~~ ✅ Feito em
+   2026-09-08 (seção 6 "Produtos em app (IAPs)") — falta só o passo 11
+   (submeter pra revisão).
 7. ~~**App Store Connect → Pricing and Availability:** restringir a
    disponibilidade pra excluir jurisdições tipo-GDPR.~~ ✅ Feito em
    2026-09-08 — desmarcados os 27 países da UE, Reino Unido, Islândia,
    Noruega (EEE) e Suíça (decisão registrada na ADR 0007 revisitada —
    mantém a política de "sem modal de consentimento GDPR" sem reabrir esse
    escopo agora).
-8. **App Store Connect → App Privacy:** preencher o questionário de
-   privacidade (equivalente ao Data Safety do Play) — mesmos SDKs/dados já
-   declarados na política de privacidade (seção 6 "App Privacy").
-9. **`eas build --profile production --platform ios`** — primeira vez:
-   confirma/gera certificado de distribuição + provisioning profile via EAS
-   (fluxo interativo, precisa da sua conta Apple Developer logada uma vez).
-10. **`eas submit --platform ios --profile production`** — envia o `.ipa`
-    pro App Store Connect (primeira vez também pede login Apple/ASC API
-    Key). Testar em TestFlight antes de submeter pra revisão (opcional, mas
-    recomendado — sem prazo mínimo diferente do Play Console).
+8. ~~**App Store Connect → App Privacy:** preencher o questionário de
+   privacidade.~~ ✅ Finalizado em 2026-09-08 (seção 6 "App Privacy").
+9. ~~**`eas build --profile production --platform ios`**.~~ ✅ Sucesso em
+   2026-09-08 na 6ª tentativa (5 falhas de build nativo resolvidas — ver
+   seção 5 "Builds iOS" pro histórico completo).
+10. ~~**`eas submit --platform ios --profile production`**.~~ ✅ Feito em
+    2026-09-08 — build 1.0.0 (7) no App Store Connect, instalado e aberto
+    no TestFlight (convite por e-mail precisou ser aceito manualmente).
+    **Pendente agora:** validar de ponta a ponta no TestFlight (compra
+    real sandbox, restore, os 3 formatos de anúncio, prompt de ATT) antes
+    do próximo passo.
 11. **Submeter o app + os 4 IAPs pra revisão da Apple** (App Store Connect →
     versão do app → "Add for Review", com os IAPs anexados à mesma
-    submission — Apple revisa app e IAP juntos na primeira vez).
+    submission — Apple revisa app e IAP juntos na primeira vez). Próximo
+    passo real, depois da validação no TestFlight (item 10).
 12. **Publicar em produção na App Store.**
 
 ---
@@ -142,8 +145,10 @@ opcional e sem prazo mínimo.
 | SKAdNetworkItems (iOS) | ⏳ **Não preenchido, deliberado** — lista muda com frequência, risco de transcrição errada via ferramenta automatizada (ver seção 3) | Copiar manualmente de `developers.google.com/admob/ios/3p-skadnetworks` antes do build de produção final |
 | Google Play Console | ✅ App criado, teste fechado publicado, 1 testador ativo | Recrutar até 12 testadores + aguardar 14 dias corridos |
 | Google Play Console — IAPs | ✅ 4 produtos únicos criados e ativos | — |
-| App Store Connect — app + IAPs | ✅ **Criados** (você confirmou, 2026-09-08) | Faltam campos de revisão dos IAPs (seção 6) e o App Privacy form |
-| App Store Connect — Availability | ⏳ Pendente | Restringir UE + Reino Unido (decisão de 2026-09-08, ver ADR 0007) |
+| App Store Connect — app + IAPs | ✅ App, 4 IAPs, Tradução/Review Info e App Privacy **completos** (2026-09-08) | Falta só submeter app + IAPs juntos pra revisão |
+| App Store Connect — Availability | ✅ Restringido (UE + Reino Unido + Islândia + Noruega + Suíça, 2026-09-08) | — |
+| App Store Connect — build/TestFlight | ✅ Build 1.0.0 (7) enviado via `eas submit`, instalado e testado no TestFlight (2026-09-08) | Validar compra/restore reais + demais fluxos de ponta a ponta |
+| RevenueCat — app iOS real | ✅ In-App Purchase Key, 4 produtos, entitlement, offering e chave de API **completos** (2026-09-08) | Testar compra/restore reais no TestFlight |
 | Firebase Analytics — app Android | ✅ Projeto criado, `google-services.json` na raiz (fora do git) | Rebuild + validar no DebugView |
 | Firebase Analytics — app **iOS** | ✅ **Criado em 2026-09-08** — `GoogleService-Info.plist` na raiz (fora do git), `ios.googleServicesFile` ligado em `app.json` | Rebuild + validar no DebugView |
 | Política de privacidade | ✅ Atualizada em 2026-09-08 — cobre iOS/IDFA/ATT e Firebase Analytics (estava faltando desde antes) | — |
@@ -178,6 +183,28 @@ Sem mudanças desde a última revisão — seção estável, mesma pra Android e
       fim de Run real ainda. Opcional: `npm run verify:backend` (Docker) para
       validar sem depender de terminar uma Run.
 - [x] `npm test` verde sem depender de rede (contrato TS ↔ SQL travado).
+
+### Job semanal de queda de Tier (ADR 0012, ticket 03 — novo)
+
+Primeira peça de infra agendada do projeto (`pg_cron` + `pg_net`, migration
+`0008_league_tier_drop_notifications.sql`). A parte testável sem rede
+(`_league_tier_drop_notification_candidates`) já passa em
+`npm run verify:backend`; o disparo real via `pg_net` e o agendamento via
+`pg_cron` não são verificáveis localmente (extensões do projeto Supabase,
+ausentes num Postgres vanilla) nem antes do primeiro rollout de uma semana
+real em produção.
+
+- [ ] Extensões `pg_cron` e `pg_net` habilitadas no projeto Supabase
+      (Database → Extensions) — sem isso a migration aplica normalmente
+      (os `do $$ ... exception when others ...$$` guardam a falta delas),
+      mas o job nunca é agendado nem despacha nada.
+- [ ] `select * from cron.job where jobname = 'league-tier-drop-notifications'`
+      confirma o agendamento (segunda 00:05 UTC) depois da migration aplicada.
+- [ ] **Confirmar que o job rodou corretamente na primeira virada de semana
+      real em produção** — não é verificável antes do primeiro rollout:
+      conferir `cron.job_run_details` (sucesso/erro da última execução) e,
+      pra pelo menos um dispositivo que caiu de Tier na semana, que a
+      notificação chegou de fato (Expo Push, `push_tokens` populada).
 
 ---
 
@@ -272,24 +299,19 @@ RevenueCat pra validação de recibo server-to-server (substituiu o antigo
 3. Colar o **Issuer ID** no campo correspondente.
 4. **Save changes** — o RevenueCat valida a credencial.
 
-- [ ] Key `.p8` gerada e baixada (guardar em local seguro, ex.: gerenciador
-      de senhas — não vai pro git, mesmo padrão do
-      `google-play-service-account.json`).
-- [ ] Upload feito + Issuer ID preenchido no RevenueCat, validação passou.
-- [ ] Os 4 productIds criados em Products → app "Combo Forge (App Store)"
-      → New Product (mesmos productIds do catálogo — ver tabela acima).
-- [ ] Entitlement `remove_ads` anexada ao Remove Ads do iOS (mesma
-      entitlement já usada pro Android — a RevenueCat mostra os dois
-      produtos, Android + iOS, na lista de "Associated products").
-- [ ] Offering `default`: os 4 packages ganham o lado iOS anexado ao lado
-      do Android/Test Store já existentes.
-- [ ] Chave pública do RevenueCat pro app iOS (`appl_...`) preenchida no
-      `.env`/EAS — **atenção:** é uma chave diferente da `goog_...` usada
-      hoje (essa é específica do app Android). Pode ser necessário separar
-      por plataforma via `Platform.OS` em `services/revenuecat.ts` se o
-      RevenueCat não usar uma única chave "cross-platform" pro projeto —
-      checar no dashboard qual modelo esse projeto usa antes de mexer no
-      código.
+- [x] Key `.p8` gerada e baixada.
+- [x] Upload feito + Issuer ID preenchido no RevenueCat, validação passou.
+- [x] Os 4 productIds criados em Products → app "Combo Forge (App Store)".
+- [x] Entitlement `remove_ads` anexada ao Remove Ads do iOS.
+- [x] Offering `default`: os 4 packages com o lado iOS anexado.
+- [x] Chave pública do RevenueCat pro app iOS (`appl_inEramBKuacOfoWgaIcAvRLNEDD`)
+      preenchida em 2026-09-08 — `.env` local + EAS `preview`/`production`
+      (`EXPO_PUBLIC_REVENUECAT_API_KEY_IOS`, nova variável). Confirmado que
+      o projeto usa chave por plataforma (não cross-platform única), então
+      `services/revenuecat.ts` foi ajustado pra escolher a chave certa via
+      `Platform.OS` (Android continua na variável antiga, sem sufixo, por
+      compatibilidade). `npm run typecheck` e `npm test` verdes depois da
+      mudança.
 
 ### Verificar
 
@@ -297,8 +319,8 @@ RevenueCat pra validação de recibo server-to-server (substituiu o antigo
       restore, remoção de anúncios) — ver histórico abaixo.
 - [ ] Testar compra e restore **reais no Android** (produto + licença de
       teste do Play Console) — depende de tudo acima.
-- [ ] Testar compra e restore **reais no iOS** (produto + sandbox tester do
-      App Store Connect) — depende da In-App Purchase Key acima.
+- [ ] Testar compra e restore **reais no iOS** — RevenueCat 100% configurado
+      (✅ acima), falta só exercitar no build do TestFlight já instalado.
 
 #### Histórico de validação (Test Store, dev build, 2026-08-15/16)
 
@@ -461,8 +483,8 @@ EXPO_PUBLIC_ADMOB_LIVE_ADS=false
 - [x] **Preenchido em 2026-09-08:** as 3 variáveis `*_AD_UNIT_ID_IOS`
       (rewarded/banner/interstitial) no `.env` local e nos dois ambientes
       do EAS (`preview` + `production`).
-- [ ] `EXPO_PUBLIC_REVENUECAT_API_KEY` do iOS — pendente até a chave `appl_...`
-      (ou equivalente cross-platform) existir no RevenueCat (seção 2).
+- [x] `EXPO_PUBLIC_REVENUECAT_API_KEY_IOS` (`appl_...`) preenchida em
+      2026-09-08 — `.env` local + EAS `preview`/`production` (seção 2).
 - [x] `.env` fora do git (`git check-ignore .env`).
 
 ---
@@ -600,12 +622,13 @@ primeira vez.
       se a versão nova já tiver o fix, o patch vira no-op ou passa a falhar
       ao aplicar, sinal de que pode ser deletado).
       Refazer o build depois dessa mudança.
-- [ ] Instalar via TestFlight (upload automático do `eas submit`, ou
-      manual) e validar de ponta a ponta: Run normal, Desafio Diário
-      completo, compra + restore reais (sandbox tester do App Store
-      Connect), anúncio recompensado, intersticial, banner, prompt de ATT.
-- [ ] `eas submit --platform ios --profile production --latest` — envia o
-      `.ipa` pro App Store Connect.
+- [x] `eas submit --platform ios --profile production --latest` — ✅ feito
+      em 2026-09-08, `.ipa` no App Store Connect (build 1.0.0 (7)).
+- [~] Instalar via TestFlight — ✅ instalado e aberto em 2026-09-08 (aceitar
+      o convite por e-mail foi o passo que faltava, não configuração).
+      Falta validar de ponta a ponta: Run normal, Desafio Diário completo,
+      compra + restore reais (depende da In-App Purchase Key do RevenueCat,
+      seção 2), anúncio recompensado, intersticial, banner, prompt de ATT.
 
 ### Ambos
 
@@ -720,32 +743,30 @@ contador, confirme lá se mudou). Textos abaixo já cabem:
 produto em contexto no app. Como os 4 IAPs aparecem na mesma tela (Shop),
 **a mesma screenshot serve pros 4** — não precisa ser 4 imagens diferentes:
 
-- [ ] Abrir o app (dev build ou TestFlight) → ir pra tela **Shop** (ícone
-      no topo) → tirar um screenshot mostrando os 4 itens com preço/botão
-      de compra visíveis.
-- [ ] Fazer upload da mesma imagem no campo "Screenshot" de Review
-      Information dos 4 produtos.
-
-*(Se preferir, posso rodar o app numa build local e capturar essa tela
-automaticamente via `/run` — mais rápido pra você tirar você mesmo agora
-com o app já aberto, mas avise se quiser que eu gere.)*
+- [x] Screenshot da tela **Shop** capturada (emulador Android, recortada
+      pra 640×920) e usada nos 4 produtos — mesma imagem serve pros 4.
+- [x] Upload feito no campo "Screenshot" de Review Information dos 4
+      produtos.
+- [x] **Tradução da App Store + Review Information dos 4 IAPs completos**
+      (confirmado em 2026-09-08) — falta só clicar em enviar pra revisão
+      (junto com a versão do app, seção "Ordem recomendada — iOS" item 11).
 
 #### App Privacy (equivalente ao Data Safety do Play)
 
-- [~] Questionário "App Privacy" em preenchimento (2026-09-08) — tipos de
+- [x] Questionário "App Privacy" **finalizado em 2026-09-08** — tipos de
       dado, vínculo à identidade e uso pra rastreamento decididos e
       registrados na ADR 0007 (seção "App Privacy — declarações de
       rastreamento"), com a tabela completa das 9 respostas (ID de usuário,
       ID do dispositivo, Histórico de compras, Interações com o produto,
       Dados de publicidade, Outras informações de uso, Localização
-      aproximada, Dados de falhas, Dados de desempenho). Falta só terminar
-      de clicar na UI da App Store Connect.
+      aproximada, Dados de falhas, Dados de desempenho).
 
 #### Availability
 
-- [ ] **Restringir território:** excluir União Europeia + Reino Unido
-      (decisão de 2026-09-08 — ver ADR 0007 revisitado). Pricing and
-      Availability → Availability → desmarcar os países da UE + UK.
+- [x] **Restringir território** — ✅ feito em 2026-09-08 (ver ADR 0007
+      revisitado): desmarcados os 27 países da UE, Reino Unido, Islândia,
+      Noruega e Suíça em Pricing and Availability → Availability (escopo
+      final ficou "jurisdições tipo-GDPR", mais amplo que só UE+RU).
 
 #### Assets de loja (App Store, separado do Play Store)
 
@@ -781,16 +802,18 @@ com o app já aberto, mas avise se quiser que eu gere.)*
 
 - [x] AdMob: app + 3 ad units reais criadas; ATT implementado.
 - [ ] AdMob: SKAdNetworkItems preenchido antes do build de produção final.
-- [ ] RevenueCat: In-App Purchase Key gerada e configurada; 4 produtos
+- [x] RevenueCat: In-App Purchase Key gerada e configurada; 4 produtos
       criados no app "Combo Forge (App Store)"; entitlement e offering
       anexadas; chave de API do RevenueCat pro iOS no `.env`/EAS.
-- [ ] App Store Connect: Tradução + Review Information dos 4 IAPs
-      preenchidos (conteúdo pronto na seção 6); App Privacy preenchido;
-      Availability restringindo UE/RU; assets de loja (screenshots
-      iPhone/iPad, descrição, keywords) completos.
-- [ ] Build de produção (`eas build --platform ios --profile production`)
-      instalado via TestFlight com todo o fluxo validado (compra real
-      sandbox, restore, os 3 formatos de anúncio, prompt de ATT).
+- [x] App Store Connect: Tradução + Review Information dos 4 IAPs
+      preenchidos; App Privacy preenchido; Availability restringindo
+      jurisdições tipo-GDPR.
+- [ ] App Store Connect: assets de loja (screenshots iPhone/iPad,
+      descrição, keywords) — ainda pendente, separado dos IAPs.
+- [x] Build de produção (`eas build --platform ios --profile production`)
+      gerado e enviado via `eas submit`; instalado no TestFlight.
+- [ ] Validar de ponta a ponta no TestFlight: compra real sandbox, restore,
+      os 3 formatos de anúncio, prompt de ATT.
 - [ ] App + os 4 IAPs submetidos juntos pra revisão da Apple.
 
 ---
