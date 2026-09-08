@@ -9,6 +9,7 @@ import {
   DailyAttempts,
   DAILY_FREE_ATTEMPTS,
   dailyAttemptsForDay,
+  dailyCallToActionState,
   hasFreeAttempt,
   unlockExtraAttempt,
   utcDateIso,
@@ -100,6 +101,52 @@ describe('tentativas do Desafio Diário', () => {
     state = withBestSubmitted(state, 800);
     state = withBestSubmitted(state, 300);
     expect(state.bestSubmitted).toBe(800);
+  });
+});
+
+describe('dailyCallToActionState', () => {
+  test.each<[string, DailyAttempts, ReturnType<typeof dailyCallToActionState>]>([
+    [
+      'gratuita disponível, nada usado',
+      { date: '2026-08-11', attemptsUsed: 0, unlockedTotal: 1, bestSubmitted: null },
+      'free-ready',
+    ],
+    [
+      'gratuita usada, extra já liberada e não jogada',
+      { date: '2026-08-11', attemptsUsed: 1, unlockedTotal: 2, bestSubmitted: null },
+      'extra-ready',
+    ],
+    [
+      'gratuita usada, sem extra liberada ainda',
+      { date: '2026-08-11', attemptsUsed: 1, unlockedTotal: 1, bestSubmitted: null },
+      'watch-ad',
+    ],
+    [
+      'vários ciclos jogados, extra liberada e não jogada',
+      { date: '2026-08-11', attemptsUsed: 5, unlockedTotal: 6, bestSubmitted: null },
+      'extra-ready',
+    ],
+    [
+      'vários ciclos jogados, aguardando novo anúncio',
+      { date: '2026-08-11', attemptsUsed: 5, unlockedTotal: 5, bestSubmitted: null },
+      'watch-ad',
+    ],
+  ])('%s', (_description, state, expected) => {
+    expect(dailyCallToActionState(state)).toBe(expected);
+  });
+
+  test('transições ao longo de um ciclo completo (gratuita → anúncio → extra → jogada → anúncio)', () => {
+    let state = createInitialDailyAttempts('2026-08-11');
+    expect(dailyCallToActionState(state)).toBe('free-ready');
+
+    state = consumeDailyAttempt(state);
+    expect(dailyCallToActionState(state)).toBe('watch-ad');
+
+    state = unlockExtraAttempt(state);
+    expect(dailyCallToActionState(state)).toBe('extra-ready');
+
+    state = consumeDailyAttempt(state);
+    expect(dailyCallToActionState(state)).toBe('watch-ad');
   });
 });
 

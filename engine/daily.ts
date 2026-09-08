@@ -99,6 +99,20 @@ export function canWatchExtraAd(state: DailyAttempts): boolean {
   return state.attemptsUsed >= state.unlockedTotal;
 }
 
+/**
+ * Qual dos 3 estados de convite mostrar ao jogador. `watch-ad` cobre
+ * canWatchExtraAd; dentre os que sobram, `attemptsUsed > 0` só significa "a
+ * tentativa pronta é extra" porque DAILY_FREE_ATTEMPTS === 1 — se isso
+ * mudasse, precisaria comparar contra DAILY_FREE_ATTEMPTS, não contra 0.
+ */
+export function dailyCallToActionState(
+  state: DailyAttempts,
+): 'free-ready' | 'extra-ready' | 'watch-ad' {
+  if (canWatchExtraAd(state)) return 'watch-ad';
+  if (state.attemptsUsed > 0) return 'extra-ready';
+  return 'free-ready';
+}
+
 /** Registra a melhor pontuação submetida no dia (monótona). */
 export function withBestSubmitted(
   state: DailyAttempts,
