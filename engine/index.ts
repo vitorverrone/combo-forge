@@ -20,6 +20,7 @@ export * from './run';
 export * from './daily';
 export * from './displayName';
 export * from './adProvider';
+export * from './pushProvider';
 export * from './shop';
 export * from './feedback';
 export * from './telemetry';

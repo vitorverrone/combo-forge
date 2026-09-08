@@ -84,6 +84,7 @@ const migrations = [
   join(root, 'supabase', 'migrations', '0004_league.sql'),
   join(root, 'supabase', 'migrations', '0005_league_threshold.sql'),
   join(root, 'supabase', 'migrations', '0006_display_name_prohibited_terms.sql'),
+  join(root, 'supabase', 'migrations', '0007_push_tokens.sql'),
 ];
 const IMAGE = 'postgres:16-alpine';
 const CONTAINER = 'combo-forge-pg-verify';
@@ -419,6 +420,44 @@ try {
     leaguePlacementsDirectDenied = true;
   }
   check(leaguePlacementsDirectDenied, 'anon NÃO acessa league_placements diretamente (RLS sem políticas)');
+
+  console.log('\n7. Token de push (register_push_token, ADR 0012, ticket 02)');
+  psql(`select public.register_push_token('dev-push-1', 'ExponentPushToken[aaa]', 'ios')`);
+  check(
+    psql(`select expo_push_token || ',' || platform from public.push_tokens where device_id = 'dev-push-1'`) ===
+      'ExponentPushToken[aaa],ios',
+    'primeiro registro grava token + plataforma',
+  );
+  psql(`select public.register_push_token('dev-push-1', 'ExponentPushToken[bbb]', 'android')`);
+  check(
+    psql(`select expo_push_token || ',' || platform from public.push_tokens where device_id = 'dev-push-1'`) ===
+      'ExponentPushToken[bbb],android',
+    'upsert sobrescreve o token e a plataforma do mesmo dispositivo',
+  );
+  check(psql(`select count(*) from public.push_tokens where device_id = 'dev-push-1'`) === '1', 'upsert não duplica linha');
+  let emptyTokenRejected = false;
+  try {
+    psql(`select public.register_push_token('dev-push-2', '', 'ios')`);
+  } catch {
+    emptyTokenRejected = true;
+  }
+  check(emptyTokenRejected, 'token vazio é rejeitado');
+  let badPlatformRejected = false;
+  try {
+    psql(`select public.register_push_token('dev-push-3', 'ExponentPushToken[ccc]', 'web')`);
+  } catch {
+    badPlatformRejected = true;
+  }
+  check(badPlatformRejected, 'plataforma fora de (ios, android) é rejeitada');
+  check(psql(`select count(*) from public.push_tokens where device_id in ('dev-push-2', 'dev-push-3')`) === '0', 'nenhuma das tentativas rejeitadas foi persistida');
+  check(psqlCommand(`set role anon; select public.register_push_token('anon-push-dev', 'ExponentPushToken[anon]', 'android')`) === '', 'anon consegue registrar o token (security definer, retorno void)');
+  let pushTokensDirectDenied = false;
+  try {
+    psqlCommand(`set role anon; select * from public.push_tokens`);
+  } catch {
+    pushTokensDirectDenied = true;
+  }
+  check(pushTokensDirectDenied, 'anon NÃO acessa push_tokens diretamente (RLS sem políticas)');
 
   if (failures === 0) {
     console.log('\n✔ Contrato do Desafio Diário verificado contra Postgres real.');

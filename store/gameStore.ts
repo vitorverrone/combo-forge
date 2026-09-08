@@ -81,6 +81,10 @@ import {
   ShopProvider,
   ShopStorage,
   createDevTelemetryProvider,
+  createMemoryPushProvider,
+  createUnavailablePushBackend,
+  PushBackend,
+  PushProvider,
   TelemetryParams,
   TelemetryProvider,
 } from '../engine';
@@ -91,6 +95,18 @@ import {
   DailyState,
   runDailyCommand,
 } from './dailyFlow';
+
+import {
+  acceptPushSoftAsk as acceptPushSoftAskFlow,
+  createMemoryPushFlowStorage,
+  declinePushSoftAsk as declinePushSoftAskFlow,
+  loadPushState,
+  PushFlowDeps,
+  PushFlowState,
+  PushFlowStorage,
+  PushState,
+  registerNotificationTapListener,
+} from './pushFlow';
 
 import {
   equipCosmetic as equipCosmeticFlow,
@@ -185,6 +201,11 @@ export interface GameState {
   /** Tutorial contextual em coach-mark (.scratch/tutorial-walkthrough): qual passo está ativo, o que já foi visto. */
   readonly tutorial: TutorialState;
   readonly tutorialStorage: TutorialStorage;
+  /** Notificação push de queda de Tier (ADR 0012, ticket 02): resolução do soft-ask dentro do app. */
+  readonly push: PushState;
+  readonly pushProvider: PushProvider;
+  readonly pushBackend: PushBackend;
+  readonly pushStorage: PushFlowStorage;
 
   readonly chooseForger: (forger: ForgerId) => void;
   readonly startRun: () => void;
@@ -200,6 +221,10 @@ export interface GameState {
   readonly fetchLeaderboard: () => Promise<void>;
   /** Grava/troca o Nome de Exibição do dispositivo (ticket 02). */
   readonly setDisplayName: (name: string) => Promise<void>;
+  /** Aceita o soft-ask de notificação (ADR 0012): pede a permissão do SO e, se concedida, registra o token. */
+  readonly acceptPushSoftAsk: () => Promise<void>;
+  /** Recusa o soft-ask de notificação: nunca mais aparece (ADR 0012). */
+  readonly declinePushSoftAsk: () => void;
   /** Abre a loja cosmética. */
   readonly openShop: () => void;
   /** Carrega as ofertas (preços) do provider e o estado persistido. */
@@ -290,6 +315,12 @@ export interface GameStoreDeps {
   readonly initialShop?: PersistedShop;
   /** Port de persistência do tutorial contextual (padrão: memória, p/ testes). */
   readonly tutorialStorage?: TutorialStorage;
+  /** Provider de push (padrão: memória, sem capability — mesmo estado de ambiente sem SDK nativo). */
+  readonly pushProvider?: PushProvider;
+  /** Backend de registro de token (padrão: indisponível; app injeta Supabase). */
+  readonly pushBackend?: PushBackend;
+  /** Port de persistência do soft-ask de push (padrão: memória, p/ testes). */
+  readonly pushStorage?: PushFlowStorage;
 }
 
 /** Seleção resolvida em cartas da Mão, na ordem da Mão. */
@@ -456,6 +487,13 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
   const shopProvider = deps.shopProvider ?? createDevShopProvider();
   const initialShop = deps.initialShop ?? normalizeShopState(shopStorage.load());
 
+  // Sem provider injetado, o padrão se comporta como um ambiente sem
+  // capability nativa de push (mesmo estado de Expo Go/web) — nada dispara
+  // até o bootstrap real injetar services/push.ts.
+  const pushProvider = deps.pushProvider ?? createMemoryPushProvider();
+  const pushBackend = deps.pushBackend ?? createUnavailablePushBackend();
+  const pushStorage = deps.pushStorage ?? createMemoryPushFlowStorage();
+
   // Estado inicial do Desafio Diário: deviceId persistido (ou novo) e
   // tentativas com rollover para o dia atual.
   const today = utcDateIso(now());
@@ -470,7 +508,7 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     dailyStorage.saveAttempts(initialAttempts);
   }
 
-  return createStore<GameState>()((set, get) => ({
+  const store = createStore<GameState>()((set, get) => ({
     screen: 'start',
     forger: 'apprentice',
     runMode: 'normal',
@@ -520,6 +558,10 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     showInterstitial: false,
     tutorial: loadTutorialState(tutorialStorage),
     tutorialStorage,
+    push: loadPushState(pushStorage),
+    pushProvider,
+    pushBackend,
+    pushStorage,
 
     dismissInterstitial: () => set({ showInterstitial: false }),
 
@@ -699,6 +741,16 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
         name,
       });
       set({ daily: result.daily });
+    },
+
+    acceptPushSoftAsk: async () => {
+      const next = await acceptPushSoftAskFlow(pushFlowSlice(get()), pushFlowDeps(get()));
+      set({ push: next.push });
+    },
+
+    declinePushSoftAsk: () => {
+      const next = declinePushSoftAskFlow(pushFlowSlice(get()), pushFlowDeps(get()));
+      set({ push: next.push });
     },
 
     toggleCard: (key) => {
@@ -915,6 +967,14 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       set({ tutorial: next });
     },
   }));
+
+  // Toque na notificação de queda de Tier (ADR 0012): navega direto para a
+  // DailyChallengeScreen, mesma action que o botão "Desafio Diário" usa.
+  // Fica fora do objeto de estado (não é uma action que a UI dispara) —
+  // liga por toda a vida do store, uma vez na criação.
+  registerNotificationTapListener(pushProvider, () => store.getState().openDaily());
+
+  return store;
 }
 
 /** O que advanceProgression precisa do state atual — sempre viajam juntos no call site (mesmo padrão de ShopFlowDeps/ShopFlowState). */
@@ -1050,6 +1110,16 @@ function shopFlowDeps(state: GameState): ShopFlowDeps {
 /** Fatia da Loja (estado + remoção de anúncios) a partir do estado atual. */
 function shopFlowSlice(state: GameState): ShopFlowState {
   return { shop: state.shop, adsRemoved: state.adsRemoved };
+}
+
+/** Ports do fluxo de push a partir do estado atual do store (mesmo padrão do dailyFlow/shopFlow). */
+function pushFlowDeps(state: GameState): PushFlowDeps {
+  return { provider: state.pushProvider, backend: state.pushBackend, storage: state.pushStorage };
+}
+
+/** Fatia de push (estado + deviceId, propriedade do Desafio Diário) a partir do estado atual. */
+function pushFlowSlice(state: GameState): PushFlowState {
+  return { push: state.push, deviceId: state.daily.deviceId };
 }
 
 /** Store singleton usado pela UI (memória; o app injeta SQLite no boot). */

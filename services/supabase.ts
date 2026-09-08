@@ -9,13 +9,15 @@
  * Desafio Diário como indisponível em vez de quebrar.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 import {
   createUnavailableDailyBackend,
+  createUnavailablePushBackend,
   DailyBackend,
   DailyLeaderboard,
   LeagueStanding,
+  PushBackend,
 } from '../engine';
 import { LeagueLeaderboardResponse } from '../supabase/contract';
 
@@ -62,21 +64,27 @@ export function toEngineLeagueStanding(response: LeagueLeaderboardResponse): Lea
 }
 
 /**
+ * Cliente Supabase configurado, ou null sem env presente (dev/testes) ou
+ * URL inválida (ex.: placeholder do .env.example ainda não preenchido) —
+ * compartilhado por todos os backends deste arquivo (Desafio Diário, Push)
+ * pra não duplicar o mesmo try/catch em cada um.
+ */
+function createConfiguredClient(): SupabaseClient | null {
+  if (!isSupabaseConfigured()) return null;
+  try {
+    return createClient(SUPABASE_URL as string, SUPABASE_ANON_KEY as string);
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Backend real do Desafio Diário sobre o projeto Supabase configurado.
  * Devolve null quando o env não está presente (desenvolvimento/testes).
  */
 export function createSupabaseDailyBackend(): DailyBackend | null {
-  if (!isSupabaseConfigured()) return null;
-
-  let client;
-  try {
-    client = createClient(SUPABASE_URL as string, SUPABASE_ANON_KEY as string);
-  } catch {
-    // URL inválida (ex.: placeholder do .env.example ainda não preenchido):
-    // trata como não configurado — o Desafio Diário fica indisponível em
-    // vez de derrubar o bootstrap inteiro (que injeta loja e demais ports).
-    return null;
-  }
+  const client = createConfiguredClient();
+  if (client === null) return null;
 
   return {
     fetchSeed: async (dateIso: string): Promise<number> => {
@@ -126,4 +134,31 @@ export function createSupabaseDailyBackend(): DailyBackend | null {
 /** Backend para o store: real se configurado; indisponível (erros claros) se não. */
 export function createAppDailyBackend(): DailyBackend {
   return createSupabaseDailyBackend() ?? createUnavailableDailyBackend();
+}
+
+/**
+ * Backend real de push (ADR 0012, ticket 02) sobre o projeto Supabase
+ * configurado: implementa PushBackend com a RPC register_push_token
+ * (supabase/migrations/0007_push_tokens.sql). Devolve null sem env presente
+ * (dev/testes) — mesma regra do backend do Desafio Diário.
+ */
+export function createSupabasePushBackend(): PushBackend | null {
+  const client = createConfiguredClient();
+  if (client === null) return null;
+
+  return {
+    registerToken: async (deviceId: string, token: string, platform: 'ios' | 'android'): Promise<void> => {
+      const { error } = await client.rpc('register_push_token', {
+        p_device_id: deviceId,
+        p_token: token,
+        p_platform: platform,
+      });
+      if (error) throw new Error(error.message);
+    },
+  };
+}
+
+/** Backend de push para o store: real se configurado; indisponível se não. */
+export function createAppPushBackend(): PushBackend {
+  return createSupabasePushBackend() ?? createUnavailablePushBackend();
 }

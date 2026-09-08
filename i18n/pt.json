@@ -117,6 +117,10 @@
     "thisWeekLeaderboard": "Ranking da semana",
     "leagueTitle": "Sua Liga",
     "leagueDivision": "Divisão {{number}}",
+    "pushSoftAskTitle": "Avisar se eu cair de Tier?",
+    "pushSoftAskBody": "A gente te avisa se você cair de Tier na Liga no fim da semana.",
+    "pushSoftAskAccept": "Ativar aviso",
+    "pushSoftAskDecline": "Agora não",
     "leaderboardLoading": "Carregando ranking…",
     "noScoresThisWeek": "Nenhuma pontuação esta semana ainda.",
     "yourBest": "Sua melhor",
@@ -497,6 +501,8 @@
     "displayNameInput": "Campo de nome de exibição",
     "saveDisplayName": "Salvar nome de exibição",
     "restartNow": "Reiniciar agora para atualizar",
-    "dismissUpdatePrompt": "Dispensar aviso de atualização"
+    "dismissUpdatePrompt": "Dispensar aviso de atualização",
+    "acceptPushSoftAsk": "Aceitar notificações de queda de Tier",
+    "declinePushSoftAsk": "Recusar notificações de queda de Tier"
   }
 }

@@ -76,6 +76,7 @@
       "expo-font",
       "expo-localization",
       "expo-updates",
+      "expo-notifications",
       [
         "expo-splash-screen",
         {

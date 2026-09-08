@@ -12,6 +12,7 @@ import {
 } from '../engine';
 
 import { useTranslation } from '../i18n';
+import { shouldShowPushSoftAsk } from '../store/pushFlow';
 import { leagueTierName } from './format';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
@@ -39,6 +40,9 @@ export function DailyChallengeScreen() {
   const watchAdForExtraAttempt = useGameStore((state) => state.watchAdForExtraAttempt);
   const setDisplayName = useGameStore((state) => state.setDisplayName);
   const backToStart = useGameStore((state) => state.backToStart);
+  const push = useGameStore((state) => state.push);
+  const acceptPushSoftAsk = useGameStore((state) => state.acceptPushSoftAsk);
+  const declinePushSoftAsk = useGameStore((state) => state.declinePushSoftAsk);
   const [showAdLoading, setShowAdLoading] = useState(false);
 
   // Rollover para o dia atual (fronteira UTC, igual ao backend).
@@ -181,6 +185,14 @@ export function DailyChallengeScreen() {
           </View>
         )}
 
+        {shouldShowPushSoftAsk(push, daily.league) && (
+          <PushSoftAskBanner
+            registering={push.registering}
+            onAccept={() => void acceptPushSoftAsk()}
+            onDecline={declinePushSoftAsk}
+          />
+        )}
+
         <Text style={styles.bottomHint}>
           {t('daily.bottomHint')}{' '}
           {t('daily.bottomHintEnd', { playBold: t('daily.playBold') })}
@@ -235,6 +247,55 @@ function LeagueStandingView({ standing }: { standing: LeagueStanding }) {
       ) : (
         <RankedEntryRows entries={standing.top} />
       )}
+    </View>
+  );
+}
+
+/**
+ * Soft-ask de notificação (ADR 0012, ticket 02): convite dentro do app,
+ * mostrado só na primeira vez que a Liga ativa e nunca de novo depois de
+ * recusado (shouldShowPushSoftAsk, store/pushFlow.ts) — precede o prompt
+ * nativo do SO, disparado só ao aceitar.
+ */
+function PushSoftAskBanner({
+  registering,
+  onAccept,
+  onDecline,
+}: {
+  readonly registering: boolean;
+  readonly onAccept: () => void;
+  readonly onDecline: () => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.pushSoftAsk}>
+      <Text style={styles.pushSoftAskTitle}>{t('daily.pushSoftAskTitle')}</Text>
+      <Text style={styles.pushSoftAskBody}>{t('daily.pushSoftAskBody')}</Text>
+      <View style={styles.pushSoftAskActions}>
+        <Pressable
+          accessibilityLabel={t('a11y.declinePushSoftAsk')}
+          accessibilityRole="button"
+          disabled={registering}
+          onPress={onDecline}
+          style={({ pressed }) => [styles.pushSoftAskDeclineBtn, pressed && styles.btnPressed]}
+        >
+          <Text style={styles.pushSoftAskDeclineText}>{t('daily.pushSoftAskDecline')}</Text>
+        </Pressable>
+        <Pressable
+          accessibilityLabel={t('a11y.acceptPushSoftAsk')}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: registering }}
+          disabled={registering}
+          onPress={onAccept}
+          style={({ pressed }) => [styles.pushSoftAskAcceptBtn, pressed && styles.btnPressed]}
+        >
+          {registering ? (
+            <ActivityIndicator color={colors.textOnPrimary} />
+          ) : (
+            <Text style={styles.pushSoftAskAcceptText}>{t('daily.pushSoftAskAccept')}</Text>
+          )}
+        </Pressable>
+      </View>
     </View>
   );
 }
@@ -452,6 +513,63 @@ const styles = StyleSheet.create({
     color: colors.danger,
     textAlign: 'center',
     lineHeight: 17,
+  },
+  pushSoftAsk: {
+    marginTop: spacing[16],
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: radius[14],
+    padding: spacing[16],
+    alignSelf: 'stretch',
+  },
+  pushSoftAskTitle: {
+    fontFamily: fonts.heading,
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.text,
+  },
+  pushSoftAskBody: {
+    fontFamily: fonts.body,
+    fontSize: 13,
+    fontWeight: '400',
+    color: colors.textDim,
+    marginTop: spacing[4],
+    lineHeight: 18,
+  },
+  pushSoftAskActions: {
+    flexDirection: 'row',
+    gap: spacing[10],
+    marginTop: spacing[14],
+  },
+  pushSoftAskDeclineBtn: {
+    flex: 1,
+    borderRadius: radius[12],
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pushSoftAskDeclineText: {
+    color: colors.textDim,
+    fontFamily: fonts.heading,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  pushSoftAskAcceptBtn: {
+    flex: 1,
+    borderRadius: radius[12],
+    backgroundColor: colors.gold,
+    height: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pushSoftAskAcceptText: {
+    color: colors.textOnPrimary,
+    fontFamily: fonts.heading,
+    fontSize: 13,
+    fontWeight: '700',
   },
   divider: {
     alignSelf: 'stretch',
