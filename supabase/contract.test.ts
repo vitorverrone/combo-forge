@@ -131,31 +131,20 @@ describe('Liga: ordem dos Tiers (promoteLeagueTier/demoteLeagueTier, ADR 0010, t
 describe('Liga: detecção de queda de Tier (didLeagueTierDrop, ticket 01)', () => {
   const ORDER: readonly LeagueTier[] = ['bronze', 'silver', 'gold', 'platinum', 'diamond'];
 
-  test('queda real: par consecutivo descendo é detectado', () => {
-    for (let i = ORDER.length - 1; i > 0; i -= 1) {
-      expect(didLeagueTierDrop(ORDER[i], ORDER[i - 1])).toBe(true);
+  test('todos os pares de Tier: queda (inclusive não-consecutiva), subida e mesmo Tier', () => {
+    for (let prevIndex = 0; prevIndex < ORDER.length; prevIndex += 1) {
+      for (let nextIndex = 0; nextIndex < ORDER.length; nextIndex += 1) {
+        expect(didLeagueTierDrop(ORDER[prevIndex], ORDER[nextIndex])).toBe(nextIndex < prevIndex);
+      }
     }
   });
 
-  test('subida não conta como queda', () => {
-    for (let i = 0; i < ORDER.length - 1; i += 1) {
-      expect(didLeagueTierDrop(ORDER[i], ORDER[i + 1])).toBe(false);
-    }
+  test('queda máxima: diamond direto pro piso bronze é queda', () => {
+    expect(didLeagueTierDrop('diamond', 'bronze')).toBe(true);
   });
 
-  test('mesmo Tier não conta como queda', () => {
-    for (const tier of ORDER) {
-      expect(didLeagueTierDrop(tier, tier)).toBe(false);
-    }
-  });
-
-  test('piso do Bronze: nunca há queda "abaixo" dele', () => {
-    expect(didLeagueTierDrop('bronze', 'bronze')).toBe(false);
-  });
-
-  test('teto do Diamond: cair de diamond é queda como qualquer outra', () => {
-    expect(didLeagueTierDrop('diamond', 'platinum')).toBe(true);
-    expect(didLeagueTierDrop('diamond', 'diamond')).toBe(false);
+  test('subida máxima: bronze direto pro teto diamond não é queda', () => {
+    expect(didLeagueTierDrop('bronze', 'diamond')).toBe(false);
   });
 });
 
