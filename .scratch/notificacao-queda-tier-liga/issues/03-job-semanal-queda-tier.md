@@ -4,13 +4,13 @@
 
 **Blocked by:** 01 — Espelhar `didLeagueTierDrop` no contrato TS; 02 — Registro de push token + toque na notificação navega pro Desafio Diário (o job precisa de `push_tokens` populada pra ter alguém a notificar).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Função SQL nova calcula o Tier novo de todo dispositivo com posição na semana anterior, reaproveitando `_resolve_league_tier`, e insere em `league_placements` com a mesma idempotência (`on conflict do nothing`) da RPC existente
-- [ ] Agendamento via `pg_cron`, rodando pouco depois da virada da semana ISO
-- [ ] Dispositivos cujo Tier caiu (via `didLeagueTierDrop`/lógica equivalente) e têm token em `push_tokens` recebem push via `pg_net`, com o Tier novo nomeado na mensagem, em pt-br e en
-- [ ] Dispositivos sem queda de Tier, ou sem token registrado, não geram nenhuma tentativa de push (sem erro, sem noise)
-- [ ] Bronze nunca gera notificação de queda (piso, sem rebaixamento) — mesmo teste vale pro caso trivial de Diamante nunca subir
-- [ ] `get_league_leaderboard` continua se comportando exatamente como antes (verificado com os testes/contratos já existentes, sem regressão)
-- [ ] A parte "quem caiu de Tier e tem token" é verificada contra Postgres real via `npm run verify:backend`, com cenários conhecidos de `league_placements`/`push_tokens`
-- [ ] `docs/release-checklist.md` ganha um item novo: confirmar que o job rodou corretamente na primeira virada de semana real em produção (não é verificável antes do primeiro rollout)
+- [x] Função SQL nova calcula o Tier novo de todo dispositivo com posição na semana anterior, reaproveitando `_resolve_league_tier`, e insere em `league_placements` com a mesma idempotência (`on conflict do nothing`) da RPC existente
+- [x] Agendamento via `pg_cron`, rodando pouco depois da virada da semana ISO — `cron.schedule('league-tier-drop-notifications', '5 0 * * 1', ...)`; guardado (`do $$ ... exception ...`) pra não derrubar a migration onde `pg_cron` não está habilitada (ex.: Postgres vanilla do `verify:backend`) — **precisa das extensões `pg_cron`/`pg_net` habilitadas no projeto Supabase antes de valer em produção**, ver item novo em `docs/release-checklist.md`
+- [x] Dispositivos cujo Tier caiu (mesma ordem de `didLeagueTierDrop`, via `_league_tier_rank`) e têm token em `push_tokens` recebem push via `pg_net`, com o Tier novo nomeado na mensagem, em pt-br e en (mesma copy bilíngue numa notificação só, já que o schema de `push_tokens` não guarda idioma do dispositivo)
+- [x] Dispositivos sem queda de Tier, ou sem token registrado, não geram nenhuma tentativa de push (sem erro, sem noise) — verificado
+- [x] Bronze nunca gera notificação de queda (piso, sem rebaixamento) — verificado; e o caso trivial do teto do Diamante (nunca sobe além dele) também — cuidado: descer DE Diamante é uma queda real e válida (platinum), diferente de "nunca sobe", os dois casos têm asserts próprios
+- [x] `get_league_leaderboard` continua se comportando exatamente como antes (sem edição nas migrations 0004/0005; seção 9 nova do `verify:backend` reconfirma um cenário existente sem regressão)
+- [x] A parte "quem caiu de Tier e tem token" (`_league_tier_drop_notification_candidates`) é verificada contra Postgres real via `npm run verify:backend` — **passou de ponta a ponta nesta sessão** (Docker ficou disponível a meio da implementação)
+- [x] `docs/release-checklist.md` ganha um item novo — seção "Job semanal de queda de Tier (ADR 0012, ticket 03 — novo)", cobrindo habilitar as extensões, confirmar o agendamento e validar a primeira virada de semana real (não verificável antes disso)
