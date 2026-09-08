@@ -4,14 +4,18 @@
 
 **Blocked by:** 01 — Extrair `dailyCallToActionState` e refatorar `DailyChallengeScreen` (o painel precisa consumir essa função, não duplicar a lógica de estado).
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Painel novo do Desafio Diário renderizado entre o leque de cartas (`titleCardFan`) e o seletor de Forjador (`forgerRow`) na `StartScreen`
-- [ ] Painel mostra label, contador de tentativas, e texto de estado correto nos 3 casos (`free-ready`/`extra-ready`/`watch-ad`) via `dailyCallToActionState`
-- [ ] Linha de Sequência aparece quando `dailyStreakCurrent > 0` e desaparece por completo quando é 0 (sem linha vazia ou "0" visível)
-- [ ] Tocar em qualquer parte do painel navega para `DailyChallengeScreen` (via `openDaily`) — sem atalho de anúncio direto da Start Screen
-- [ ] Botão "Iniciar Run" perde o destaque dourado (`btnPrimary`) e passa a usar o estilo secundário, sem mudar de posição ou comportamento (`startRun` continua funcionando)
-- [ ] Nenhuma chamada de rede nova disparada pela `StartScreen` (Tier de Liga e ranking continuam exclusivos da `DailyChallengeScreen`)
-- [ ] Onboarding (`OnboardingOverlay`, `hasSeenOnboarding()`) inalterado — continua rodando normalmente na primeira abertura
-- [ ] Verificação funcional real em emulador/simulador cobrindo os 3 estados do painel e os dois casos de Sequência (> 0 e = 0)
-- [ ] `tsc --noEmit` limpo, `eslint .` sem problemas, suíte de testes passando
+- [x] Painel novo do Desafio Diário renderizado entre o leque de cartas (`titleCardFan`) e o seletor de Forjador (`forgerRow`) na `StartScreen`
+- [x] Painel mostra label, contador de tentativas, e texto de estado correto nos 3 casos (`free-ready`/`extra-ready`/`watch-ad`) via `dailyCallToActionState`
+- [x] Linha de Sequência aparece quando `dailyStreakCurrent > 0` e desaparece por completo quando é 0 (sem linha vazia ou "0" visível)
+- [x] Tocar em qualquer parte do painel navega para `DailyChallengeScreen` (via `openDaily`) — sem atalho de anúncio direto da Start Screen
+- [x] Botão "Iniciar Run" perde o destaque dourado (`btnPrimary`) e passa a usar o estilo secundário, sem mudar de posição ou comportamento (`startRun` continua funcionando)
+- [x] Nenhuma chamada de rede nova disparada pela `StartScreen` (Tier de Liga e ranking continuam exclusivos da `DailyChallengeScreen`)
+- [x] Onboarding (`OnboardingOverlay`, `hasSeenOnboarding()`) inalterado — continua rodando normalmente na primeira abertura
+- [ ] Verificação funcional real em emulador/simulador cobrindo os 3 estados do painel e os dois casos de Sequência (> 0 e = 0) — **não realizada**: sem emulador Android disponível no ambiente do agente, e `expo export --platform web` falha por uma dependência nativa pré-existente (`sp-react-native-in-app-updates`), não relacionada a esta mudança. Vale uma checagem visual rápida antes de considerar o ticket totalmente fechado.
+- [x] `tsc --noEmit` limpo, `eslint .` sem problemas, suíte de testes passando
+
+## Comments
+
+- O ticket/spec não deixavam explícito o destino do antigo botão secundário "Daily Challenge · X/Y attempts used" na CTA stack depois que o painel novo entra em cena. Perguntado, o usuário confirmou: remover o botão antigo — o painel novo já cobre 100% da sua função (mesmo contador/estado, mesma navegação via `openDaily`), então mantê-lo duplicaria informação e ação na mesma tela. A CTA stack ficou só com "Iniciar Run" (agora estilo secundário) + Coleção. A chave de i18n `start.attemptsUsed`, órfã depois dessa remoção, foi apagada de `en.json`/`pt.json`.
