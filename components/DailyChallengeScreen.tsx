@@ -8,11 +8,11 @@ import {
   DailyLeaderboard,
   DailyLeaderboardEntry,
   LeagueStanding,
+  shouldShowPushSoftAsk,
   utcDateIso,
 } from '../engine';
 
 import { useTranslation } from '../i18n';
-import { shouldShowPushSoftAsk } from '../store/pushFlow';
 import { leagueTierName } from './format';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
@@ -185,7 +185,7 @@ export function DailyChallengeScreen() {
           </View>
         )}
 
-        {shouldShowPushSoftAsk(push, daily.league) && (
+        {shouldShowPushSoftAsk(push.softAskState, daily.league) && (
           <PushSoftAskBanner
             registering={push.registering}
             onAccept={() => void acceptPushSoftAsk()}

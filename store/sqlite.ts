@@ -17,11 +17,12 @@ import {
   PersistedProgression,
   PersistedShop,
   ProgressionStorage,
+  PushSoftAskState,
   ShopStorage,
 } from '../engine';
 
 import { kv } from '../services/sqliteKv';
-import { PushFlowStorage, PushSoftAskState } from './pushFlow';
+import { PushFlowStorage } from './pushFlow';
 import { TutorialStorage } from './tutorialFlow';
 
 const DDA_KEY = 'combo-forge:dda';

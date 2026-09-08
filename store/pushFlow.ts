@@ -13,13 +13,14 @@
  *
  * PushFlowStorage vive aqui (não em engine/) porque a flag "soft-ask
  * resolvido" não é regra de jogo — é uma preocupação de fluxo/UI, mesmo
- * raciocínio de TutorialStorage em store/tutorialFlow.ts.
+ * raciocínio de TutorialStorage em store/tutorialFlow.ts. shouldShowPushSoftAsk
+ * (o predicado "mostrar o soft-ask agora?") vive em engine/pushProvider.ts,
+ * não aqui — mesmo raciocínio de shouldShowBanner em engine/adProvider.ts:
+ * predicado puro sobre tipos de domínio, consumido direto pelo componente,
+ * sem depender de nenhum port deste fluxo.
  */
 
-import { LeagueStanding, PushBackend, PushProvider } from '../engine';
-
-/** Resolução do soft-ask dentro do app: nunca reaparece depois de aceito ou recusado. */
-export type PushSoftAskState = 'unresolved' | 'accepted' | 'declined';
+import { PushBackend, PushProvider, PushSoftAskState } from '../engine';
 
 /** Estado do fluxo de push no store. */
 export interface PushState {
@@ -70,27 +71,19 @@ export function loadPushState(storage: PushFlowStorage): PushState {
 }
 
 /**
- * Mostra o soft-ask quando a Liga está ativa pro dispositivo (ADR 0012) e a
- * resolução ainda está pendente. Antes da Liga ativar, `league` é sempre
- * null — é isso que garante "nunca no cold start" sem precisar de uma flag
- * "primeira vez" separada: o próprio primeiro `league !== null` já é essa
- * primeira vez.
- */
-export function shouldShowPushSoftAsk(push: PushState, league: LeagueStanding | null): boolean {
-  return league !== null && push.softAskState === 'unresolved';
-}
-
-/**
  * Aceita o soft-ask: dispara o prompt nativo do SO e, se concedido, registra
  * o Expo push token no backend. Resolve para 'accepted' independentemente
  * do resultado da permissão ou do registro — best-effort, nunca re-pergunta
- * (mesma garantia que 'declined' já tem).
+ * (mesma garantia que 'declined' já tem). Guarda também em `registering`
+ * (não só em `softAskState`): sem isso, dois toques rápidos no botão antes
+ * da primeira chamada resolver disparariam requestPermission/registerToken
+ * duas vezes em paralelo (softAskState só sai de 'unresolved' ao final).
  */
 export async function acceptPushSoftAsk(
   state: PushFlowState,
   deps: PushFlowDeps,
 ): Promise<PushFlowState> {
-  if (state.push.softAskState !== 'unresolved') return state;
+  if (state.push.softAskState !== 'unresolved' || state.push.registering) return state;
   const busy: PushFlowState = { ...state, push: { ...state.push, registering: true } };
   try {
     const permission = await deps.provider.requestPermission();

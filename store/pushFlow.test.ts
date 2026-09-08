@@ -16,7 +16,6 @@ import {
   PushFlowDeps,
   PushFlowState,
   registerNotificationTapListener,
-  shouldShowPushSoftAsk,
 } from './pushFlow';
 
 /** Backend fake: rastreia chamadas de registro, falha opcional. */
@@ -49,27 +48,6 @@ function makeState(overrides: Partial<PushFlowState> = {}): PushFlowState {
     ...overrides,
   };
 }
-
-describe('shouldShowPushSoftAsk', () => {
-  test('Liga inativa (null): nunca mostra, mesmo não resolvido', () => {
-    expect(shouldShowPushSoftAsk({ softAskState: 'unresolved', registering: false }, null)).toBe(false);
-  });
-
-  test('Liga ativa + soft-ask não resolvido: mostra', () => {
-    const league = { week: '2026-08-31', tier: 'bronze' as const, division: 1, own: null, top: [] };
-    expect(shouldShowPushSoftAsk({ softAskState: 'unresolved', registering: false }, league)).toBe(true);
-  });
-
-  test('Liga ativa + já recusado: não mostra de novo', () => {
-    const league = { week: '2026-08-31', tier: 'bronze' as const, division: 1, own: null, top: [] };
-    expect(shouldShowPushSoftAsk({ softAskState: 'declined', registering: false }, league)).toBe(false);
-  });
-
-  test('Liga ativa + já aceito: não mostra de novo', () => {
-    const league = { week: '2026-08-31', tier: 'bronze' as const, division: 1, own: null, top: [] };
-    expect(shouldShowPushSoftAsk({ softAskState: 'accepted', registering: false }, league)).toBe(false);
-  });
-});
 
 describe('acceptPushSoftAsk', () => {
   test('permissão concedida: registra o token no backend e resolve para accepted (persistido)', async () => {
@@ -130,6 +108,15 @@ describe('acceptPushSoftAsk', () => {
     const alreadyAccepted = makeState({ push: { softAskState: 'accepted', registering: false } });
     const result = await acceptPushSoftAsk(alreadyAccepted, deps);
     expect(result).toBe(alreadyAccepted);
+    expect(backend.registered).toHaveLength(0);
+  });
+
+  test('já em andamento (registering=true, ex.: dois toques rápidos): no-op, nenhuma chamada é feita', async () => {
+    const backend = makeFakePushBackend();
+    const deps = makeDeps({ backend });
+    const midFlight = makeState({ push: { softAskState: 'unresolved', registering: true } });
+    const result = await acceptPushSoftAsk(midFlight, deps);
+    expect(result).toBe(midFlight);
     expect(backend.registered).toHaveLength(0);
   });
 

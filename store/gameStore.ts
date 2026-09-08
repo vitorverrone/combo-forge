@@ -744,6 +744,10 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     },
 
     acceptPushSoftAsk: async () => {
+      // Mesmo motivo do set() intermediário em fetchLeaderboard: sem ele,
+      // push.registering nunca chega a ficar true na store (o set() final só
+      // acontece depois do await inteiro) e o spinner/disabled do botão nunca aparece.
+      set((state) => ({ push: { ...state.push, registering: true } }));
       const next = await acceptPushSoftAskFlow(pushFlowSlice(get()), pushFlowDeps(get()));
       set({ push: next.push });
     },
