@@ -4,8 +4,8 @@
 
 **Blocked by:** None — can start immediately.
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `didLeagueTierDrop` existe em `supabase/contract.ts`, exportada
-- [ ] Testes com valores dourados em `supabase/contract.test.ts` cobrindo todos os pares de Tier — queda real, subida, mesmo Tier — e os extremos (Bronze não tem "abaixo", Diamante não tem "acima")
-- [ ] `tsc --noEmit` limpo, `eslint .` sem problemas, suíte de testes passando
+- [x] `didLeagueTierDrop` existe em `supabase/contract.ts`, exportada
+- [x] Testes com valores dourados em `supabase/contract.test.ts` cobrindo todos os pares de Tier — queda real, subida, mesmo Tier — e os extremos (Bronze não tem "abaixo", Diamante não tem "acima")
+- [x] `tsc --noEmit` limpo, `eslint .` sem problemas, suíte de testes passando
