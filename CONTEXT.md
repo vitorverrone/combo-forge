@@ -119,3 +119,7 @@ _Evitar_: Shop, storefront, lojinha
 **Telemetria**:
 Eventos de produto emitidos pelo app para observar como jogadores usam o Combo Forge em produção — retenção, progressão, calibração do DDA, fill rate de anúncio —, enviados ao Firebase Analytics e correlacionáveis ao mesmo device_id anônimo do Desafio Diário (ver ADR 0007). A orquestração de IO vive como port injetada nos flows do store, mesma relação da Loja com o shopFlow e do Desafio Diário com o dailyFlow.
 _Evitar_: Analytics, tracking, logging
+
+**Notificação**:
+Mecanismo de push do jogo: um evento de retenção específico, calculado no servidor (nunca decidido pelo cliente), dispara uma mensagem para o dispositivo mesmo com o app fechado. O token de push é vinculado ao device_id — mesma identidade anônima do resto do Desafio Diário (ADR 0001), sem conta de usuário. A permissão do sistema operacional é sempre pedida com contexto (nunca no cold start), precedida por um soft-ask dentro do próprio app. Cada gatilho é adicionado sob demanda sobre essa mesma infra; o primeiro é a Queda de Tier (ADR 0012).
+_Evitar_: Push (sozinho, sem o termo "Notificação"), alerta, alarme
