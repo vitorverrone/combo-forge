@@ -12,6 +12,7 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.combocardforge.app",
       "googleServicesFile": "./GoogleService-Info.plist",
+      "icon": "./assets/icon-ios.png",
       "infoPlist": {
         "LSApplicationQueriesSchemes": [
           "itms-apps",
@@ -81,7 +82,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#161120",
-          "image": "./assets/icon.png",
+          "image": "./assets/icon-ios.png",
           "imageWidth": 200
         }
       ],
