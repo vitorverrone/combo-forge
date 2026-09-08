@@ -5,6 +5,7 @@ import {
   canPlayDaily,
   canWatchExtraAd,
   dailyAttemptsForDay,
+  dailyCallToActionState,
   DailyLeaderboard,
   DailyLeaderboardEntry,
   LeagueStanding,
@@ -61,19 +62,12 @@ export function DailyChallengeScreen() {
   const rem = attempts.unlockedTotal - attempts.attemptsUsed;
   const availableNow = 1;
 
-  let hintText = '';
-  if (rem === 0) {
-    // canWatchExtraAd é sempre true aqui (sem teto, sempre dá pra assistir
-    // outro anúncio depois de jogar a tentativa disponível).
-    hintText = t('daily.watchAdHint');
-  } else if (attempts.attemptsUsed > 0) {
-    // attemptsUsed > 0 só significa "a tentativa pronta é extra" porque
-    // DAILY_FREE_ATTEMPTS === 1 — se isso mudasse, esta condição precisaria
-    // comparar contra DAILY_FREE_ATTEMPTS, não contra 0.
-    hintText = t('daily.extraReady');
-  } else {
-    hintText = t('daily.freeReady');
-  }
+  const ctaState = dailyCallToActionState(attempts);
+  const hintText = {
+    'watch-ad': t('daily.watchAdHint'),
+    'extra-ready': t('daily.extraReady'),
+    'free-ready': t('daily.freeReady'),
+  }[ctaState];
 
   return (
     <View style={styles.container}>
