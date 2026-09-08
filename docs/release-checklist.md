@@ -98,10 +98,12 @@ opcional e sem prazo mínimo.
    confirmou) — falta preencher Tradução da App Store + Review Information
    (screenshot) de cada um antes de submeter pra revisão (seção 6 "Produtos
    em app (IAPs)" — conteúdo já redigido, só copiar/colar).
-7. **App Store Connect → Pricing and Availability:** restringir a
-   disponibilidade pra excluir UE + Reino Unido (decisão de 2026-09-08,
-   ver ADR 0007 revisitado — mantém a política de "sem modal de consentimento
-   GDPR" sem reabrir esse escopo agora).
+7. ~~**App Store Connect → Pricing and Availability:** restringir a
+   disponibilidade pra excluir jurisdições tipo-GDPR.~~ ✅ Feito em
+   2026-09-08 — desmarcados os 27 países da UE, Reino Unido, Islândia,
+   Noruega (EEE) e Suíça (decisão registrada na ADR 0007 revisitada —
+   mantém a política de "sem modal de consentimento GDPR" sem reabrir esse
+   escopo agora).
 8. **App Store Connect → App Privacy:** preencher o questionário de
    privacidade (equivalente ao Data Safety do Play) — mesmos SDKs/dados já
    declarados na política de privacidade (seção 6 "App Privacy").
@@ -510,8 +512,94 @@ credenciais (certificado de distribuição + provisioning profile,
 gerenciados pelo EAS) — só peça pra rodar interativamente (não em CI) na
 primeira vez.
 
-- [ ] `eas build --profile production --platform ios` — primeira vez,
-      confirma/gera credenciais Apple via prompt interativo do EAS.
+- [x] `eas build --profile production --platform ios` — ✅ **sucesso em
+      2026-09-08** na 6ª tentativa (5 falhas antes, build time 6m59s).
+      Credenciais
+      Apple confirmadas/geradas via prompt interativo do EAS na primeira
+      chamada. Histórico completo das 5 tentativas abaixo, pra referência
+      futura se `@shopify/react-native-skia` ou `@react-native-firebase`
+      forem atualizados e o problema reaparecer. As 3 primeiras falhas
+      vieram do choque entre o Firebase (quer resolver via Swift Package
+      Manager, exige frameworks dinâmicos) e o Google Mobile Ads SDK/UMP do
+      AdMob (vendorizados como XCFramework **estático**, não dá pra mudar
+      isso):
+      1. 1ª falha: `[react-native-firebase] SPM + static linkage is not
+         supported` — linkage estático (implícito, sem config explícita
+         antes disso) não é compatível com o Firebase via SPM. Tentativa de
+         fix: `disableSPM: true` no plugin `@react-native-firebase/app` pra
+         manter linkage estático — resolveu essa mas destampou a próxima.
+      2. 2ª falha (com SPM desabilitado): `FirebaseCoreInternal depends
+         upon GoogleUtilities, which does not define modules` — pods Swift
+         do Firebase não integram como biblioteca estática sem
+         `use_modular_headers!`/`forceStaticLinking` explícitos. Tentativa
+         de fix: trocar de lado — reverter `disableSPM` e usar
+         `expo-build-properties` → `ios.useFrameworks: "dynamic"` (o que o
+         SPM do Firebase pede) — resolveu essa mas quebrou o AdMob.
+      3. 3ª falha (com frameworks dinâmicos): `The 'Pods-ComboForge' target
+         has transitive dependencies that include statically linked
+         binaries: .../GoogleUserMessagingPlatform/.../
+         UserMessagingPlatform.xcframework` — o Google Mobile Ads SDK/UMP
+         vem vendorizado estático, incompatível com projeto inteiro em
+         linkage dinâmico.
+      **Fix final adotado:** manter linkage **estático** (compatível
+      nativamente com o AdMob, que não pode virar dinâmico) e resolver o
+      lado do Firebase com a opção que o próprio `expo-build-properties`
+      documenta pra esse exato conflito — `forceStaticLinking`, que força
+      só os pods do Firebase a compilar como biblioteca estática com
+      modular headers, sem mexer no resto do projeto:
+      ```json
+      ["@react-native-firebase/app", { "ios": { "disableSPM": true } }],
+      ...
+      ["expo-build-properties", {
+        "android": { "kotlinVersion": "2.2.20" },
+        "ios": {
+          "useFrameworks": "static",
+          "forceStaticLinking": ["RNFBApp", "RNFBAnalytics"]
+        }
+      }]
+      ```
+      (a lista do `forceStaticLinking` precisa crescer se algum
+      `@react-native-firebase/*` novo — `/crashlytics`, `/auth` etc. — for
+      adicionado depois; nome do pod segue o padrão `RNFB<Módulo>`).
+      4. 4ª e 5ª falhas (`pod install` já passando, erros no compile/archive
+         do Xcode, mesma causa raiz): `'third_party/base64.h' file not
+         found` compilando `cpp/api/third_party/base64.cpp`, depois
+         `'include/core/SkImage.h'`/`'include/core/SkRefCnt.h'` file not
+         found compilando `cpp/api/third_party/SkottieUtils.cpp`. Bug real
+         e conhecido do próprio `react-native-skia` **2.6.2**, não algo
+         específico deste projeto — confirmado nos issues oficiais do
+         repositório (`Shopify/react-native-skia#3895`, "Expo SDK 56 unable
+         to build with Skia v2.6.2") e num PR ainda **não mergeado**
+         (`#3904`) que corrige exatamente isso. Causa raiz: o `.podspec` do
+         Skia declara `HEADER_SEARCH_PATHS` com um glob recursivo
+         (`cpp/**`) em vez de listar as pastas-raiz explicitamente — o
+         glob recursivo funciona pra build sem frameworks, mas não resolve
+         de forma confiável includes relativos como `"third_party/base64.h"`
+         ou `"include/core/SkImage.h"` quando o pod compila como framework
+         estático (`use_frameworks! :linkage => :static`, o modo forçado
+         pelo fix do item 3 acima) — supeita: com milhares de subpastas
+         adicionadas via glob recursivo (a árvore do Skia é enorme), a
+         resolução de include relativo fica na borda do que o Xcode
+         processa de forma confiável.
+      **Fix aplicado (sem esperar release oficial):** `patch-package` —
+      adiciona `"$(PODS_TARGET_SRCROOT)/cpp/api"` e
+      `"$(PODS_TARGET_SRCROOT)/cpp/skia"` explícitos no `HEADER_SEARCH_PATHS`
+      do `.podspec` instalado (mesma ideia do PR `#3904`, aplicada
+      localmente). `cpp/skia` sozinho cobre `include/`, `modules/` e `src/`
+      — quase 2000 dos includes relativos da árvore inteira, confirmado
+      varrendo todo `cpp/**` por padrão de include (`grep -rhoE '#include
+      "[^"]+/[^"]+"'`) antes de aplicar, pra não precisar de mais uma
+      rodada de build só pra achar o próximo arquivo faltante.
+      `npm install -D patch-package` + `"postinstall": "patch-package"` em
+      `package.json` (novo — projeto não tinha patch-package antes) +
+      `patches/@shopify+react-native-skia+2.6.2.patch` commitado no repo —
+      reaplicado automaticamente em qualquer `npm install`, inclusive no
+      build de nuvem do EAS. **Remover este patch quando
+      `@shopify/react-native-skia` for atualizado pra uma versão que já
+      inclua o PR #3904** (checar o changelog antes de atualizar a versão —
+      se a versão nova já tiver o fix, o patch vira no-op ou passa a falhar
+      ao aplicar, sinal de que pode ser deletado).
+      Refazer o build depois dessa mudança.
 - [ ] Instalar via TestFlight (upload automático do `eas submit`, ou
       manual) e validar de ponta a ponta: Run normal, Desafio Diário
       completo, compra + restore reais (sandbox tester do App Store
@@ -644,11 +732,14 @@ com o app já aberto, mas avise se quiser que eu gere.)*
 
 #### App Privacy (equivalente ao Data Safety do Play)
 
-- [ ] Preencher o questionário "App Privacy" da versão do app — mesmos
-      SDKs/dados já declarados na política de privacidade atualizada:
-      AdMob (identificador de publicidade, dados de uso pra anúncios),
-      RevenueCat (dados de compra), Supabase (dados de uso — pontuação
-      anônima), Firebase Analytics (dados de uso/analytics).
+- [~] Questionário "App Privacy" em preenchimento (2026-09-08) — tipos de
+      dado, vínculo à identidade e uso pra rastreamento decididos e
+      registrados na ADR 0007 (seção "App Privacy — declarações de
+      rastreamento"), com a tabela completa das 9 respostas (ID de usuário,
+      ID do dispositivo, Histórico de compras, Interações com o produto,
+      Dados de publicidade, Outras informações de uso, Localização
+      aproximada, Dados de falhas, Dados de desempenho). Falta só terminar
+      de clicar na UI da App Store Connect.
 
 #### Availability
 
