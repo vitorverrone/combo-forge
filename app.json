@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.combocardforge.app",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "LSApplicationQueriesSchemes": [
           "itms-apps"
@@ -41,7 +42,7 @@
         "react-native-google-mobile-ads",
         {
           "androidAppId": "ca-app-pub-7753200620000515~2190419729",
-          "iosAppId": "ca-app-pub-3940256099942544~1458002511"
+          "iosAppId": "ca-app-pub-7753200620000515~6706283181"
         }
       ],
       [
@@ -64,6 +65,12 @@
           "backgroundColor": "#161120",
           "image": "./assets/icon.png",
           "imageWidth": 200
+        }
+      ],
+      [
+        "expo-tracking-transparency",
+        {
+          "userTrackingPermission": "This identifier is used to measure ad performance. Combo Forge never shows personalized ads."
         }
       ]
     ],
