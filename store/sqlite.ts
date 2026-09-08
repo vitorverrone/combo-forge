@@ -9,8 +9,6 @@
  * Este módulo toca o nativo e só deve ser importado pelo bootstrap do app —
  * os testes usam os ports em memória.
  */
-import { SQLiteStorage } from 'expo-sqlite/kv-store';
-
 import {
   DailyAttempts,
   DailyChallengeStorage,
@@ -22,10 +20,9 @@ import {
   ShopStorage,
 } from '../engine';
 
+import { kv } from '../services/sqliteKv';
 import { TutorialStorage } from './tutorialFlow';
 
-/** Banco dedicado do Combo Forge (o KV store cria uma tabela própria). */
-const DATABASE_NAME = 'combo-forge.db';
 const DDA_KEY = 'combo-forge:dda';
 const PROGRESSION_KEY = 'combo-forge:progression';
 const DAILY_ATTEMPTS_KEY = 'combo-forge:daily-attempts';
@@ -34,8 +31,6 @@ const DAILY_DISPLAY_NAME_KEY = 'combo-forge:daily-display-name';
 const SHOP_KEY = 'combo-forge:shop';
 const TUTORIAL_GAMESCREEN_SEEN_KEY = 'combo-forge:tutorial-gamescreen-seen';
 const TUTORIAL_FORGE_SEEN_KEY = 'combo-forge:tutorial-forge-seen';
-
-const kv = new SQLiteStorage(DATABASE_NAME);
 
 function readJson<T>(key: string): T | null {
   const raw = kv.getItemSync(key);

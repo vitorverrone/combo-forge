@@ -47,14 +47,15 @@ export function DailyChallengeScreen() {
   const playable = canPlayDaily(attempts);
   const canAd = canWatchExtraAd(attempts);
 
-  // Tentativas restantes: unlockedTotal cresce sem teto (1 grátis + 1 por
-  // anúncio assistido), sempre à frente de attemptsUsed por no máximo 1 — é
-  // o gate "uma tentativa por anúncio" (canWatchExtraAd) que garante isso.
+  // Tentativas prontas para jogar agora: unlockedTotal nunca fica mais de 1
+  // à frente de attemptsUsed (é o gate "uma tentativa por anúncio",
+  // canWatchExtraAd, que garante isso) — então `rem` é sempre 0 ou 1, nunca
+  // mais. O denominador reflete esse teto real (no máximo 1 tentativa
+  // pendente por vez), não o total de anúncios já assistidos no dia — senão
+  // o "X/Y" cresceria a cada anúncio (1/2, 1/3, ...) sugerindo um teto que
+  // não existe.
   const rem = attempts.unlockedTotal - attempts.attemptsUsed;
-  // Denominador do "X/Y": tentativas já desbloqueadas hoje, não um teto —
-  // sem teto, o jogador pode assistir quantos anúncios quiser ao longo do
-  // dia (um por vez, entre uma Run e a próxima).
-  const availableNow = attempts.unlockedTotal;
+  const availableNow = 1;
 
   let hintText = '';
   if (rem === 0) {

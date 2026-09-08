@@ -153,22 +153,21 @@ export function abandonGameScreenTutorialIfActive(state: TutorialState): Tutoria
 }
 
 export interface GameScreenTutorialContext {
-  readonly runMode: 'normal' | 'daily';
   readonly roundNumber: number;
   readonly phase: RunPhase;
 }
 
 /**
- * A seção GameScreen deveria começar agora? Run normal, Rodada 1, fase
- * 'playing', ainda não vista, e a seção GameScreen ainda não está ativa.
- * Não depende do estado da seção Forja.
+ * A seção GameScreen deveria começar agora? Rodada 1, fase 'playing', ainda
+ * não vista, e a seção GameScreen ainda não está ativa — em qualquer modo de
+ * Run (normal ou Desafio Diário, já que a 1ª partida do jogador pode ser
+ * qualquer um dos dois). Não depende do estado da seção Forja.
  */
 export function shouldStartGameScreenTutorial(
   state: TutorialState,
   context: GameScreenTutorialContext,
 ): boolean {
   return (
-    context.runMode === 'normal' &&
     context.roundNumber === 1 &&
     context.phase === 'playing' &&
     !state.gameScreenSeen &&
@@ -177,22 +176,20 @@ export function shouldStartGameScreenTutorial(
 }
 
 export interface ForgeTutorialContext {
-  readonly runMode: 'normal' | 'daily';
   readonly phase: RunPhase;
 }
 
 /**
- * A seção Forja deveria começar agora? Run normal, fase 'forging', ainda
- * não vista, e a seção Forja ainda não está ativa. Não depende do estado da
- * seção GameScreen — pular ou nunca ter visto a GameScreen não impede a
- * Forja de disparar.
+ * A seção Forja deveria começar agora? Fase 'forging', ainda não vista, e a
+ * seção Forja ainda não está ativa — em qualquer modo de Run (normal ou
+ * Desafio Diário). Não depende do estado da seção GameScreen — pular ou
+ * nunca ter visto a GameScreen não impede a Forja de disparar.
  */
 export function shouldStartForgeTutorial(
   state: TutorialState,
   context: ForgeTutorialContext,
 ): boolean {
   return (
-    context.runMode === 'normal' &&
     context.phase === 'forging' &&
     !state.forgeSeen &&
     state.forgeActiveStep === null
