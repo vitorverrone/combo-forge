@@ -1,7 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import { DailyAttempts, dailyCallToActionState } from '../engine';
+import { DailyAttempts } from '../engine';
 import { useTranslation } from '../i18n';
+import { dailyCallToActionText } from './format';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 
@@ -24,11 +25,7 @@ export function DailyChallengePanel({
 }) {
   const { t } = useTranslation();
   const remaining = attempts.unlockedTotal - attempts.attemptsUsed;
-  const stateText = {
-    'watch-ad': t('daily.watchAdHint'),
-    'extra-ready': t('daily.extraReady'),
-    'free-ready': t('daily.freeReady'),
-  }[dailyCallToActionState(attempts)];
+  const stateText = dailyCallToActionText(attempts);
 
   return (
     <Pressable
