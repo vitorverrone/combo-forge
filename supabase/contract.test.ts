@@ -13,6 +13,7 @@ import { validateDisplayName as engineValidateDisplayName } from '../engine/disp
 import {
   dailySeed,
   demoteLeagueTier,
+  didLeagueTierDrop,
   isoWeekStart,
   leagueDivisionNumber,
   leagueDivisionPosition,
@@ -124,6 +125,26 @@ describe('Liga: ordem dos Tiers (promoteLeagueTier/demoteLeagueTier, ADR 0010, t
 
   test('demoteLeagueTier não tem efeito no piso (bronze)', () => {
     expect(demoteLeagueTier('bronze')).toBe('bronze');
+  });
+});
+
+describe('Liga: detecção de queda de Tier (didLeagueTierDrop, ticket 01)', () => {
+  const ORDER: readonly LeagueTier[] = ['bronze', 'silver', 'gold', 'platinum', 'diamond'];
+
+  test('todos os pares de Tier: queda (inclusive não-consecutiva), subida e mesmo Tier', () => {
+    for (let prevIndex = 0; prevIndex < ORDER.length; prevIndex += 1) {
+      for (let nextIndex = 0; nextIndex < ORDER.length; nextIndex += 1) {
+        expect(didLeagueTierDrop(ORDER[prevIndex], ORDER[nextIndex])).toBe(nextIndex < prevIndex);
+      }
+    }
+  });
+
+  test('queda máxima: diamond direto pro piso bronze é queda', () => {
+    expect(didLeagueTierDrop('diamond', 'bronze')).toBe(true);
+  });
+
+  test('subida máxima: bronze direto pro teto diamond não é queda', () => {
+    expect(didLeagueTierDrop('bronze', 'diamond')).toBe(false);
   });
 });
 

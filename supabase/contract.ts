@@ -99,6 +99,11 @@ export function demoteLeagueTier(tier: LeagueTier): LeagueTier {
   return LEAGUE_TIERS[Math.max(0, index - 1)];
 }
 
+/** Verdadeiro se `nextTier` é um Tier abaixo de `prevTier` — mesma ordem de `promoteLeagueTier`/`demoteLeagueTier`. */
+export function didLeagueTierDrop(prevTier: LeagueTier, nextTier: LeagueTier): boolean {
+  return LEAGUE_TIERS.indexOf(nextTier) < LEAGUE_TIERS.indexOf(prevTier);
+}
+
 /** Número da Divisão (1-based) de um rank dentro do Tier, em blocos de `divisionSize`. */
 export function leagueDivisionNumber(rank: number, divisionSize: number = LEAGUE_DIVISION_SIZE): number {
   return Math.floor((rank - 1) / divisionSize) + 1;
