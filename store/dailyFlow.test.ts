@@ -80,6 +80,8 @@ function makeDailyState(overrides: Partial<DailyState> = {}): DailyState {
     displayName: null,
     displayNameStatus: 'idle',
     displayNameError: null,
+    dailyOnboardingSeen: false,
+    pendingPlayIntent: false,
     ...overrides,
   };
 }
@@ -145,6 +147,28 @@ describe('runDailyCommand — start', () => {
     expect(result.daily.error).toBe('rede fora');
     expect(result.daily.attempts.attemptsUsed).toBe(0);
     expect(storage.loadAttempts()?.attemptsUsed).toBe(0);
+  });
+});
+
+describe('runDailyCommand — requestPlay (ticket 02)', () => {
+  test('com displayName já salvo: inicia a Run igual a start', async () => {
+    const deps = makeDeps();
+    const result = await runDailyCommand(makeDailyState({ displayName: 'Fulano' }), deps, {
+      type: 'requestPlay',
+    });
+    expect(result.run).not.toBeNull();
+    expect(result.daily.attempts.attemptsUsed).toBe(1);
+    expect(result.daily.pendingPlayIntent).toBe(false);
+  });
+
+  test('sem displayName: não inicia Run, não mexe em tentativas, marca pendingPlayIntent', async () => {
+    const deps = makeDeps();
+    const result = await runDailyCommand(makeDailyState({ displayName: null }), deps, {
+      type: 'requestPlay',
+    });
+    expect(result.run).toBeNull();
+    expect(result.daily.attempts.attemptsUsed).toBe(0);
+    expect(result.daily.pendingPlayIntent).toBe(true);
   });
 });
 
@@ -343,6 +367,30 @@ describe('runDailyCommand — setDisplayName (ticket 02)', () => {
     expect(result.daily.displayNameError).toBeNull();
     expect(backend.displayNameCalls).toEqual([{ deviceId: 'device-9', name: 'Fulano' }]);
     expect(storage.loadDisplayName()).toBe('Fulano');
+    expect(result.run).toBeNull(); // sem pendingPlayIntent: só salva o nome, não inicia Run
+  });
+
+  test('com pendingPlayIntent (tocou em jogar sem nome): salvar o nome também inicia a Run e zera o flag', async () => {
+    const deps = makeDeps();
+    const result = await runDailyCommand(makeDailyState({ pendingPlayIntent: true }), deps, {
+      type: 'setDisplayName',
+      name: 'Fulano',
+    });
+    expect(result.daily.displayName).toBe('Fulano');
+    expect(result.daily.pendingPlayIntent).toBe(false);
+    expect(result.run).not.toBeNull();
+    expect(result.daily.attempts.attemptsUsed).toBe(1);
+  });
+
+  test('com pendingPlayIntent e nome inválido: não inicia Run, flag continua pendente', async () => {
+    const deps = makeDeps();
+    const result = await runDailyCommand(makeDailyState({ pendingPlayIntent: true }), deps, {
+      type: 'setDisplayName',
+      name: 'ab',
+    });
+    expect(result.daily.displayName).toBeNull();
+    expect(result.daily.pendingPlayIntent).toBe(true);
+    expect(result.run).toBeNull();
   });
 
   test('nome inválido no cliente: rejeita sem chamar o backend (sem round-trip de rede)', async () => {

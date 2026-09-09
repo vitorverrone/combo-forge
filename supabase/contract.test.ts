@@ -15,6 +15,7 @@ import {
   demoteLeagueTier,
   didLeagueTierDrop,
   isoWeekStart,
+  leagueDivisionBucketToShow,
   leagueDivisionNumber,
   leagueDivisionPosition,
   LEAGUE_POPULATION_THRESHOLD,
@@ -165,6 +166,18 @@ describe('Liga: aritmética de Divisão (leagueDivisionNumber/leagueDivisionPosi
     expect(leagueDivisionPosition(30)).toBe(30);
     expect(leagueDivisionPosition(31)).toBe(1);
     expect(leagueDivisionPosition(60)).toBe(30);
+  });
+});
+
+describe('Liga: bucket de Divisão a exibir quando own pode ser null (leagueDivisionBucketToShow, ticket 04 de onboarding-liga-notificacao-cold-start)', () => {
+  test('com own pontuado: usa o bucket (0-based) da própria Divisão', () => {
+    expect(leagueDivisionBucketToShow(1)).toBe(0); // rank 1 → bucket 0 (Divisão 1)
+    expect(leagueDivisionBucketToShow(30)).toBe(0);
+    expect(leagueDivisionBucketToShow(31)).toBe(1); // rank 31 → bucket 1 (Divisão 2)
+  });
+
+  test('sem own (dispositivo não pontuou na semana): cai no bucket 0 (Divisão 1) como prévia', () => {
+    expect(leagueDivisionBucketToShow(null)).toBe(0);
   });
 });
 

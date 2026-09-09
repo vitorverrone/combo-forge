@@ -116,10 +116,6 @@
     "thisWeekLeaderboard": "This week's leaderboard",
     "leagueTitle": "Your league",
     "leagueDivision": "Division {{number}}",
-    "pushSoftAskTitle": "Get notified about your League Tier?",
-    "pushSoftAskBody": "We'll let you know if you drop a Tier at the end of the week.",
-    "pushSoftAskAccept": "Notify me",
-    "pushSoftAskDecline": "Not now",
     "leaderboardLoading": "Loading leaderboard…",
     "noScoresThisWeek": "No scores this week yet.",
     "yourBest": "Your best",
@@ -200,6 +196,31 @@
       "tip": "Tip: Relics stay active until the run ends — choose wisely."
     },
     "letsForge": "Let's Forge"
+  },
+  "dailyOnboarding": {
+    "tiers": {
+      "title": "The League",
+      "body": "Compete in a weekly League split into 5 Tiers — Bronze, Silver, Gold, Platinum, Diamond. Everyone starts in Bronze, no matter how well your first run goes.",
+      "tip": "Tip: your very first score never sets your Tier — climbing takes more than one great run."
+    },
+    "divisions": {
+      "title": "Divisions",
+      "body": "Each week you're grouped into a Division of players in your Tier. The top 5 move up a Tier, the bottom 5 move down — except Bronze (no dropping) and Diamond (no climbing).",
+      "tip": "Tip: your Division resets every week, but your Tier carries over."
+    },
+    "streak": {
+      "title": "Daily Streak",
+      "body": "Play the Daily Challenge every day to build your Streak. Miss a day and it resets to zero.",
+      "tip": "Tip: streak milestones (3, 7, 15, 30 days) unlock new Titles."
+    },
+    "tierInitial": {
+      "bronze": "B",
+      "silver": "S",
+      "gold": "G",
+      "platinum": "P",
+      "diamond": "D"
+    },
+    "gotIt": "Got it!"
   },
   "tutorial": {
     "skip": "Skip tutorial",
@@ -463,6 +484,7 @@
   },
   "a11y": {
     "back": "Back",
+    "help": "Help",
     "openProfile": "Open profile",
     "openShop": "Open shop",
     "openCollection": "Open collection",
@@ -477,6 +499,8 @@
     "openOnboarding": "Open tutorial",
     "startPlaying": "Start playing",
     "nextStep": "Next step",
+    "openDailyOnboarding": "Open League guide",
+    "closeDailyOnboarding": "Close League guide",
     "confirmForge": "Confirm forge",
     "cardOfSuit": "{{value}} of {{suit}}",
     "applyEffect": "Apply {{effect}}",
@@ -500,8 +524,6 @@
     "displayNameInput": "Display name input",
     "saveDisplayName": "Save display name",
     "restartNow": "Restart now to update",
-    "dismissUpdatePrompt": "Dismiss update prompt",
-    "acceptPushSoftAsk": "Accept Tier drop notifications",
-    "declinePushSoftAsk": "Decline Tier drop notifications"
+    "dismissUpdatePrompt": "Dismiss update prompt"
   }
 }

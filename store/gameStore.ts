@@ -97,15 +97,11 @@ import {
 } from './dailyFlow';
 
 import {
-  acceptPushSoftAsk as acceptPushSoftAskFlow,
   createMemoryPushFlowStorage,
-  declinePushSoftAsk as declinePushSoftAskFlow,
-  loadPushState,
   PushFlowDeps,
-  PushFlowState,
   PushFlowStorage,
-  PushState,
   registerNotificationTapListener,
+  requestPushPermissionOnColdStart as requestPushPermissionOnColdStartFlow,
 } from './pushFlow';
 
 import {
@@ -201,8 +197,6 @@ export interface GameState {
   /** Tutorial contextual em coach-mark (.scratch/tutorial-walkthrough): qual passo está ativo, o que já foi visto. */
   readonly tutorial: TutorialState;
   readonly tutorialStorage: TutorialStorage;
-  /** Notificação push de queda de Tier (ADR 0012, ticket 02): resolução do soft-ask dentro do app. */
-  readonly push: PushState;
   readonly pushProvider: PushProvider;
   readonly pushBackend: PushBackend;
   readonly pushStorage: PushFlowStorage;
@@ -213,6 +207,8 @@ export interface GameState {
   readonly openDaily: () => void;
   /** Inicia a Run do Desafio Diário (seed do dia, DDA off, Forjador fixo). */
   readonly startDailyChallenge: () => Promise<void>;
+  /** Toque em "jogar" (ticket 02): inicia direto com nome salvo, ou marca a intenção pendente e abre o DisplayNameModal. */
+  readonly requestPlay: () => Promise<void>;
   /** Assistir anúncio recompensado para liberar a tentativa extra. */
   readonly watchAdForExtraAttempt: () => Promise<void>;
   /** Submete a pontuação da Run ao backend (best-of-week no servidor). */
@@ -221,10 +217,10 @@ export interface GameState {
   readonly fetchLeaderboard: () => Promise<void>;
   /** Grava/troca o Nome de Exibição do dispositivo (ticket 02). */
   readonly setDisplayName: (name: string) => Promise<void>;
-  /** Aceita o soft-ask de notificação (ADR 0012): pede a permissão do SO e, se concedida, registra o token. */
-  readonly acceptPushSoftAsk: () => Promise<void>;
-  /** Recusa o soft-ask de notificação: nunca mais aparece (ADR 0012). */
-  readonly declinePushSoftAsk: () => void;
+  /** Marca o onboarding da Liga como visto (ticket 01): nunca mais reaparece sozinho. */
+  readonly completeDailyOnboarding: () => void;
+  /** Pede a permissão nativa do SO uma única vez, no cold start (ADR 0012, atualização 2026-09-08). */
+  readonly requestPushPermissionOnColdStart: () => Promise<void>;
   /** Abre a loja cosmética. */
   readonly openShop: () => void;
   /** Carrega as ofertas (preços) do provider e o estado persistido. */
@@ -537,6 +533,8 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
       displayName: dailyStorage.loadDisplayName(),
       displayNameStatus: 'idle',
       displayNameError: null,
+      dailyOnboardingSeen: dailyStorage.loadDailyOnboardingSeen(),
+      pendingPlayIntent: false,
     },
     dailyStorage,
     dailyBackend,
@@ -558,7 +556,6 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     showInterstitial: false,
     tutorial: loadTutorialState(tutorialStorage),
     tutorialStorage,
-    push: loadPushState(pushStorage),
     pushProvider,
     pushBackend,
     pushStorage,
@@ -647,6 +644,13 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
     startDailyChallenge: async () => {
       const result = await runDailyCommand(get().daily, dailyFlowDeps(get(), now), {
         type: 'start',
+      });
+      set(applyDailyResult(result));
+    },
+
+    requestPlay: async () => {
+      const result = await runDailyCommand(get().daily, dailyFlowDeps(get(), now), {
+        type: 'requestPlay',
       });
       set(applyDailyResult(result));
     },
@@ -740,21 +744,19 @@ export function createGameStore(deps: GameStoreDeps = {}): StoreApi<GameState> {
         type: 'setDisplayName',
         name,
       });
-      set({ daily: result.daily });
+      // Ticket 02: com pendingPlayIntent, este comando encadeia o início da
+      // Run (mesma lógica de requestPlay/startDailyChallenge) — precisa do
+      // mesmo applyDailyResult pra navegar pro jogo, não só atualizar `daily`.
+      set(applyDailyResult(result));
     },
 
-    acceptPushSoftAsk: async () => {
-      // Mesmo motivo do set() intermediário em fetchLeaderboard: sem ele,
-      // push.registering nunca chega a ficar true na store (o set() final só
-      // acontece depois do await inteiro) e o spinner/disabled do botão nunca aparece.
-      set((state) => ({ push: { ...state.push, registering: true } }));
-      const next = await acceptPushSoftAskFlow(pushFlowSlice(get()), pushFlowDeps(get()));
-      set({ push: next.push });
+    completeDailyOnboarding: () => {
+      get().dailyStorage.saveDailyOnboardingSeen();
+      set((state) => ({ daily: { ...state.daily, dailyOnboardingSeen: true } }));
     },
 
-    declinePushSoftAsk: () => {
-      const next = declinePushSoftAskFlow(pushFlowSlice(get()), pushFlowDeps(get()));
-      set({ push: next.push });
+    requestPushPermissionOnColdStart: async () => {
+      await requestPushPermissionOnColdStartFlow(get().daily.deviceId, pushFlowDeps(get()));
     },
 
     toggleCard: (key) => {
@@ -1119,11 +1121,6 @@ function shopFlowSlice(state: GameState): ShopFlowState {
 /** Ports do fluxo de push a partir do estado atual do store (mesmo padrão do dailyFlow/shopFlow). */
 function pushFlowDeps(state: GameState): PushFlowDeps {
   return { provider: state.pushProvider, backend: state.pushBackend, storage: state.pushStorage };
-}
-
-/** Fatia de push (estado + deviceId, propriedade do Desafio Diário) a partir do estado atual. */
-function pushFlowSlice(state: GameState): PushFlowState {
-  return { push: state.push, deviceId: state.daily.deviceId };
 }
 
 /** Store singleton usado pela UI (memória; o app injeta SQLite no boot). */

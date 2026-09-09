@@ -835,6 +835,35 @@ describe('Desafio Diário (ticket 13)', () => {
     expect(reopened.getState().daily.displayName).toBe('Fulano');
   });
 
+  test('requestPlay sem nome → setDisplayName encadeia a Run de verdade (navega pro jogo, consome a tentativa e efetivamente joga)', async () => {
+    const store = createGameStore({ dailyBackend: makeFakeDailyBackend() });
+    await store.getState().requestPlay(); // sem nome salvo: marca pendingPlayIntent, não inicia Run
+    expect(store.getState().run).toBeNull();
+    expect(store.getState().daily.attempts.attemptsUsed).toBe(0);
+
+    await store.getState().setDisplayName('Fulano');
+
+    expect(store.getState().screen).toBe('game');
+    expect(store.getState().run).not.toBeNull();
+    expect(store.getState().daily.pendingPlayIntent).toBe(false);
+    expect(store.getState().daily.attempts.attemptsUsed).toBe(1);
+  });
+
+  test('completeDailyOnboarding (ticket 01) marca visto, persiste, e sobrevive à recriação do store', () => {
+    const storage = createMemoryDailyChallengeStorage();
+    const store = createGameStore({ dailyStorage: storage, dailyBackend: makeFakeDailyBackend() });
+    expect(store.getState().daily.dailyOnboardingSeen).toBe(false); // nunca visto ainda
+    store.getState().completeDailyOnboarding();
+    expect(store.getState().daily.dailyOnboardingSeen).toBe(true);
+    expect(storage.loadDailyOnboardingSeen()).toBe(true);
+    // Recriar o store (nova sessão do app) carrega o flag persistido.
+    const reopened = createGameStore({
+      dailyStorage: storage,
+      dailyBackend: makeFakeDailyBackend(),
+    });
+    expect(reopened.getState().daily.dailyOnboardingSeen).toBe(true);
+  });
+
   test('setDisplayName com falha do servidor marca erro e não persiste', async () => {
     const storage = createMemoryDailyChallengeStorage();
     const store = createGameStore({

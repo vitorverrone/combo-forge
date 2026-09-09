@@ -8,7 +8,6 @@ import {
   DailyLeaderboard,
   DailyLeaderboardEntry,
   LeagueStanding,
-  shouldShowPushSoftAsk,
   utcDateIso,
 } from '../engine';
 
@@ -17,6 +16,7 @@ import { dailyCallToActionText, leagueTierName } from './format';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
 import { useGameStore } from '../store/gameStore';
+import { DailyOnboardingOverlay } from './DailyOnboardingOverlay';
 import { DisplayNameModal } from './DisplayNameModal';
 import TopButton from './TopButton';
 import { useState } from 'react';
@@ -29,21 +29,24 @@ import { useState } from 'react';
  * semanal com a posição própria + top 10 (nunca expõe derrotas de ninguém).
  * O ranking carrega sozinho ao entrar na tela e de novo após cada submissão
  * bem-sucedida — sem botão de "ver ranking" (ticket 03). O Nome de Exibição
- * de cada dispositivo é obrigatório (ticket 02) — o modal bloqueante cobre o
- * resto da tela até ser salvo.
+ * de cada dispositivo é obrigatório (ticket 02) — mas só é pedido ao tocar em
+ * "jogar" (`requestPlay`, ticket 02 do onboarding/notificação), não ao entrar
+ * na tela: sem nome ainda, o toque marca `pendingPlayIntent` e abre o
+ * DisplayNameModal; salvo o nome, a Run começa sozinha.
  */
 export function DailyChallengeScreen() {
   const { t } = useTranslation();
   const daily = useGameStore((state) => state.daily);
   const dailyStreakCurrent = useGameStore((state) => state.progression.stats.dailyStreakCurrent);
-  const startDailyChallenge = useGameStore((state) => state.startDailyChallenge);
+  const requestPlay = useGameStore((state) => state.requestPlay);
   const watchAdForExtraAttempt = useGameStore((state) => state.watchAdForExtraAttempt);
   const setDisplayName = useGameStore((state) => state.setDisplayName);
   const backToStart = useGameStore((state) => state.backToStart);
-  const push = useGameStore((state) => state.push);
-  const acceptPushSoftAsk = useGameStore((state) => state.acceptPushSoftAsk);
-  const declinePushSoftAsk = useGameStore((state) => state.declinePushSoftAsk);
+  const completeDailyOnboarding = useGameStore((state) => state.completeDailyOnboarding);
   const [showAdLoading, setShowAdLoading] = useState(false);
+  // Reaberto sob demanda pelo botão "?" da topbar — independente de já ter sido visto (dailyOnboardingSeen).
+  const [dailyOnboardingReopened, setDailyOnboardingReopened] = useState(false);
+  const showDailyOnboarding = !daily.dailyOnboardingSeen || dailyOnboardingReopened;
 
   // Rollover para o dia atual (fronteira UTC, igual ao backend).
   const today = utcDateIso();
@@ -68,6 +71,11 @@ export function DailyChallengeScreen() {
       {/* Topbar */}
       <View style={styles.topbar}>
         <TopButton onPress={backToStart} />
+        <TopButton
+          variant="help"
+          accessibilityLabel={t('a11y.openDailyOnboarding')}
+          onPress={() => setDailyOnboardingReopened(true)}
+        />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -131,7 +139,7 @@ export function DailyChallengeScreen() {
           accessibilityRole="button"
           accessibilityState={{ disabled: !playable || daily.status === 'loading' }}
           disabled={!playable || daily.status === 'loading'}
-          onPress={() => void startDailyChallenge()}
+          onPress={() => void requestPlay()}
           style={({ pressed }) => [
             styles.btnPrimary,
             (!playable || daily.status === 'loading') && styles.btnPrimaryDisabled,
@@ -173,27 +181,27 @@ export function DailyChallengeScreen() {
           </View>
         )}
 
-        {shouldShowPushSoftAsk(push.softAskState, daily.league) && (
-          <PushSoftAskBanner
-            registering={push.registering}
-            onAccept={() => void acceptPushSoftAsk()}
-            onDecline={declinePushSoftAsk}
-          />
-        )}
-
         <Text style={styles.bottomHint}>
           {t('daily.bottomHint')}{' '}
           {t('daily.bottomHintEnd', { playBold: t('daily.playBold') })}
         </Text>
       </ScrollView>
 
-      {daily.displayName === null && (
+      {daily.displayName === null && daily.pendingPlayIntent && (
         <DisplayNameModal
           saving={daily.displayNameStatus === 'saving'}
           error={daily.displayNameStatus === 'error' ? daily.displayNameError : null}
           onSave={(name) => void setDisplayName(name)}
         />
       )}
+
+      <DailyOnboardingOverlay
+        visible={showDailyOnboarding}
+        onComplete={() => {
+          if (!daily.dailyOnboardingSeen) completeDailyOnboarding();
+          setDailyOnboardingReopened(false);
+        }}
+      />
     </View>
   );
 }
@@ -235,55 +243,6 @@ function LeagueStandingView({ standing }: { standing: LeagueStanding }) {
       ) : (
         <RankedEntryRows entries={standing.top} />
       )}
-    </View>
-  );
-}
-
-/**
- * Soft-ask de notificação (ADR 0012, ticket 02): convite dentro do app,
- * mostrado só na primeira vez que a Liga ativa e nunca de novo depois de
- * recusado (shouldShowPushSoftAsk, store/pushFlow.ts) — precede o prompt
- * nativo do SO, disparado só ao aceitar.
- */
-function PushSoftAskBanner({
-  registering,
-  onAccept,
-  onDecline,
-}: {
-  readonly registering: boolean;
-  readonly onAccept: () => void;
-  readonly onDecline: () => void;
-}) {
-  const { t } = useTranslation();
-  return (
-    <View style={styles.pushSoftAsk}>
-      <Text style={styles.pushSoftAskTitle}>{t('daily.pushSoftAskTitle')}</Text>
-      <Text style={styles.pushSoftAskBody}>{t('daily.pushSoftAskBody')}</Text>
-      <View style={styles.pushSoftAskActions}>
-        <Pressable
-          accessibilityLabel={t('a11y.declinePushSoftAsk')}
-          accessibilityRole="button"
-          disabled={registering}
-          onPress={onDecline}
-          style={({ pressed }) => [styles.pushSoftAskDeclineBtn, pressed && styles.btnPressed]}
-        >
-          <Text style={styles.pushSoftAskDeclineText}>{t('daily.pushSoftAskDecline')}</Text>
-        </Pressable>
-        <Pressable
-          accessibilityLabel={t('a11y.acceptPushSoftAsk')}
-          accessibilityRole="button"
-          accessibilityState={{ disabled: registering }}
-          disabled={registering}
-          onPress={onAccept}
-          style={({ pressed }) => [styles.pushSoftAskAcceptBtn, pressed && styles.btnPressed]}
-        >
-          {registering ? (
-            <ActivityIndicator color={colors.textOnPrimary} />
-          ) : (
-            <Text style={styles.pushSoftAskAcceptText}>{t('daily.pushSoftAskAccept')}</Text>
-          )}
-        </Pressable>
-      </View>
     </View>
   );
 }
@@ -349,8 +308,9 @@ const styles = StyleSheet.create({
   topbar: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing[8],
     paddingHorizontal: spacing[16],
-    paddingTop: spacing[0],
+    paddingBottom: spacing[8],
   },
   scroll: {
     paddingHorizontal: spacing[16],
@@ -501,63 +461,6 @@ const styles = StyleSheet.create({
     color: colors.danger,
     textAlign: 'center',
     lineHeight: 17,
-  },
-  pushSoftAsk: {
-    marginTop: spacing[16],
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    borderRadius: radius[14],
-    padding: spacing[16],
-    alignSelf: 'stretch',
-  },
-  pushSoftAskTitle: {
-    fontFamily: fonts.heading,
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  pushSoftAskBody: {
-    fontFamily: fonts.body,
-    fontSize: 13,
-    fontWeight: '400',
-    color: colors.textDim,
-    marginTop: spacing[4],
-    lineHeight: 18,
-  },
-  pushSoftAskActions: {
-    flexDirection: 'row',
-    gap: spacing[10],
-    marginTop: spacing[14],
-  },
-  pushSoftAskDeclineBtn: {
-    flex: 1,
-    borderRadius: radius[12],
-    borderWidth: 1,
-    borderColor: colors.surfaceBorder,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pushSoftAskDeclineText: {
-    color: colors.textDim,
-    fontFamily: fonts.heading,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  pushSoftAskAcceptBtn: {
-    flex: 1,
-    borderRadius: radius[12],
-    backgroundColor: colors.gold,
-    height: 42,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  pushSoftAskAcceptText: {
-    color: colors.textOnPrimary,
-    fontFamily: fonts.heading,
-    fontSize: 13,
-    fontWeight: '700',
   },
   divider: {
     alignSelf: 'stretch',

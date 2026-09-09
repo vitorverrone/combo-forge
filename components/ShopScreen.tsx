@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing[16],
-    paddingTop: spacing[0],
+    paddingBottom: spacing[8],
   },
   navBtn: {
     width: 40,

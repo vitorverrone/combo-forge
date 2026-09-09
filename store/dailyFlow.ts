@@ -73,6 +73,14 @@ export interface DailyState {
   readonly displayName: string | null;
   readonly displayNameStatus: 'idle' | 'saving' | 'error';
   readonly displayNameError: string | null;
+  /** Onboarding da Liga na DailyChallengeScreen (ticket 01): visto uma única vez por dispositivo. */
+  readonly dailyOnboardingSeen: boolean;
+  /**
+   * Intenção de jogar pendente de Nome de Exibição (ticket 02): true quando o
+   * jogador tocou em "jogar" sem nome salvo ainda — é isso que abre o
+   * DisplayNameModal. Nunca persistido (estado de UI de uma sessão).
+   */
+  readonly pendingPlayIntent: boolean;
 }
 
 /** Ports que o fluxo precisa (injetados pelo store; memória nos testes). */
@@ -90,6 +98,7 @@ export interface DailyFlowDeps {
 /** Comandos do ciclo de vida do Desafio Diário. */
 export type DailyCommand =
   | { type: 'start' }
+  | { type: 'requestPlay' }
   | { type: 'watchAd' }
   | { type: 'submit'; score: number }
   | { type: 'fetchLeaderboard' }
@@ -119,6 +128,8 @@ export async function runDailyCommand(
   switch (command.type) {
     case 'start':
       return startDailyChallenge(state, deps);
+    case 'requestPlay':
+      return requestPlay(state, deps);
     case 'watchAd':
       return watchAdForExtraAttempt(state, deps);
     case 'submit':
@@ -180,6 +191,19 @@ async function startDailyChallenge(
       rng: null,
     };
   }
+}
+
+/**
+ * Toque em "jogar" (ticket 02): com Nome de Exibição já salvo, comporta-se
+ * como 'start'. Sem nome ainda, não mexe em tentativas/seed — só marca a
+ * intenção pendente, que é o que abre o DisplayNameModal na UI. `setDisplayName`
+ * encadeia de volta pra esta mesma Run assim que o nome for salvo.
+ */
+async function requestPlay(state: DailyState, deps: DailyFlowDeps): Promise<DailyFlowResult> {
+  if (state.displayName !== null) {
+    return startDailyChallenge(state, deps);
+  }
+  return { daily: { ...state, pendingPlayIntent: true }, run: null, rng: null };
 }
 
 /** Assistir o anúncio recompensado para liberar a tentativa extra. */
@@ -297,11 +321,18 @@ async function setDisplayName(
   try {
     const savedName = await deps.backend.setDisplayName(state.deviceId, name);
     deps.storage.saveDisplayName(savedName);
-    return {
-      daily: { ...saving, displayName: savedName, displayNameStatus: 'idle' },
-      run: null,
-      rng: null,
+    const saved: DailyState = {
+      ...saving,
+      displayName: savedName,
+      displayNameStatus: 'idle',
+      pendingPlayIntent: false,
     };
+    // Ticket 02: tocou em "jogar" sem nome salvo ainda — o nome acabou de
+    // resolver isso, então a Run começa agora, sem exigir um segundo toque.
+    if (state.pendingPlayIntent) {
+      return startDailyChallenge(saved, deps);
+    }
+    return { daily: saved, run: null, rng: null };
   } catch (error) {
     return {
       daily: { ...saving, displayNameStatus: 'error', displayNameError: messageOf(error) },

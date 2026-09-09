@@ -5,21 +5,31 @@ import { fonts } from "./typography";
 import { useTranslation } from "../i18n";
 
 interface TopButtonProps {
-    readonly isBackButton?: boolean
+    readonly variant?: 'back' | 'profile' | 'help';
     readonly onPress?: () => void;
+    /** Sobrescreve o label padrão do variant (necessário pra 'help', cujo destino muda por tela). */
+    readonly accessibilityLabel?: string;
 }
 
-export default function TopButton({ isBackButton = true, onPress }: TopButtonProps) {
+const DEFAULT_LABEL_KEY = {
+    back: 'a11y.back',
+    profile: 'a11y.openProfile',
+    help: 'a11y.help',
+} as const;
+
+export default function TopButton({ variant = 'back', onPress, accessibilityLabel }: TopButtonProps) {
     const { t } = useTranslation();
     return (
         <Pressable
-            accessibilityLabel={isBackButton ? t('a11y.back') : t('a11y.openProfile')}
+            accessibilityLabel={accessibilityLabel ?? t(DEFAULT_LABEL_KEY[variant])}
             accessibilityRole="button"
             onPress={onPress}
             style={({ pressed }) => [styles.navBtn, pressed && styles.navBtnPressed]}
         >
             <View style={styles.topButtonView}>
-                {isBackButton ? <Text style={styles.navBtnText}>←</Text> : <Svg
+                {variant === 'back' && <Text style={styles.navBtnText}>←</Text>}
+                {variant === 'help' && <Text style={styles.navBtnText}>?</Text>}
+                {variant === 'profile' && <Svg
                     width={18}
                     height={18}
                     viewBox="0 0 24 24"

@@ -175,6 +175,13 @@ describe('ports', () => {
     expect(storage.loadDeviceId()).toBe('uuid-1');
   });
 
+  test('storage em memória guarda a flag de onboarding da Liga (default false)', () => {
+    const storage = createMemoryDailyChallengeStorage();
+    expect(storage.loadDailyOnboardingSeen()).toBe(false);
+    storage.saveDailyOnboardingSeen();
+    expect(storage.loadDailyOnboardingSeen()).toBe(true);
+  });
+
   test('backend indisponível rejeita com mensagem clara', async () => {
     const backend = createUnavailableDailyBackend();
     await expect(backend.fetchSeed('2026-08-11')).rejects.toThrow('backend não configurado');

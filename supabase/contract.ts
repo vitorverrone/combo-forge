@@ -115,6 +115,22 @@ export function leagueDivisionPosition(rank: number, divisionSize: number = LEAG
 }
 
 /**
+ * Bucket (0-based) da Divisão a exibir no ranking do Tier — espelho de
+ * `_league_division_view` (SQL). Com `ownRank` conhecido (o dispositivo já
+ * pontuou na semana), é o bucket da própria Divisão dele; sem pontuação
+ * ainda (`ownRank === null`), cai no bucket 0 (Divisão 1) como prévia — em
+ * vez de não mostrar ninguém, mesmo havendo outros dispositivos do Tier já
+ * pontuados na semana.
+ */
+export function leagueDivisionBucketToShow(
+  ownRank: number | null,
+  divisionSize: number = LEAGUE_DIVISION_SIZE,
+): number {
+  if (ownRank === null) return 0;
+  return Math.floor((ownRank - 1) / divisionSize);
+}
+
+/**
  * Resolve o novo Tier a partir da posição do dispositivo na Divisão da
  * semana anterior — espelho puro de `_resolve_league_tier` (SQL), sem a
  * parte de leitura do banco (resolvida por quem chama, com o rank/tamanho de
@@ -147,7 +163,12 @@ export interface LeagueStanding {
   readonly division: number | null;
   /** Posição própria na Divisão (null se o dispositivo não pontuou na semana). */
   readonly own: LeaderboardEntry | null;
-  /** Ranking completo da Divisão (não só um top 10) — vazio se `own` for null. */
+  /**
+   * Ranking completo da Divisão (não só um top 10). Com `own` null (o
+   * dispositivo não pontuou na semana), mostra a Divisão 1 do Tier como
+   * prévia em vez de vir vazio (leagueDivisionBucketToShow) — nunca vazio
+   * enquanto existir qualquer pontuação no Tier essa semana.
+   */
   readonly top: readonly LeaderboardEntry[];
 }
 

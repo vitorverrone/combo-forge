@@ -5,6 +5,7 @@ import { useTranslation } from '../i18n';
 import { kv } from '../services/sqliteKv';
 import { PatternList } from './PatternList';
 import { colors, spacing, radius } from './theme';
+import { useResetStepOnReopen } from './useResetStepOnReopen';
 
 const STORAGE_KEY = 'combo-forge:onboarding-seen';
 
@@ -39,17 +40,10 @@ interface Props {
 export function OnboardingOverlay({ visible, onComplete }: Props) {
   const { t } = useTranslation();
   const [step, setStep] = useState(0);
-
   // O componente fica montado o tempo todo (StartScreen/GameScreen só
-  // alternam `visible`) — sem isso, reabrir (ex.: pelo "?" da GameScreen)
-  // retomaria no passo onde ficou da última vez em vez de recomeçar do
-  // início. Ajustado durante a renderização (não num efeito) seguindo o
-  // padrão recomendado pelo React pra resetar estado quando uma prop muda.
-  const [wasVisible, setWasVisible] = useState(visible);
-  if (visible !== wasVisible) {
-    setWasVisible(visible);
-    if (visible) setStep(0);
-  }
+  // alternam `visible`) — sem o reset abaixo, reabrir (ex.: pelo "?" da
+  // GameScreen) retomaria no passo onde ficou da última vez.
+  useResetStepOnReopen(visible, setStep);
 
   if (!visible) return null;
 

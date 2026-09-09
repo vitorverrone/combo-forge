@@ -116,10 +116,6 @@
     "thisWeekLeaderboard": "Ranking da semana",
     "leagueTitle": "Sua Liga",
     "leagueDivision": "Divisão {{number}}",
-    "pushSoftAskTitle": "Avisar se eu cair de Tier?",
-    "pushSoftAskBody": "A gente te avisa se você cair de Tier na Liga no fim da semana.",
-    "pushSoftAskAccept": "Ativar aviso",
-    "pushSoftAskDecline": "Agora não",
     "leaderboardLoading": "Carregando ranking…",
     "noScoresThisWeek": "Nenhuma pontuação esta semana ainda.",
     "yourBest": "Sua melhor",
@@ -200,6 +196,31 @@
       "tip": "Dica: Relíquias ficam ativas até o fim da run — escolha com cuidado."
     },
     "letsForge": "Vamos Forjar"
+  },
+  "dailyOnboarding": {
+    "tiers": {
+      "title": "A Liga",
+      "body": "Compita numa Liga semanal dividida em 5 Tiers — Bronze, Prata, Ouro, Platina, Diamante. Todo mundo começa no Bronze, não importa o quão bem vá sua primeira run.",
+      "tip": "Dica: sua primeira pontuação nunca define seu Tier — subir exige mais que uma run boa."
+    },
+    "divisions": {
+      "title": "Divisões",
+      "body": "A cada semana você é agrupado numa Divisão de jogadores do seu Tier. Os 5 melhores sobem de Tier, os 5 piores descem — exceto Bronze (nunca desce) e Diamante (nunca sobe).",
+      "tip": "Dica: sua Divisão reinicia toda semana, mas seu Tier continua valendo."
+    },
+    "streak": {
+      "title": "Sequência Diária",
+      "body": "Jogue o Desafio Diário todo dia para aumentar sua Sequência. Perder um dia zera o contador.",
+      "tip": "Dica: marcos de sequência (3, 7, 15, 30 dias) desbloqueiam novos Títulos."
+    },
+    "tierInitial": {
+      "bronze": "BR",
+      "silver": "PR",
+      "gold": "OU",
+      "platinum": "PT",
+      "diamond": "DI"
+    },
+    "gotIt": "Entendi!"
   },
   "tutorial": {
     "skip": "Pular tutorial",
@@ -463,6 +484,7 @@
   },
   "a11y": {
     "back": "Voltar",
+    "help": "Ajuda",
     "openProfile": "Abrir perfil",
     "openShop": "Abrir loja",
     "openCollection": "Abrir coleção",
@@ -477,6 +499,8 @@
     "openOnboarding": "Abrir tutorial",
     "startPlaying": "Começar a jogar",
     "nextStep": "Próximo passo",
+    "openDailyOnboarding": "Abrir guia da Liga",
+    "closeDailyOnboarding": "Fechar guia da Liga",
     "confirmForge": "Confirmar forja",
     "cardOfSuit": "{{value}} de {{suit}}",
     "applyEffect": "Aplicar {{effect}}",
@@ -500,8 +524,6 @@
     "displayNameInput": "Campo de nome de exibição",
     "saveDisplayName": "Salvar nome de exibição",
     "restartNow": "Reiniciar agora para atualizar",
-    "dismissUpdatePrompt": "Dispensar aviso de atualização",
-    "acceptPushSoftAsk": "Aceitar notificações de queda de Tier",
-    "declinePushSoftAsk": "Recusar notificações de queda de Tier"
+    "dismissUpdatePrompt": "Dispensar aviso de atualização"
   }
 }

@@ -10,8 +10,6 @@
  * implementado por services/supabase.ts — mesmo molde de DailyBackend.
  */
 
-import { LeagueStanding } from './daily';
-
 /**
  * Resultado de pedir a permissão do SO. 'unavailable' cobre tanto a ausência
  * do módulo nativo (Expo Go/web/testes) quanto qualquer falha do SDK — nunca
@@ -75,31 +73,10 @@ export interface PushBackend {
   registerToken(deviceId: string, token: string, platform: 'ios' | 'android'): Promise<void>;
 }
 
-/** Backend indisponível (env não configurado): erro claro, nunca trava o soft-ask. */
+/** Backend indisponível (env não configurado): erro claro, nunca trava o registro. */
 export function createUnavailablePushBackend(): PushBackend {
   return {
     registerToken: () =>
       Promise.reject(new Error('Registro de push indisponível: backend não configurado.')),
   };
-}
-
-/**
- * Resolução do soft-ask dentro do app (store/pushFlow.ts): nunca reaparece
- * depois de aceito ou recusado.
- */
-export type PushSoftAskState = 'unresolved' | 'accepted' | 'declined';
-
-/**
- * Mostra o soft-ask quando a Liga está ativa pro dispositivo (ADR 0012) e a
- * resolução ainda está pendente. Antes da Liga ativar, `league` é sempre
- * null — é isso que garante "nunca no cold start" sem precisar de uma flag
- * "primeira vez" separada: o próprio primeiro `league !== null` já é essa
- * primeira vez. Mesmo padrão de `shouldShowBanner` (predicado puro sobre
- * tipos de domínio, consumido direto pelo componente).
- */
-export function shouldShowPushSoftAsk(
-  softAskState: PushSoftAskState,
-  league: LeagueStanding | null,
-): boolean {
-  return league !== null && softAskState === 'unresolved';
 }
