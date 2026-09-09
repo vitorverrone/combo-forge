@@ -190,6 +190,12 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
                   .filter((card) => card.suit === suit)
                   .map((card) => {
                     const red = isRedSuit(card.suit);
+                    let cardEffectDisabled = false
+                    run.forgedCards.filter((forgedCard) => {
+                      if (cardKey(forgedCard.card) === cardKey(card) && forgedCard.effects.length >= 3) {
+                        cardEffectDisabled = true
+                      }
+                    });
                     const isSelected = targetKey === cardKey(card);
                     return (
                       <Pressable
@@ -197,11 +203,13 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
                         accessibilityRole="button"
                         accessibilityLabel={t('a11y.cardOfSuit', { value: card.value, suit: suitName(card.suit) })}
                         onPress={() => setTargetKey(cardKey(card))}
+                        disabled={cardEffectDisabled}
                         style={({ pressed }) => [
                           styles.pickCard,
                           red && styles.pickCardRed,
                           isSelected && styles.pickCardSelected,
                           pressed && styles.btnPressed,
+                          cardEffectDisabled && { opacity: 0.7 }
                         ]}
                       >
                         <Text style={[styles.pickCardRank, red && styles.pickCardRedText]}>

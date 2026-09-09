@@ -78,7 +78,7 @@ export function StartScreen() {
       <View style={styles.container}>
         {/* Top bar: Profile left, Shop right */}
         <View style={styles.topbar}>
-          <TopButton onPress={openProfile} isBackButton={false} />
+          <TopButton onPress={openProfile} variant="profile" />
           <Pressable
             accessibilityLabel={t('a11y.openShop')}
             accessibilityRole="button"
@@ -252,7 +252,8 @@ const styles = StyleSheet.create({
   homeContent: {
     flex: 1,
     justifyContent: 'space-between',
-    display: 'flex'
+    display: 'flex',
+    gap: spacing[16]
   },
   titleCardFan: {
     gap: spacing[16]
@@ -384,7 +385,6 @@ const styles = StyleSheet.create({
   },
   /* ── CTA stack ── */
   ctaStack: {
-    marginTop: spacing[28],
     paddingBottom: spacing[10],
   },
   btnSecondary: {

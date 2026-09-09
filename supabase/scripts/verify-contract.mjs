@@ -323,11 +323,25 @@ try {
     from generate_series(1, 30) as i
   `);
 
+  // Cada um dos 30 dispositivos "bulk" também abre o Desafio Diário (o que
+  // dispara a resolução preguiçosa de Tier/Divisão via get_league_leaderboard)
+  // — sem isso, eles têm pontuação em daily_submissions mas nenhuma linha em
+  // league_placements pra essa semana, e não apareceriam em nenhuma Divisão
+  // (ticket 04 de onboarding-liga-notificacao-cold-start: reproduz o cenário
+  // real reportado — outros jogadores do Tier já pontuaram, mas o dispositivo
+  // que está consultando ainda não).
+  for (let i = 1; i <= 30; i += 1) {
+    psql(`select public.get_league_leaderboard('bulk-${i}', '2026-08-31 12:00:00+00')`);
+  }
+
   const newDevice = JSON.parse(psql(`select public.get_league_leaderboard('dev-lg-new', '2026-08-31 12:00:00+00')`));
   check(newDevice.active === true, 'acima da massa crítica → active: true');
   check(newDevice.tier === 'bronze', 'dispositivo novo (sem posicionamento anterior) sempre entra em bronze');
   check(newDevice.division === null && newDevice.own === null, 'sem pontuação na semana atual → division/own null (dispositivo não jogou ainda)');
-  check(JSON.stringify(newDevice.top) === '[]', 'sem own, a Divisão não pode ser calculada → top vazio');
+  check(
+    Array.isArray(newDevice.top) && newDevice.top.length === 30,
+    `fix ticket 04: sem own, top mostra a Divisão 1 do Tier como prévia (30 dispositivos bulk já pontuados) em vez de vazio (top.length=${newDevice.top.length})`,
+  );
 
   // Cenário de promoção/rebaixamento: 13 dispositivos no Tier 'silver' na
   // semana anterior (2026-08-24), incluindo um empate exato na posição 5

@@ -77,8 +77,14 @@ export function PlayingCard({
 
       {/* Forge effect badge */}
       {forged !== undefined && forged.effects.length > 0 && (
-        <View style={styles.forgedBadge}>
-          <Text style={styles.forgedText}>{forged.effects.map(forgeEffectLabel).join(' ')}</Text>
+        <View style={styles.forgedEffects}>
+          {forged?.effects.map((effect, index) => {
+            return (
+              <View key={`${effect.kind}-${index}`} style={[styles.forgedBadge, (effect.kind === 'wildcard' || effect.kind === 'trigger') && { maxWidth: '100%' }]}>
+                <Text style={styles.forgedText}>{forgeEffectLabel(effect)}</Text>
+              </View>
+            )
+          })}
         </View>
       )}
     </View>
@@ -145,15 +151,27 @@ const styles = StyleSheet.create({
     transform: [{ rotate: '180deg' }],
   },
   /* ── Forge badge ── */
-  forgedBadge: {
+  forgedEffects: {
     position: 'absolute',
-    left: 4,
-    right: 4,
+    left: 0,
+    right: 0,
     bottom: 4,
+    padding: spacing[4],
+    alignItems: 'center',
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing[4],
+    flexWrap: 'wrap'
+  },
+  forgedBadge: {
     borderRadius: radius[4],
     backgroundColor: colors.gold,
+    padding: spacing[2],
     paddingVertical: 1,
-    alignItems: 'center',
+    minWidth: '44%',
+    maxWidth: '44%',
+    alignItems: 'center'
   },
   forgedText: {
     color: colors.textOnPrimary,

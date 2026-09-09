@@ -198,6 +198,9 @@ export interface DailyChallengeStorage {
   saveDeviceId(id: string): void;
   loadDisplayName(): string | null;
   saveDisplayName(name: string): void;
+  /** Onboarding da Liga na DailyChallengeScreen (ticket 01): visto uma única vez por dispositivo. */
+  loadDailyOnboardingSeen(): boolean;
+  saveDailyOnboardingSeen(): void;
 }
 
 /** Implementação em memória do port, para testes. */
@@ -205,10 +208,12 @@ export function createMemoryDailyChallengeStorage(
   initial?: DailyAttempts | null,
   deviceId?: string | null,
   displayName?: string | null,
+  dailyOnboardingSeen?: boolean,
 ): DailyChallengeStorage {
   let attempts = initial ?? null;
   let storedDeviceId = deviceId ?? null;
   let storedDisplayName = displayName ?? null;
+  let storedDailyOnboardingSeen = dailyOnboardingSeen ?? false;
   return {
     loadAttempts: () => attempts,
     saveAttempts: (state) => {
@@ -221,6 +226,10 @@ export function createMemoryDailyChallengeStorage(
     loadDisplayName: () => storedDisplayName,
     saveDisplayName: (name) => {
       storedDisplayName = name;
+    },
+    loadDailyOnboardingSeen: () => storedDailyOnboardingSeen,
+    saveDailyOnboardingSeen: () => {
+      storedDailyOnboardingSeen = true;
     },
   };
 }

@@ -17,7 +17,6 @@ import {
   PersistedProgression,
   PersistedShop,
   ProgressionStorage,
-  PushSoftAskState,
   ShopStorage,
 } from '../engine';
 
@@ -30,10 +29,11 @@ const PROGRESSION_KEY = 'combo-forge:progression';
 const DAILY_ATTEMPTS_KEY = 'combo-forge:daily-attempts';
 const DAILY_DEVICE_ID_KEY = 'combo-forge:daily-device-id';
 const DAILY_DISPLAY_NAME_KEY = 'combo-forge:daily-display-name';
+const DAILY_ONBOARDING_SEEN_KEY = 'combo-forge:daily-onboarding-seen';
 const SHOP_KEY = 'combo-forge:shop';
 const TUTORIAL_GAMESCREEN_SEEN_KEY = 'combo-forge:tutorial-gamescreen-seen';
 const TUTORIAL_FORGE_SEEN_KEY = 'combo-forge:tutorial-forge-seen';
-const PUSH_SOFT_ASK_STATE_KEY = 'combo-forge:push-soft-ask-state';
+const PUSH_PERMISSION_REQUESTED_KEY = 'combo-forge:push-permission-requested';
 
 function readJson<T>(key: string): T | null {
   const raw = kv.getItemSync(key);
@@ -83,6 +83,8 @@ export function createSqliteDailyChallengeStorage(): DailyChallengeStorage {
     saveDeviceId: (id) => writeJson(DAILY_DEVICE_ID_KEY, id),
     loadDisplayName: () => readJson<string>(DAILY_DISPLAY_NAME_KEY),
     saveDisplayName: (name) => writeJson(DAILY_DISPLAY_NAME_KEY, name),
+    loadDailyOnboardingSeen: () => kv.getItemSync(DAILY_ONBOARDING_SEEN_KEY) === 'true',
+    saveDailyOnboardingSeen: () => kv.setItemSync(DAILY_ONBOARDING_SEEN_KEY, 'true'),
   };
 }
 
@@ -100,11 +102,11 @@ export function createSqliteTutorialStorage(): TutorialStorage {
   };
 }
 
-/** Port de storage do soft-ask de push sobre SQLite (ADR 0012, ticket 02). */
+/** Port de storage da permissão de push sobre SQLite (ADR 0012, atualização 2026-09-08 — ticket 03). */
 export function createSqlitePushFlowStorage(): PushFlowStorage {
   return {
-    loadSoftAskState: () => readJson<PushSoftAskState>(PUSH_SOFT_ASK_STATE_KEY),
-    saveSoftAskState: (state) => writeJson(PUSH_SOFT_ASK_STATE_KEY, state),
+    hasRequestedPushPermission: () => kv.getItemSync(PUSH_PERMISSION_REQUESTED_KEY) === 'true',
+    saveRequestedPushPermission: () => kv.setItemSync(PUSH_PERMISSION_REQUESTED_KEY, 'true'),
   };
 }
 

@@ -36,14 +36,15 @@ export function DailyChallengePanel({
     >
       <View style={styles.headerRow}>
         <Text style={styles.label}>{t('start.dailyChallenge')}</Text>
-        <Text style={styles.counter}>{remaining}/1</Text>
+        <Text style={styles.stateText}>{stateText}</Text>
+        {streakCurrent > 0 && (
+          <Text style={styles.streakLine}>
+            {t('daily.streakLabel')} <Text style={styles.streakValue}>{streakCurrent}</Text>
+          </Text>
+        )}
       </View>
-      <Text style={styles.stateText}>{stateText}</Text>
-      {streakCurrent > 0 && (
-        <Text style={styles.streakLine}>
-          {t('daily.streakLabel')} <Text style={styles.streakValue}>{streakCurrent}</Text>
-        </Text>
-      )}
+      <Text style={styles.counter}>{remaining} / 1</Text>
+
     </Pressable>
   );
 }
@@ -55,15 +56,19 @@ const styles = StyleSheet.create({
     borderColor: colors.gold,
     borderRadius: radius[14],
     padding: spacing[16],
-    marginTop: spacing[20],
+    display: 'flex',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
   },
   panelPressed: {
     opacity: 0.85,
   },
   headerRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    gap: spacing[4],
+    flexShrink: 1
   },
   label: {
     fontFamily: fonts.heading,
@@ -78,20 +83,19 @@ const styles = StyleSheet.create({
     color: colors.gold,
     fontSize: 20,
     fontWeight: '800',
+    flexShrink: 0
   },
   stateText: {
     fontFamily: fonts.body,
     color: colors.text,
     fontSize: 13,
     fontWeight: '500',
-    marginTop: spacing[6],
   },
   streakLine: {
     fontFamily: fonts.body,
     fontSize: 12,
     fontWeight: '600',
     color: colors.textDim,
-    marginTop: spacing[8],
   },
   streakValue: {
     color: colors.gold,

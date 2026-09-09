@@ -1,21 +1,18 @@
 /**
- * Testes do fluxo de notificação push (store/pushFlow.ts, ADR 0012, ticket
- * 02) — soft-ask não repetido após recusado/aceito, registro de token
- * quando a permissão é concedida, e o listener de toque chamando o
- * callback de navegação. Mesmo padrão de store/dailyFlow.test.ts/
- * store/shopFlow.test.ts: o fluxo é exercitado direto pela interface, sem
- * zustand.
+ * Testes do fluxo de notificação push (store/pushFlow.ts, ADR 0012 —
+ * atualização 2026-09-08, ticket 03) — permissão nativa pedida uma única vez
+ * no cold start (sem soft-ask), registro de token quando concedida, e o
+ * listener de toque chamando o callback de navegação. Mesmo padrão de
+ * store/dailyFlow.test.ts/store/shopFlow.test.ts: o fluxo é exercitado
+ * direto pela interface, sem zustand.
  */
 import { createMemoryPushProvider, ExpoPushToken, PushBackend } from '../engine';
 
 import {
-  acceptPushSoftAsk,
   createMemoryPushFlowStorage,
-  declinePushSoftAsk,
-  loadPushState,
   PushFlowDeps,
-  PushFlowState,
   registerNotificationTapListener,
+  requestPushPermissionOnColdStart,
 } from './pushFlow';
 
 /** Backend fake: rastreia chamadas de registro, falha opcional. */
@@ -41,86 +38,76 @@ function makeDeps(overrides: Partial<PushFlowDeps> = {}): PushFlowDeps {
   };
 }
 
-function makeState(overrides: Partial<PushFlowState> = {}): PushFlowState {
-  return {
-    push: { softAskState: 'unresolved', registering: false },
-    deviceId: 'device-1',
-    ...overrides,
-  };
-}
-
-describe('acceptPushSoftAsk', () => {
-  test('permissão concedida: registra o token no backend e resolve para accepted (persistido)', async () => {
+describe('requestPushPermissionOnColdStart', () => {
+  test('permissão concedida: registra o token no backend e marca como já solicitado (persistido)', async () => {
     const storage = createMemoryPushFlowStorage();
     const backend = makeFakePushBackend();
     const deps = makeDeps({ storage, backend });
-    const result = await acceptPushSoftAsk(makeState(), deps);
-    expect(result.push.softAskState).toBe('accepted');
-    expect(result.push.registering).toBe(false);
+    await requestPushPermissionOnColdStart('device-1', deps);
     expect(backend.registered).toEqual([{ deviceId: 'device-1', token: 'tok-1', platform: 'android' }]);
-    expect(storage.loadSoftAskState()).toBe('accepted');
+    expect(storage.hasRequestedPushPermission()).toBe(true);
   });
 
-  test('permissão negada: não registra token, mas resolve para accepted (nunca mais pergunta)', async () => {
+  test('permissão negada: não registra token, mas marca como já solicitado (nunca mais pergunta)', async () => {
+    const storage = createMemoryPushFlowStorage();
     const backend = makeFakePushBackend();
-    const deps = makeDeps({
-      provider: createMemoryPushProvider({ permission: 'denied' }),
-      backend,
-    });
-    const result = await acceptPushSoftAsk(makeState(), deps);
-    expect(result.push.softAskState).toBe('accepted');
+    const deps = makeDeps({ storage, provider: createMemoryPushProvider({ permission: 'denied' }), backend });
+    await requestPushPermissionOnColdStart('device-1', deps);
     expect(backend.registered).toHaveLength(0);
+    expect(storage.hasRequestedPushPermission()).toBe(true);
   });
 
-  test('módulo indisponível (sem SDK nativo): não registra token, resolve para accepted', async () => {
+  test('módulo indisponível (sem SDK nativo): não registra token, marca como já solicitado', async () => {
+    const storage = createMemoryPushFlowStorage();
     const backend = makeFakePushBackend();
-    const deps = makeDeps({
-      provider: createMemoryPushProvider({ permission: 'unavailable' }),
-      backend,
-    });
-    const result = await acceptPushSoftAsk(makeState(), deps);
-    expect(result.push.softAskState).toBe('accepted');
+    const deps = makeDeps({ storage, provider: createMemoryPushProvider({ permission: 'unavailable' }), backend });
+    await requestPushPermissionOnColdStart('device-1', deps);
     expect(backend.registered).toHaveLength(0);
+    expect(storage.hasRequestedPushPermission()).toBe(true);
   });
 
-  test('permissão concedida mas sem token disponível: não chama o backend, ainda resolve para accepted', async () => {
+  test('permissão concedida mas sem token disponível: não chama o backend, ainda marca como solicitado', async () => {
+    const storage = createMemoryPushFlowStorage();
     const backend = makeFakePushBackend();
     const deps = makeDeps({
+      storage,
+      backend,
       provider: createMemoryPushProvider({ permission: 'granted', token: null }),
-      backend,
     });
-    const result = await acceptPushSoftAsk(makeState(), deps);
-    expect(result.push.softAskState).toBe('accepted');
+    await requestPushPermissionOnColdStart('device-1', deps);
     expect(backend.registered).toHaveLength(0);
+    expect(storage.hasRequestedPushPermission()).toBe(true);
   });
 
-  test('falha do backend ao registrar: não quebra, ainda resolve para accepted (best-effort)', async () => {
+  test('falha do backend ao registrar: não quebra, ainda marca como solicitado (best-effort)', async () => {
+    const storage = createMemoryPushFlowStorage();
     const backend = makeFakePushBackend(true);
-    const deps = makeDeps({ backend });
-    const result = await acceptPushSoftAsk(makeState(), deps);
-    expect(result.push.softAskState).toBe('accepted');
-    expect(result.push.registering).toBe(false);
+    const deps = makeDeps({ storage, backend });
+    await expect(requestPushPermissionOnColdStart('device-1', deps)).resolves.toBeUndefined();
+    expect(storage.hasRequestedPushPermission()).toBe(true);
   });
 
-  test('já resolvido (accepted ou declined): no-op, nenhuma chamada é feita', async () => {
+  test('já solicitado antes: no-op, nenhuma chamada ao provider/backend', async () => {
+    const storage = createMemoryPushFlowStorage(true);
     const backend = makeFakePushBackend();
-    const deps = makeDeps({ backend });
-    const alreadyAccepted = makeState({ push: { softAskState: 'accepted', registering: false } });
-    const result = await acceptPushSoftAsk(alreadyAccepted, deps);
-    expect(result).toBe(alreadyAccepted);
+    let permissionRequested = false;
+    const deps = makeDeps({
+      storage,
+      backend,
+      provider: {
+        ...createMemoryPushProvider(),
+        requestPermission: async () => {
+          permissionRequested = true;
+          return 'granted';
+        },
+      },
+    });
+    await requestPushPermissionOnColdStart('device-1', deps);
+    expect(permissionRequested).toBe(false);
     expect(backend.registered).toHaveLength(0);
   });
 
-  test('já em andamento (registering=true, ex.: dois toques rápidos): no-op, nenhuma chamada é feita', async () => {
-    const backend = makeFakePushBackend();
-    const deps = makeDeps({ backend });
-    const midFlight = makeState({ push: { softAskState: 'unresolved', registering: true } });
-    const result = await acceptPushSoftAsk(midFlight, deps);
-    expect(result).toBe(midFlight);
-    expect(backend.registered).toHaveLength(0);
-  });
-
-  test('usa o deviceId do estado (não hardcoded) e a plataforma vinda do token', async () => {
+  test('usa o deviceId recebido (não hardcoded) e a plataforma vinda do token', async () => {
     const storage = createMemoryPushFlowStorage();
     const backend = makeFakePushBackend();
     const iosToken: ExpoPushToken = { token: 'tok-ios', platform: 'ios' };
@@ -129,37 +116,8 @@ describe('acceptPushSoftAsk', () => {
       backend,
       provider: createMemoryPushProvider({ permission: 'granted', token: iosToken }),
     });
-    await acceptPushSoftAsk(makeState({ deviceId: 'device-9' }), deps);
+    await requestPushPermissionOnColdStart('device-9', deps);
     expect(backend.registered).toEqual([{ deviceId: 'device-9', token: 'tok-ios', platform: 'ios' }]);
-  });
-});
-
-describe('declinePushSoftAsk', () => {
-  test('recusar persiste declined e nunca mais mostra', () => {
-    const storage = createMemoryPushFlowStorage();
-    const deps = makeDeps({ storage });
-    const result = declinePushSoftAsk(makeState(), deps);
-    expect(result.push.softAskState).toBe('declined');
-    expect(storage.loadSoftAskState()).toBe('declined');
-  });
-
-  test('já resolvido: no-op', () => {
-    const deps = makeDeps();
-    const alreadyDeclined = makeState({ push: { softAskState: 'declined', registering: false } });
-    const result = declinePushSoftAsk(alreadyDeclined, deps);
-    expect(result).toBe(alreadyDeclined);
-  });
-});
-
-describe('loadPushState', () => {
-  test('reflete o estado persistido; registering sempre começa false', () => {
-    const storage = createMemoryPushFlowStorage('declined');
-    expect(loadPushState(storage)).toEqual({ softAskState: 'declined', registering: false });
-  });
-
-  test('sem estado salvo: começa unresolved', () => {
-    const storage = createMemoryPushFlowStorage();
-    expect(loadPushState(storage)).toEqual({ softAskState: 'unresolved', registering: false });
   });
 });
 

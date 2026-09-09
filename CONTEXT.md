@@ -121,5 +121,5 @@ Eventos de produto emitidos pelo app para observar como jogadores usam o Combo F
 _Evitar_: Analytics, tracking, logging
 
 **Notificação**:
-Mecanismo de push do jogo: um evento de retenção específico, calculado no servidor (nunca decidido pelo cliente), dispara uma mensagem para o dispositivo mesmo com o app fechado. O token de push é vinculado ao device_id — mesma identidade anônima do resto do Desafio Diário (ADR 0001), sem conta de usuário. A permissão do sistema operacional é sempre pedida com contexto (nunca no cold start), precedida por um soft-ask dentro do próprio app. Cada gatilho é adicionado sob demanda sobre essa mesma infra; o primeiro é a Queda de Tier (ADR 0012).
+Mecanismo de push do jogo: um evento de retenção específico, calculado no servidor (nunca decidido pelo cliente), dispara uma mensagem para o dispositivo mesmo com o app fechado. O token de push é vinculado ao device_id — mesma identidade anônima do resto do Desafio Diário (ADR 0001), sem conta de usuário. A permissão do sistema operacional é pedida direto (prompt nativo do SO, sem soft-ask nosso antes) no cold start da primeira sessão, antes do onboarding geral do jogo (ADR 0012, atualização 2026-09-08). Cada gatilho é adicionado sob demanda sobre essa mesma infra; o primeiro é a Queda de Tier (ADR 0012).
 _Evitar_: Push (sozinho, sem o termo "Notificação"), alerta, alarme

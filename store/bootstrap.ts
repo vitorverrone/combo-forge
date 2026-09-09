@@ -22,7 +22,7 @@ import { createAppShopProvider } from '../services/revenuecat';
 import { createAppTelemetryProvider } from '../services/firebaseAnalytics';
 
 import { gameStore } from './gameStore';
-import { loadPushState, registerNotificationTapListener } from './pushFlow';
+import { registerNotificationTapListener } from './pushFlow';
 import { createSqlitePersistence } from './sqlite';
 import { loadTutorialState } from './tutorialFlow';
 
@@ -72,6 +72,7 @@ export function initializeSqlitePersistence(): void {
           savedAttempts ?? createInitialDailyAttempts(utcDateIso()),
           utcDateIso(),
         ),
+        dailyOnboardingSeen: dailyStorage.loadDailyOnboardingSeen(),
       },
       shop: {
         ...gameStore.getState().shop,
@@ -81,7 +82,6 @@ export function initializeSqlitePersistence(): void {
       pushStorage,
       pushProvider,
       pushBackend: createAppPushBackend(),
-      push: loadPushState(pushStorage),
     });
     registerNotificationTapListener(pushProvider, () => gameStore.getState().openDaily());
     // Sincronização automática no launch (ticket 03): o RevenueCat reentrega
@@ -89,6 +89,11 @@ export function initializeSqlitePersistence(): void {
     // interação do jogador. Fire-and-forget: falha silenciosa (o botão
     // "Restaurar compras" da Loja e o próximo launch tentam de novo).
     void gameStore.getState().syncRemoveAdsEntitlement();
+    // Permissão nativa de notificação (ADR 0012, atualização 2026-09-08):
+    // pedida uma única vez, no cold start absoluto, antes até do onboarding
+    // geral do jogo — sem soft-ask. Fire-and-forget: mesma regra do
+    // syncRemoveAdsEntitlement acima, nunca bloqueia o boot.
+    void gameStore.getState().requestPushPermissionOnColdStart();
   } catch (error) {
     // SQLite indisponível ou falhou ao inicializar (ex.: contenção de lock
     // no cold start): mantém os ports em memória do store singleton — a
