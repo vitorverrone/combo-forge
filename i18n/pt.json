@@ -73,7 +73,8 @@
     "milestones": "Conquistas",
     "forgersUnlocked": "Forjadores desbloqueados: {{count}}/3",
     "language": "Idioma",
-    "displayName": "Nome de Exibição"
+    "displayName": "Nome de Exibição",
+    "privacyPolicy": "Política de Privacidade"
   },
   "forge": {
     "relics": "Relíquias",

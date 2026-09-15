@@ -46,6 +46,11 @@ google-play-service-account.json
 google-services.json
 GoogleService-Info.plist
 
+# Firebase Admin SDK service account key — segredo real (acesso admin ao
+# projeto Firebase), nunca commitar. Nome padrão do console:
+# <project-id>-firebase-adminsdk-<hash>.json
+*firebase-adminsdk*.json
+
 # TypeScript
 *.tsbuildinfo
 
