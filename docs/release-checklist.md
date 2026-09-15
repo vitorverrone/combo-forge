@@ -856,11 +856,10 @@ devolve informação de produto nenhuma pro StoreKit, então nenhum provider
    formulários fiscais "Ativo" (Brasil, W-8BEN, certificado da Apple),
    conformidade DSA "Ativo" — **Acordo de apps pagos virou "Ativo"**.
 
-**Próximo passo real:** testar a Shop de novo no TestFlight (mesmo build,
-sem rebuild) — se a oferta carregar e a compra funcionar, gravar o vídeo
-pedido pela Apple mostrando o fluxo de compra de verdade, e responder a
-mensagem Guideline 2.1(b) explicando a causa raiz (contrato pendente, já
-resolvido) e os passos de navegação até a Shop.
+- [x] **Confirmado**: Shop testada de novo no TestFlight (mesmo build, sem
+      rebuild) — oferta carregou e a compra funcionou. Vídeo gravado e
+      enviado pra Apple; a revisão já testou esse fluxo e não voltou a
+      reclamar do Guideline 2.1(b) — considerado resolvido.
 
 ### iOS — 2ª rejeição real (Guideline 2.5.4, 2026-09-14): `UIBackgroundModes: audio` não usado
 
