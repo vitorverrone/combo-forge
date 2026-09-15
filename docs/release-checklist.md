@@ -774,10 +774,159 @@ produto em contexto no app. Como os 4 IAPs aparecem na mesma tela (Shop),
       6.9" iPhone obrigatório; 13" iPad se `supportsTablet` for mantido —
       **é o caso**, `app.json` tem `supportsTablet: true` nas duas
       plataformas, então screenshots de iPad também serão pedidas).
-- [ ] Descrição, subtítulo, keywords (equivalente à descrição curta/longa
-      do Play, mas com limites de caracteres próprios da Apple — confirmar
-      na UI do App Store Connect ao preencher).
-- [ ] Ícone — já existe (`assets/icon.png`, mesmo usado no Play Console).
+- [x] Descrição, subtítulo, keywords, screenshots (iPhone 6,5" e iPad 13",
+      geradas a partir da screenshot da Shop — funcionais, trocar por
+      capturas melhores quando der), Direitos de conteúdo ("Não", sem
+      conteúdo de terceiros) — tudo preenchido em 2026-09-08.
+- [x] Ícone — já existe (`assets/icon.png`, mesmo usado no Play Console).
+
+### iOS — submetido pra revisão em 2026-09-08
+
+- [x] **App + os 4 IAPs enviados juntos pra revisão da Apple** (versão 1.0,
+      lançamento configurado como manual). Próximo passo é só aguardar —
+      normalmente 24-48h pra primeira revisão, podendo levar mais por
+      incluir IAPs pela primeira vez. Status acompanhável em App Store
+      Connect → Distribuição → Histórico.
+- [ ] **Enquanto espera:** validar de ponta a ponta no TestFlight (compra
+      real sandbox dos 4 produtos, restore, os 3 formatos de anúncio,
+      prompt de ATT) — ainda não foi feito, e não depende da revisão pra
+      poder testar agora.
+- [x] Se a Apple rejeitar ou pedir alguma correção: registrar o motivo
+      aqui antes de corrigir, mesmo padrão usado pros 5 erros de build
+      nativo (seção 5) — ajuda a não repetir o mesmo problema depois.
+
+### iOS — 1ª rejeição real (Guideline 2.1(b), 2026-09-11): Paid Apps Agreement pendente
+
+Duas mensagens da Apple, mesma causa raiz:
+
+1. **Guideline 2.1 (genérica, conta nova)**: pediu vídeo de tela + contexto
+   geral — respondida (seção 6, conteúdo já redigido lá).
+2. **Guideline 2.1(b) — "cannot locate the In-App Purchases"** (build 1.0
+   (13), revisado num iPad Air 11" M3): o revisor não conseguiu **usar** os
+   4 IAPs (Obsidian/Emerald/Royal Deck, Remove Ads) — não é bug de UI/
+   navegação (o botão da Shop está visível e funcional), é porque o
+   **RevenueCat não conseguia buscar produto nenhum da App Store Connect**.
+   Confirmado reproduzindo no próprio device do usuário: a Shop mostra o
+   erro `None of the products registered in the RevenueCat dashboard could
+   be fetched from App Store Connect` e o botão "Buy" não faz nada.
+
+**Causa raiz:** o **Paid Applications Agreement** nunca tinha sido assinado
+em App Store Connect → Negócios → Contratos (status "Novo"/depois
+"Informações do usuário pendentes") — sem esse contrato ativo, a Apple não
+devolve informação de produto nenhuma pro StoreKit, então nenhum provider
+(RevenueCat incluso) consegue buscar os IAPs, pagos ou não.
+
+**Passos pra resolver** (conta pessoa física, Brasil):
+1. Negócios → Contratos → completar a **Conformidade com o DSA** primeiro
+   (bloqueava o resto) — marcado "Não sou um comerciante sob os termos do
+   DSA / não pretendo distribuir na UE" (consistente com a restrição de
+   território já feita, ver ADR 0007).
+2. Negócios → "Editar pessoa jurídica" (link que só aparece depois do passo
+   1) → completar dados da pessoa jurídica.
+3. **Adicionar conta bancária**: usada uma conta **Wise**. Tentativa
+   inicial foi em **BRL** — bancos brasileiros não emitem IBAN pronto
+   (precisaria calcular a partir de código do banco/agência/conta/tipo,
+   ferramenta tipo `wise.com/lv/iban/brazil`), e além disso conta em BRL
+   **exige documentação extra com a StoneX** (parceiro bancário da Apple
+   no Brasil — formulário online em `banco.stonex.com` + carta física
+   impressa/assinada/enviada por correio, pagamentos ficam retidos até
+   aprovação). **Trocado pra conta Wise em EUR (Bélgica)** — evita a StoneX
+   inteira (exigência é específica de moeda BRL, não da nacionalidade do
+   developer) e o IBAN já vem pronto da Wise, sem cálculo manual. Único
+   cuidado: o campo "Account Number" do formulário da Apple **não aceita o
+   IBAN inteiro** — é o IBAN sem os 4 primeiros caracteres (código do país
+   + 2 dígitos verificadores), reformatado no padrão local (Bélgica:
+   `XXX-YYYYYYY-ZZ`, 3-7-2 dígitos). SWIFT/BIC vai direto, sem transformar.
+   Conta ficou "Processando" por algumas horas antes de virar "Ativa".
+4. **Dois formulários fiscais** (Negócios → Formulários fiscais):
+   - **Questionário fiscal dos EUA** = W-8BEN da Receita americana.
+     Preenchido com CPF no campo "6.a Foreign Tax Identifying Number"
+     (não tem TIN americano, campo 5 fica em branco). **Parte II (Claim of
+     Tax Treaty Benefits) deixada em branco de propósito** — confirmado
+     via pesquisa que **Brasil não tem tratado de bitributação com os
+     EUA** (uma das poucas economias do G20 nessa situação), então não há
+     benefício de alíquota reduzida pra reivindicar; a retenção padrão de
+     30% sobre a receita de origem americana se aplica de qualquer jeito.
+   - **Formulário fiscal do Brasil**: CPF + residência fiscal.
+   - **Certificado próprio da Apple** ("U.S. Certificate of Foreign Status
+     of Beneficial Owner"): tipo "Individual/Sole proprietor", campo
+     "Title" preenchido como "Self" (pessoa física assinando por si mesma,
+     não um cargo de empresa).
+5. ✅ **Resolvido em 2026-09-11**: conta Wise (Bélgica, EUR) "Ativa", os 3
+   formulários fiscais "Ativo" (Brasil, W-8BEN, certificado da Apple),
+   conformidade DSA "Ativo" — **Acordo de apps pagos virou "Ativo"**.
+
+**Próximo passo real:** testar a Shop de novo no TestFlight (mesmo build,
+sem rebuild) — se a oferta carregar e a compra funcionar, gravar o vídeo
+pedido pela Apple mostrando o fluxo de compra de verdade, e responder a
+mensagem Guideline 2.1(b) explicando a causa raiz (contrato pendente, já
+resolvido) e os passos de navegação até a Shop.
+
+### iOS — 2ª rejeição real (Guideline 2.5.4, 2026-09-14): `UIBackgroundModes: audio` não usado
+
+**Mensagem da Apple:** app declara a capability de áudio em background
+(`UIBackgroundModes: audio`) mas não reproduz nenhum áudio em background —
+sugeriu remover a capability, já que não é usada.
+
+**Causa raiz:** `app.json` tinha `"expo-audio"` como string simples (sem
+opções) no array de `plugins`. O plugin do `expo-audio`
+(`node_modules/expo-audio/plugin/src/withAudio.ts`) tem
+`enableBackgroundPlayback` com **default `true`** — herdado silenciosamente,
+sem nenhuma linha em `app.json` pedindo isso. Confirmado via grep que o
+código nunca usa nenhuma API de sessão de áudio em background/modo
+silencioso (`setAudioModeAsync`, `staysActiveInBackground` etc. — zero
+ocorrências) — o app de fato não precisa disso, consistente com o que a
+Apple apontou.
+
+**Fix:** `app.json` → `["expo-audio", { "enableBackgroundPlayback": false }]`.
+Verificado: `npm run typecheck` limpo, `npm test` (22 suites, 555 testes)
+passando.
+
+**Correção considerada e descartada:** cogitou-se remover o pacote
+`expo-audio` inteiro "pra não ter nenhum problema com a Apple". Investigado
+via grep — `services/feedback.ts` usa `expo-audio`'s `createAudioPlayer` de
+verdade, em **foreground**, pra tocar os tons sintetizados de SFX nas
+jogadas/combos (ticket 15). Remover o pacote quebraria essa feature real.
+Distinção que importa: a capability de **background** (não usada, causou a
+rejeição, já corrigida acima) é diferente do uso de **foreground** (usado,
+funcional, deve ficar).
+
+### iOS — auditoria de código com `/app-store-review` (2026-09-15)
+
+Rodada a skill `app-store-review` (auditoria estática local, sem rede)
+contra o código do app, cruzando com este checklist. Achou 1 ponto crítico
++ 1 observação, ambos corrigidos no mesmo dia:
+
+- [x] **Crítico — Guideline 5.1.1(i)**: a política de privacidade
+      (`docs/privacy.html`, publicada via o remote `pages` em
+      `https://vitorverrone.github.io/combo-forge/privacy.html`) só estava
+      preenchida no App Store Connect/Play Console — a guideline exige o
+      link **também dentro do app**, "easily accessible", não só no
+      metadata da loja. Fix: link adicionado em `ProfileScreen.tsx` (chave
+      i18n `profile.privacyPolicy`, `en`/`pt`), abre a URL real via
+      `Linking.openURL`.
+- [x] **Observação (não bloqueia a Apple, mas suja o Data Safety do
+      Play)**: `android.permission.RECORD_AUDIO` e `MODIFY_AUDIO_SETTINGS`
+      estavam declaradas manualmente em `app.json` (`android.permissions`)
+      sem nenhum uso real de microfone no código — sobra do default do
+      plugin `expo-audio`, que o app nunca precisou. `FOREGROUND_SERVICE` e
+      `FOREGROUND_SERVICE_MEDIA_PLAYBACK` também sobravam ali, remanescentes
+      de quando `enableBackgroundPlayback` ainda usava o default `true`
+      (ver rejeição 2.5.4 acima). Fix: removidas as 3 permissões não usadas
+      do array manual (`MODIFY_AUDIO_SETTINGS` ficou — plugin sempre
+      adiciona, necessária pra playback normal) + `recordAudioAndroid:
+      false` explícito na config do plugin `expo-audio`, pra parar de gerar
+      `RECORD_AUDIO` de novo em builds futuros.
+
+**Nenhum dos dois teria evitado as rejeições reais já enfrentadas** (Paid
+Apps Agreement é processo de negócio/conta, não código; 2.5.4 foi
+descoberto pela própria revisão da Apple antes desta auditoria) — a skill
+serve como checagem estática complementar, não substitui a leitura das
+mensagens reais de revisão nem a navegação do App Store Connect.
+
+**Pendente após este fix:** novo build (`eas build --platform ios --profile
+production`) e submit, já que mudança de permissões/plist é config nativa —
+não dá pra corrigir só respondendo a Apple ou editando metadata.
 
 ---
 

@@ -73,7 +73,8 @@
     "milestones": "Achievements",
     "forgersUnlocked": "Forgers unlocked: {{count}}/3",
     "language": "Language",
-    "displayName": "Display Name"
+    "displayName": "Display Name",
+    "privacyPolicy": "Privacy Policy"
   },
   "forge": {
     "relics": "Relics",

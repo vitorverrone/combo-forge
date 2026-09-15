@@ -1,4 +1,4 @@
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { computeUnlocks, MILESTONES, Suit } from '../engine';
 
@@ -187,6 +187,15 @@ export function ProfileScreen() {
             </Pressable>
           ))}
         </View>
+
+        {/* Privacy policy link (Guideline 5.1.1(i) — must be reachable in-app, not just in store metadata) */}
+        <Pressable
+          accessibilityRole="link"
+          onPress={() => void Linking.openURL('https://vitorverrone.github.io/combo-forge/privacy.html')}
+          style={({ pressed }) => [styles.privacyLink, pressed && styles.btnPressed]}
+        >
+          <Text style={styles.privacyLinkText}>{t('profile.privacyPolicy')}</Text>
+        </Pressable>
 
         {/* Forgers note */}
         <View style={styles.forgersNote}>
@@ -513,6 +522,19 @@ const styles = StyleSheet.create({
   },
   btnPressed: {
     opacity: 0.8,
+  },
+  /* ── Privacy policy link ── */
+  privacyLink: {
+    alignSelf: 'center',
+    marginTop: spacing[18],
+    paddingVertical: spacing[8],
+  },
+  privacyLinkText: {
+    fontFamily: fonts.body,
+    fontSize: 12,
+    fontWeight: '500',
+    color: colors.textDim,
+    textDecorationLine: 'underline',
   },
   /* ── Display Name (ticket 02) ── */
   displayNameRow: {
