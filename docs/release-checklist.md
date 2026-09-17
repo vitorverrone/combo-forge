@@ -229,6 +229,27 @@ packages abaixo, nunca teve um 5º para o VFX:
 Preços confirmados (Royal Deck = $0.99, igual às outras duas skins — o PRD
 antes documentava $1.99 por engano, já corrigido).
 
+### Decisão de escopo do MVP (2026-09-17): só 2 skins no lançamento
+
+Das 3 skins pagas da tabela acima, o **v1.0 lança só com Classic (grátis) e
+Obsidian** — Emerald e Royal (rebatizada "Gilded Set" no reskin, seção
+"3ª rejeição") ficam **comentadas em `COSMETIC_CATALOG`**
+(`engine/shop.ts`), não uma remoção: a intenção é liberar 1 delas numa
+próxima versão, não descontinuar. Nenhuma ação nas lojas é necessária agora
+— os produtos `combo_forge_skin_emerald`/`combo_forge_skin_royal` continuam
+existindo no RevenueCat/App Store Connect/Play Console exatamente como
+documentado acima, só não aparecem na Loja do app enquanto comentados no
+catálogo local. Quando uma delas for liberada, é só descomentar o item —
+sem precisar recriar produto em lugar nenhum.
+
+Ajuste feito junto: 6 testes (`engine/shop.test.ts`,
+`store/shopFlow.test.ts`, `store/gameStore.test.ts`) referenciavam
+`deck-emerald`/`deck-royal` diretamente e quebraram com o catálogo reduzido
+— reescritos pra usar só os 2 itens agora ativos (Classic/Obsidian),
+mantendo a mesma cobertura de comportamento (equipar troca a skin atual,
+restore ignora productId fora do catálogo). `npm run typecheck` limpo,
+`npm test` 555/555 depois do ajuste.
+
 ### ✅ App Android real no RevenueCat
 
 O dashboard tem três "apps" dentro do projeto Combo Forge: **Test Store**
@@ -926,6 +947,98 @@ mensagens reais de revisão nem a navegação do App Store Connect.
 **Pendente após este fix:** novo build (`eas build --platform ios --profile
 production`) e submit, já que mudança de permissões/plist é config nativa —
 não dá pra corrigir só respondendo a Apple ou editando metadata.
+
+### iOS — 3ª rejeição real (2026-09-16): "Simulated Gambling", bloqueio de conta individual
+
+**Duas mensagens da Apple, mesma causa raiz:**
+
+1. **Bloqueio de conta individual para apps com "simulated gambling"**: a
+   Apple não aceita mais esse tipo de conteúdo vindo de contas de
+   desenvolvedor pessoa física — só pessoa jurídica verificada pode publicar
+   daqui pra frente.
+2. **Guideline 2.3.6 — Accurate Metadata**: o revisor jogou o app (iPad Air
+   11" M3, build 1.0 (15)) e decidiu que o Combo Forge tem "frequent
+   simulated gambling", inconsistente com a resposta atual do questionário
+   de Age Rating — pediu pra marcar "Frequent" em "Simulated Gambling".
+
+**Causa raiz:** nada na *mecânica* do jogo é gambling (sem aposta, sem risco
+de perder recurso por sorte, sem cash-out) — o problema é 100% na
+*apresentação visual*, que lia como vídeo-pôquer/cassino pro revisor:
+
+- os 7 padrões de pontuação usavam os nomes canônicos de mãos de pôquer
+  (`Pair`, `Two Pair`, `Three of a Kind`, `Straight`, `Full House`, `Four of
+  a Kind`), numa lista ordenada por força — visualmente uma tabela de
+  pagamento de cassino;
+- naipes reais (♠♥♦♣) com a convenção vermelho/preto de baralho
+  (`isRedSuit`);
+- anatomia de carta de baralho de verdade (valor girado 180° no canto
+  oposto, como uma carta física legível dos dois lados);
+- mão de exatamente 5 cartas;
+- o nome do IAP "Royal Deck" (evoca "Royal Flush").
+
+Precedente real conhecido: **Balatro** (mesma mecânica-base — baralho
+padrão, mãos de pôquer, combos) recebeu a mesma classificação da Apple;
+publica porque o developer é pessoa jurídica, não indivíduo — confirma que
+é a apresentação, não a mecânica, que dispara a regra.
+
+**Decisão tomada:** reskin temático (não reescrever o jogo do zero e não
+contestar a classificação). `engine/patterns.ts` **não mudou uma linha** —
+`PatternKind.FullHouse` etc. continuam os identificadores internos pra
+sempre (chave de save, testes, DDA, relíquias); só a camada de exibição
+mudou:
+
+- **Padrões renomeados** (tema de ferraria, `i18n/en.json` +
+  `i18n/pt.json`): High Card→Raw Ore, Pair→Twin Ingot, Two Pair→Double Weld,
+  Three of a Kind→Triple Cast, Straight→Forged Chain, Full House→Master
+  Alloy, Four of a Kind→Perfect Cast. Descrições de composição ("2 cards of
+  the same value") mantidas — já eram neutras.
+- **Naipes → 4 Materiais da forja**: Ferro (spades), Brasa (hearts), Cristal
+  (diamonds), Carvão (clubs) — `SuitSymbol.tsx` reescrito com ícones
+  próprios (lingote, chama, gema lapidada, nódulo), `theme.ts` ganhou
+  `suitColors` com uma cor distinta por Material (rompe de propósito a
+  convenção 2-vermelho/2-preto, que era um dos sinais lidos como cassino).
+- **`isRedSuit` removido** de `format.ts`, `PlayingCard.tsx`, `RelicIcon.tsx`,
+  `ForgeScreen.tsx` — substituído por `suitColor(suit, skin?)`, que lê a cor
+  do Material (própria ou da skin equipada).
+- **`DeckSkinPalette`** (`engine/shop.ts`) ganhou `suits: Record<Suit,
+  string>` no lugar do único campo `red` — cada uma das 4 skins da Loja
+  (Classic/Obsidian/Emerald/Royal) agora define as 4 cores de Material
+  ajustadas à sua face. `productId` de cada uma **não mudou** (já registrados
+  em ASC/Play Console/RevenueCat) — só o `name`/`description` exibidos no
+  app: "Royal Deck" → "Gilded Set" (tirando a referência a Royal Flush),
+  "Obsidian/Emerald Deck" → "Obsidian/Emerald Set".
+- **`OnboardingOverlay.tsx`** (passo `selectCards` do tutorial): tinha 3
+  cartas hardcoded com naipe Unicode + vermelho/preto (A♥, 7♠, 10♦) — **essa
+  é a tela exata que apareceu num dos 2 screenshots que a Apple anexou na
+  rejeição**. Trocado pra usar `SuitSymbol`/`suitColor` como o resto do app.
+- Ícone de coroa do 1º lugar no ranking diário (`DailyChallengeScreen.tsx`)
+  trocado de `♦` (lia como naipe) pra `★`.
+- Vocabulário geral: "Deck" → "Set"/"Conjunto" nos textos de UI (Loja,
+  Coleção, Conquista "Full Deck" → "Full Set").
+- Identificadores internos (`'spades'`, `'hearts'` etc.) **não foram
+  renomeados** — são chave de save no SQLite (`cardKey`, `stats.cardPlays`);
+  mudar isso quebraria save existente por zero ganho de revisão (Apple avalia
+  o binário rodando, não o código-fonte).
+
+Verificado: `npm run typecheck` limpo, `npm test` (22 suites, 555 testes)
+passando sem alteração — confirma que o motor de pontuação/regras não foi
+tocado, só a apresentação.
+
+- [ ] **Pendente (ação manual no portal, não é código)**: os "Display Name"
+      dos 3 IAPs de skin em App Store Connect/RevenueCat ainda dizem
+      "Obsidian/Emerald/Royal Deck" (seção 6 deste documento) — precisam
+      virar "Obsidian/Emerald/Gilded Set" pra bater com o app, senão volta a
+      inconsistência de metadata do Guideline 2.3.6.
+- [ ] **Pendente**: screenshots da App Store/TestFlight foram tiradas com a
+      UI antiga (cartas de baralho) — refazer depois do build novo.
+- [ ] **Pendente**: novo build (`eas build --platform ios --profile
+      production --auto-submit`) incorporando o reskin, e marcar "None" em
+      Simulated Gambling no questionário de Age Rating **só depois** do
+      build novo estar no ar (marcar antes seria a mesma inconsistência que
+      a Apple já rejeitou).
+- [ ] **Recomendado**: incluir uma nota curta na resubmissão explicando a
+      mudança visual pro revisor não precisar adivinhar (nomes de Material
+      em vez de naipe, nomes de padrão temáticos em vez de mãos de pôquer).
 
 ---
 

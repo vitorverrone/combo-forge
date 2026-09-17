@@ -33,7 +33,7 @@
     "daily": "Diário",
     "plays": "Jogadas",
     "combo": "Combo",
-    "patternHint": "Selecione cartas para formar uma jogada",
+    "patternHint": "Selecione materiais para formar uma jogada",
     "base": "Base",
     "pts": "pts",
     "previewSuffix": "com ×{{multiplier}}",
@@ -48,8 +48,8 @@
   "shop": {
     "eyebrow": "Cosméticos",
     "title": "Loja",
-    "subtitle": "100% visual — Deck skins nunca afetam o poder do jogo.",
-    "decks": "Decks",
+    "subtitle": "100% visual — Acabamentos nunca afetam o poder do jogo.",
+    "decks": "Conjuntos",
     "removeAds": "Remover Anúncios",
     "removeAdsDesc": "Oculta o banner e anúncios intersticiais. Não afeta o anúncio recompensado opcional no Desafio Diário.",
     "buyFor": "Comprar por {{price}}",
@@ -61,7 +61,7 @@
   "profile": {
     "eyebrow": "Estatísticas do jogador",
     "title": "Perfil",
-    "desc": "Seu recorde em cada run, suas cartas favoritas e seu progresso de conquistas.",
+    "desc": "Seu recorde em cada run, seus materiais favoritos e seu progresso de conquistas.",
     "bestRunScore": "Melhor pontuação de run",
     "runsWon": "Runs ganhas",
     "winRate": "Taxa de vitória",
@@ -82,8 +82,8 @@
     "title": "Forja",
     "subtitle": "Escolha 1 de 3 ofertas para fortalecer sua run.",
     "relic": "Relíquia",
-    "cardEffect": "Efeito de Carta",
-    "chooseCard": "Escolha uma carta",
+    "cardEffect": "Efeito",
+    "chooseCard": "Escolha um Material",
     "forgeButton": "Forjar",
     "chooseRelicToReplace": "Escolha uma Relíquia para substituir",
     "relicCapReached": "Você atingiu o limite de Relíquias — escolha uma para trocar por {{name}}."
@@ -100,7 +100,7 @@
     "forgeEffects": "Efeitos de Forja",
     "lockedSummary_one": "{{count}} forjador a desbloquear · ganhe runs para progredir",
     "lockedSummary_other": "{{count}} forjadores a desbloquear · ganhe runs para progredir",
-    "allCards": "Todas as 40 cartas base estão sempre disponíveis — efeitos de forja as moldam."
+    "allCards": "Todos os 40 materiais base estão sempre disponíveis — efeitos de forja os moldam."
   },
   "daily": {
     "title": "Desafio Diário",
@@ -172,14 +172,14 @@
   },
   "onboarding": {
     "selectCards": {
-      "title": "Selecione Cartas",
-      "body": "Toque nas cartas da sua mão para escolher entre 1 e 5. Elas formam sua jogada da rodada.",
-      "tip": "Dica: cartas selecionadas sobem com borda dourada."
+      "title": "Selecione Materiais",
+      "body": "Toque nos materiais da sua mão para escolher entre 1 e 5. Eles formam sua jogada da rodada.",
+      "tip": "Dica: materiais selecionados sobem com borda dourada."
     },
     "scorePattern": {
       "title": "Pontue o Padrão",
-      "body": "Suas cartas formam um padrão — de Carta Alta até Quadra. Padrões mais fortes pontuam mais.",
-      "tip": "Dica: base = bônus do padrão + valor das cartas."
+      "body": "Seus materiais formam um padrão — de Minério Bruto até Fundição Perfeita. Padrões mais fortes pontuam mais.",
+      "tip": "Dica: base = bônus do padrão + valor dos materiais."
     },
     "rideCombo": {
       "title": "Aproveite o Combo",
@@ -193,7 +193,7 @@
     },
     "relics": {
       "title": "Relíquias e a Forja",
-      "body": "Ao vencer uma rodada, escolha entre uma Relíquia (efeito permanente pro resto da run) ou um Efeito de Carta (fortalece uma carta específica).",
+      "body": "Ao vencer uma rodada, escolha entre uma Relíquia (efeito permanente pro resto da run) ou um Efeito (fortalece um material específico).",
       "tip": "Dica: Relíquias ficam ativas até o fim da run — escolha com cuidado."
     },
     "letsForge": "Vamos Forjar"
@@ -226,11 +226,11 @@
   "tutorial": {
     "skip": "Pular tutorial",
     "complete": "Concluir",
-    "step1Callout": "Toque em até 5 cartas da sua Mão para formar uma Jogada. Comece tocando numa carta.",
-    "step2Callout": "Não gostou da seleção? Limpar desmarca tudo. Descartar troca as cartas escolhidas por novas.",
+    "step1Callout": "Toque em até 5 materiais da sua Mão para formar uma Jogada. Comece tocando num material.",
+    "step2Callout": "Não gostou da seleção? Limpar desmarca tudo. Descartar troca os materiais escolhidos por novos.",
     "step3Callout": "Suas reliquias ativas aparecem aqui, quando quiser basta clicar e um modal com mais detalhes vai aparecer",
     "step4Callout": "Ficou com alguma dúvida? Toque no ícone para abrir as dicas.",
-    "forgeCallout": "Escolha uma Relíquia (efeito permanente pro resto da Run) ou um Efeito de Carta (fortalece uma carta específica). Toque em qualquer oferta para continuar."
+    "forgeCallout": "Escolha uma Relíquia (efeito permanente pro resto da Run) ou um Efeito (fortalece um material específico). Toque em qualquer oferta para continuar."
   },
   "unlockChoice": {
     "milestoneReached": "Conquista alcançada",
@@ -251,33 +251,33 @@
   "format": {
     "noRelic": "Sem relíquia inicial — puro skill.",
     "pattern": {
-      "highCard": "Carta Alta",
-      "pair": "Par",
-      "twoPair": "Dois Pares",
-      "threeOfAKind": "Trinca",
-      "straight": "Sequência",
-      "fullHouse": "Full House",
-      "fourOfAKind": "Quadra"
+      "highCard": "Minério Bruto",
+      "pair": "Lingote Duplo",
+      "twoPair": "Solda Dupla",
+      "threeOfAKind": "Fundição Tripla",
+      "straight": "Corrente Forjada",
+      "fullHouse": "Liga Mestra",
+      "fourOfAKind": "Fundição Perfeita"
     },
     "forgeEffect": {
-      "valueBonus": "Adiciona +{{amount}} ao valor da carta",
-      "multiplier": "Multiplica o valor da carta por ×{{multiplier}}",
-      "wildcard": "Conta como qualquer valor e naipe para formar padrões",
+      "valueBonus": "Adiciona +{{amount}} ao valor do material",
+      "multiplier": "Multiplica o valor do material por ×{{multiplier}}",
+      "wildcard": "Conta como qualquer valor e material para formar padrões",
       "trigger": "Adiciona +{{bonus}} pts quando jogado na {{triggerPlay}}ª jogada da rodada"
     },
     "relic": {
-      "suit": "Cartas de {{suit}} ×{{multiplier}}",
+      "suit": "Materiais de {{suit}} ×{{multiplier}}",
       "pattern": "Bônus de {{pattern}} +{{bonus}}",
       "discard": "+{{amount}} descarte por rodada",
-      "handSize": "+{{amount}} carta na mão",
+      "handSize": "+{{amount}} material na mão",
       "comboStart": "Combo começa em ×{{multiplier}}",
       "comboGrowth": "Combo cresce +{{step}} por jogada"
     },
     "suit": {
-      "spades": "Espadas",
-      "hearts": "Copas",
-      "diamonds": "Ouros",
-      "clubs": "Paus"
+      "spades": "Ferro",
+      "hearts": "Brasa",
+      "diamonds": "Cristal",
+      "clubs": "Carvão"
     },
     "displayNameError": {
       "tooShort": "Pelo menos 3 caracteres.",
@@ -286,13 +286,13 @@
       "profanity": "Esse nome não é permitido."
     },
     "patternComposition": {
-      "highCard": "Nenhuma carta combina",
-      "pair": "2 cartas de mesmo valor",
+      "highCard": "Nenhum material combina",
+      "pair": "2 materiais de mesmo valor",
       "twoPair": "2 pares diferentes",
-      "threeOfAKind": "3 cartas de mesmo valor",
+      "threeOfAKind": "3 materiais de mesmo valor",
       "straight": "5 valores consecutivos",
-      "fullHouse": "Trinca + par",
-      "fourOfAKind": "4 cartas de mesmo valor"
+      "fullHouse": "Três iguais + duas iguais",
+      "fourOfAKind": "4 materiais de mesmo valor"
     },
     "forgerName": {
       "apprentice": "Aprendiz",
@@ -307,13 +307,13 @@
       "diamond": "Diamante"
     },
     "deckSkin": {
-      "deck-classic": "Baralho clássico de pergaminho",
+      "deck-classic": "Acabamento clássico de pergaminho",
       "deck-obsidian": "Face carvão com tinta prateada — forjado na sombra.",
       "deck-emerald": "Face verde profundo com tinta dourada — liga da floresta.",
-      "deck-royal": "Face azul-marinho com tinta marfim — coroa da forja."
+      "deck-royal": "Face violeta com tinta dourada — coroa da forja."
     },
     "relicCategory": {
-      "suit": "Naipe",
+      "suit": "Material",
       "pattern": "Padrão",
       "mechanic": "Mecânica",
       "combo": "Combo"
@@ -369,8 +369,8 @@
       "description": "Alcance um Multiplicador de Combo de ×12 em uma única jogada."
     },
     "deckMastery": {
-      "title": "Baralho Completo",
-      "description": "Jogue as 40 cartas do Baralho ao menos uma vez cada."
+      "title": "Conjunto Completo",
+      "description": "Jogue os 40 materiais do Conjunto ao menos uma vez cada."
     },
     "forgerMastery": {
       "title": "Forjador Completo",
@@ -417,7 +417,7 @@
       "title": "Forjadora Bigorna"
     },
     "value-bonus-7": {
-      "title": "+7 no valor de uma carta"
+      "title": "+7 no valor de um material"
     },
     "trigger-2-15": {
       "title": "+15 pts na jogada 2"
@@ -450,7 +450,7 @@
       "title": "Corrente Imparável"
     },
     "title-full-deck": {
-      "title": "Baralho Completo"
+      "title": "Conjunto Completo"
     },
     "title-triple-forger": {
       "title": "Forjador Completo"
@@ -492,8 +492,8 @@
     "openActiveRelics": "Abrir relíquias ativas",
     "abandonRun": "Abandonar run",
     "clearSelection": "Limpar seleção",
-    "discardSelectedCards": "Descartar cartas selecionadas",
-    "playSelectedCards": "Jogar cartas selecionadas",
+    "discardSelectedCards": "Descartar materiais selecionados",
+    "playSelectedCards": "Jogar materiais selecionados",
     "backToHome": "Voltar ao início",
     "skipTutorial": "Pular tutorial",
     "completeTutorial": "Concluir tutorial",

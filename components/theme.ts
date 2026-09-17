@@ -7,26 +7,46 @@ export const colors = {
   /** Superfícies levemente acima do surface (chips, relics). */
   surfaceElevated: '#241b33',
   /** Superfícies em estado selecionado/ativo. */
-  surfaceSelected: '#2a2140',
-  surfaceBorder: '#3a2f4c',
+  surfaceSelected: '#403654',
+  surfaceBorder: '#4A3D5D',
   /** Backdrop de modais (background com opacidade). */
   backdrop: 'rgba(22,17,32,0.8)',
   /** Face das cartas: pergaminho. */
   cardFace: '#f2e9d8',
   cardInk: '#221a2e',
-  /** Naipes vermelhos. */
+  /** Feedback destrutivo/negativo em texto (não é mais cor de naipe). */
   red: '#c1352c',
   /** Ouro da Forja (destaques, botão principal). */
-  gold: '#e0a53e',
+  gold: '#FFC300',
   goldDark: '#b9842a',
   /** Texto escuro em superfícies douradas (botões primários). */
   textOnPrimary: '#241a05',
   text: '#f4ede1',
-  textDim: '#a89bb8',
+  textDim: '#D1C7DF',
   /** Feedback de erro/perda. */
-  danger: '#e05c4e',
+  danger: '#FF7676',
   /** Feedback de vitória. */
   success: '#7fc98a',
+} as const;
+
+/**
+ * Cor de cada Material na face clara padrão (skin Classic). Cada skin da Loja
+ * sobrescreve estas cores via `DeckSkinPalette.suits`, porque uma face escura
+ * precisa de tons claros pro símbolo continuar legível.
+ *
+ * Os quatro Materiais têm matizes distintos de propósito: a convenção de
+ * baralho (dois vermelhos + dois pretos) é um dos sinais que a App Store lê
+ * como simulação de cassino, então nenhum par compartilha cor.
+ */
+export const suitColors = {
+  /** Ferro. */
+  spades: '#4d5a67',
+  /** Brasa. */
+  hearts: '#c74a1c',
+  /** Cristal. */
+  diamonds: '#2a8681',
+  /** Carvão. */
+  clubs: '#3a3348',
 } as const;
 
 /**

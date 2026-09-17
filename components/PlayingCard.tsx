@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { cardKey, Card, DeckSkinPalette, ForgedCard } from '../engine';
 
 import { useTranslation } from '../i18n';
-import { forgeEffectLabel, isRedSuit, suitName } from './format';
+import { forgeEffectLabel, suitColor, suitName } from './format';
 import { SuitSymbol } from './SuitSymbol';
 import { colors, spacing, radius } from './theme';
 import { fonts } from './typography';
@@ -41,14 +41,12 @@ export function PlayingCard({
 }: PlayingCardProps) {
   const { t } = useTranslation();
   const forged = forgedCards?.find((c) => cardKey(c.card) === cardKey(card));
-  const red = isRedSuit(card.suit);
   const face = skin?.cardFace ?? colors.cardFace;
   const borderColor = skin?.border ?? 'transparent';
-  const ink = skin?.cardInk ?? colors.cardInk;
-  const redColor = skin?.red ?? colors.red;
 
-  const rankColor = red ? redColor : ink;
-  const suitColor = red ? redColor : ink;
+  // Valor e símbolo usam a mesma cor do Material — reforça de qual Material a carta é.
+  const markColor = suitColor(card.suit, skin);
+  const rankColor = markColor;
 
   const content = (
     <View
@@ -67,7 +65,7 @@ export function PlayingCard({
 
       {/* Center suit (large) */}
       <View style={styles.centerSuit}>
-        <SuitSymbol suit={card.suit} color={suitColor} size={28} />
+        <SuitSymbol suit={card.suit} color={markColor} size={32} />
       </View>
 
       {/* Bottom-right rank (rotated) */}

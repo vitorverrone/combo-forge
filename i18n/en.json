@@ -33,7 +33,7 @@
     "daily": "Daily",
     "plays": "Plays",
     "combo": "Combo",
-    "patternHint": "Select cards to form a play",
+    "patternHint": "Select materials to form a play",
     "base": "Base",
     "pts": "pts",
     "previewSuffix": "with ×{{multiplier}}",
@@ -48,8 +48,8 @@
   "shop": {
     "eyebrow": "Cosmetics",
     "title": "Shop",
-    "subtitle": "100% visual — Deck skins never affect gameplay power.",
-    "decks": "Decks",
+    "subtitle": "100% visual — Set finishes never affect gameplay power.",
+    "decks": "Sets",
     "removeAds": "Remove Ads",
     "removeAdsDesc": "Hides the banner and interstitial ads. Doesn't affect the optional rewarded ad in the Daily Challenge.",
     "buyFor": "Buy for {{price}}",
@@ -61,7 +61,7 @@
   "profile": {
     "eyebrow": "Player stats",
     "title": "Profile",
-    "desc": "Your record across every run, your favorite cards and your achievement progress.",
+    "desc": "Your record across every run, your favorite materials and your achievement progress.",
     "bestRunScore": "Best run score",
     "runsWon": "Runs won",
     "winRate": "Win rate",
@@ -82,8 +82,8 @@
     "title": "Forge",
     "subtitle": "Choose 1 of 3 offers to strengthen your run.",
     "relic": "Relic",
-    "cardEffect": "Card Effect",
-    "chooseCard": "Choose a card",
+    "cardEffect": "Effect",
+    "chooseCard": "Choose a Material",
     "forgeButton": "Forge",
     "chooseRelicToReplace": "Choose a Relic to replace",
     "relicCapReached": "You've reached the Relic limit — pick one to swap for {{name}}."
@@ -100,7 +100,7 @@
     "forgeEffects": "Forge Effects",
     "lockedSummary_one": "{{count}} forger to unlock · win runs to progress",
     "lockedSummary_other": "{{count}} forgers to unlock · win runs to progress",
-    "allCards": "All 40 base cards are always available — forge effects shape them."
+    "allCards": "All 40 base materials are always available — forge effects shape them."
   },
   "daily": {
     "title": "Daily Challenge",
@@ -172,14 +172,14 @@
   },
   "onboarding": {
     "selectCards": {
-      "title": "Select Cards",
-      "body": "Tap cards in your hand to choose between 1 and 5. They form your play for the round.",
-      "tip": "Tip: selected cards lift up with a gold border."
+      "title": "Select Materials",
+      "body": "Tap materials in your hand to choose between 1 and 5. They form your play for the round.",
+      "tip": "Tip: selected materials lift up with a gold border."
     },
     "scorePattern": {
       "title": "Score the Pattern",
-      "body": "Your cards form a pattern — from High Card up to Four of a Kind. Stronger patterns score more.",
-      "tip": "Tip: base = pattern bonus + the cards' values."
+      "body": "Your materials form a pattern — from Raw Ore up to Perfect Cast. Stronger patterns score more.",
+      "tip": "Tip: base = pattern bonus + the materials' values."
     },
     "rideCombo": {
       "title": "Ride the Combo",
@@ -193,7 +193,7 @@
     },
     "relics": {
       "title": "Relics & the Forge",
-      "body": "Win a round and choose between a Relic (a permanent effect for the rest of the run) or a Card Effect (strengthens one specific card).",
+      "body": "Win a round and choose between a Relic (a permanent effect for the rest of the run) or an Effect (strengthens one specific material).",
       "tip": "Tip: Relics stay active until the run ends — choose wisely."
     },
     "letsForge": "Let's Forge"
@@ -226,11 +226,11 @@
   "tutorial": {
     "skip": "Skip tutorial",
     "complete": "Done",
-    "step1Callout": "Tap up to 5 cards from your Hand to form a Play. Start by tapping a card.",
-    "step2Callout": "Didn't like your pick? Clear deselects everything. Discard swaps the selected cards for new ones.",
+    "step1Callout": "Tap up to 5 materials from your Hand to form a Play. Start by tapping a material.",
+    "step2Callout": "Didn't like your pick? Clear deselects everything. Discard swaps the selected materials for new ones.",
     "step3Callout": "Your active relics appear here; simply click on one whenever you like, and a modal with more details will appear.",
     "step4Callout": "Have you had any questions? Tap the icon to open the tips.",
-    "forgeCallout": "Choose a Relic (a permanent effect for the rest of the run) or a Card Effect (strengthens one specific card). Tap any offer to continue."
+    "forgeCallout": "Choose a Relic (a permanent effect for the rest of the run) or an Effect (strengthens one specific material). Tap any offer to continue."
   },
   "unlockChoice": {
     "milestoneReached": "Achievement reached",
@@ -251,33 +251,33 @@
   "format": {
     "noRelic": "No starting relic — pure skill.",
     "pattern": {
-      "highCard": "High Card",
-      "pair": "Pair",
-      "twoPair": "Two Pair",
-      "threeOfAKind": "Three of a Kind",
-      "straight": "Straight",
-      "fullHouse": "Full House",
-      "fourOfAKind": "Four of a Kind"
+      "highCard": "Raw Ore",
+      "pair": "Twin Ingot",
+      "twoPair": "Double Weld",
+      "threeOfAKind": "Triple Cast",
+      "straight": "Forged Chain",
+      "fullHouse": "Master Alloy",
+      "fourOfAKind": "Perfect Cast"
     },
     "forgeEffect": {
-      "valueBonus": "Adds +{{amount}} to the card's value",
-      "multiplier": "Multiplies the card's value by ×{{multiplier}}",
-      "wildcard": "Counts as any value and suit to form patterns",
+      "valueBonus": "Adds +{{amount}} to the material's value",
+      "multiplier": "Multiplies the material's value by ×{{multiplier}}",
+      "wildcard": "Counts as any value and material to form patterns",
       "trigger": "Adds +{{bonus}} pts on the {{triggerPlay}}th play of the round"
     },
     "relic": {
-      "suit": "{{suit}} cards ×{{multiplier}}",
+      "suit": "{{suit}} materials ×{{multiplier}}",
       "pattern": "{{pattern}} bonus +{{bonus}}",
       "discard": "+{{amount}} discard per round",
-      "handSize": "+{{amount}} card in hand",
+      "handSize": "+{{amount}} material in hand",
       "comboStart": "Combo starts at ×{{multiplier}}",
       "comboGrowth": "Combo grows +{{step}} per play"
     },
     "suit": {
-      "spades": "Spades",
-      "hearts": "Hearts",
-      "diamonds": "Diamonds",
-      "clubs": "Clubs"
+      "spades": "Iron",
+      "hearts": "Ember",
+      "diamonds": "Crystal",
+      "clubs": "Coal"
     },
     "displayNameError": {
       "tooShort": "At least 3 characters.",
@@ -286,13 +286,13 @@
       "profanity": "That name isn't allowed."
     },
     "patternComposition": {
-      "highCard": "No matching cards",
-      "pair": "2 cards of the same value",
+      "highCard": "No matching materials",
+      "pair": "2 materials of the same value",
       "twoPair": "2 different pairs",
-      "threeOfAKind": "3 cards of the same value",
+      "threeOfAKind": "3 materials of the same value",
       "straight": "5 consecutive values",
       "fullHouse": "3 of a kind + a pair",
-      "fourOfAKind": "4 cards of the same value"
+      "fourOfAKind": "4 materials of the same value"
     },
     "forgerName": {
       "apprentice": "Apprentice",
@@ -307,13 +307,13 @@
       "diamond": "Diamond"
     },
     "deckSkin": {
-      "deck-classic": "Classic parchment deck",
+      "deck-classic": "Classic parchment finish",
       "deck-obsidian": "Charcoal face with silver ink — forged in shadow.",
       "deck-emerald": "Deep green face with gold ink — forest alloy.",
-      "deck-royal": "Navy face with ivory ink — crown of the forge."
+      "deck-royal": "Violet face with gold ink — crown of the forge."
     },
     "relicCategory": {
-      "suit": "Suit",
+      "suit": "Material",
       "pattern": "Pattern",
       "mechanic": "Mechanic",
       "combo": "Combo"
@@ -369,8 +369,8 @@
       "description": "Reach a ×12 Combo Multiplier in a single play."
     },
     "deckMastery": {
-      "title": "Full Deck",
-      "description": "Play all 40 cards in the Deck at least once."
+      "title": "Full Set",
+      "description": "Play all 40 materials in the Set at least once."
     },
     "forgerMastery": {
       "title": "Triple Forger",
@@ -417,7 +417,7 @@
       "title": "Anvil forger"
     },
     "value-bonus-7": {
-      "title": "+7 to a card's value"
+      "title": "+7 to a material's value"
     },
     "trigger-2-15": {
       "title": "+15 pts on play 2"
@@ -450,7 +450,7 @@
       "title": "Unstoppable Chain"
     },
     "title-full-deck": {
-      "title": "Full Deck"
+      "title": "Full Set"
     },
     "title-triple-forger": {
       "title": "Triple Forger"
@@ -492,8 +492,8 @@
     "openActiveRelics": "Open active relics",
     "abandonRun": "Abandon run",
     "clearSelection": "Clear selection",
-    "discardSelectedCards": "Discard selected cards",
-    "playSelectedCards": "Play selected cards",
+    "discardSelectedCards": "Discard selected materials",
+    "playSelectedCards": "Play selected materials",
     "backToHome": "Back to home",
     "skipTutorial": "Skip tutorial",
     "completeTutorial": "Complete tutorial",

@@ -113,11 +113,12 @@ describe('loja cosmética (ticket 14) — fluxo', () => {
     state = equipCosmetic(state, makeDeps(), 'deck-obsidian');
     expect(state.shop.owned.equippedDeckSkin).toBeNull();
     state = await runShopCommand(state, makeDeps(), { type: 'purchaseCosmetic', itemId: 'deck-obsidian' });
-    state = await runShopCommand(state, makeDeps(), { type: 'purchaseCosmetic', itemId: 'deck-emerald' });
     state = equipCosmetic(state, makeDeps(), 'deck-obsidian');
     expect(state.shop.owned.equippedDeckSkin).toBe('deck-obsidian');
-    state = equipCosmetic(state, makeDeps(), 'deck-emerald');
-    expect(state.shop.owned.equippedDeckSkin).toBe('deck-emerald');
+    // Troca pra Classic (free, sempre possuída) — só confirma que equipar de
+    // novo troca a skin atual, sem depender de uma 2ª skin paga no catálogo.
+    state = equipCosmetic(state, makeDeps(), 'deck-classic');
+    expect(state.shop.owned.equippedDeckSkin).toBe('deck-classic');
   });
 
   test('purchaseCosmetic ignora item já comprado (sem chamar o provider)', async () => {
@@ -129,18 +130,14 @@ describe('loja cosmética (ticket 14) — fluxo', () => {
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
-  test('restore junta compras do servidor às locais', async () => {
+  test('restore junta compras do servidor às locais, ignorando productIds fora do catálogo', async () => {
     const provider = {
       ...createDevShopProvider(),
-      restore: async () => ['combo_forge_skin_royal', 'combo_forge_skin_obsidian'],
+      restore: async () => ['combo_forge_skin_obsidian', 'produto-descontinuado'],
     };
-    let state = await runShopCommand(makeState(), makeDeps(provider), {
-      type: 'purchaseCosmetic',
-      itemId: 'deck-obsidian',
-    });
-    state = await runShopCommand(state, makeDeps(provider), { type: 'restore' });
+    const state = await runShopCommand(makeState(), makeDeps(provider), { type: 'restore' });
     expect(state.shop.owned.owned).toContain('deck-obsidian');
-    expect(state.shop.owned.owned).toContain('deck-royal');
+    expect(state.shop.owned.owned).not.toContain('produto-descontinuado');
   });
 
   test('falha do provider marca erro e não adiciona o item', async () => {

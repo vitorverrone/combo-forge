@@ -143,7 +143,7 @@ export function GameScreen() {
                   accessibilityLabel: t('a11y.nextStep'),
                   onPress: tutorialNextPressed,
                 }}
-                style={styles.hudBox}
+                style={styles.hudBoxTutorial}
               >
                 <Pressable
                   accessibilityLabel={t('a11y.openActiveRelics')}
@@ -499,11 +499,23 @@ const styles = StyleSheet.create({
     borderColor: colors.surfaceBorder,
     borderRadius: radius[10],
     paddingVertical: spacing[10],
-    paddingHorizontal: spacing[10],
+    paddingHorizontal: spacing[0],
+    alignItems: 'center',
+  },
+  hudBoxTutorial: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.surfaceBorder,
+    borderRadius: radius[10],
     alignItems: 'center',
   },
   hudBoxStep: {
+    paddingVertical: spacing[10],
+    paddingHorizontal: spacing[10],
+    width: '100%',
     alignItems: 'center',
+    justifyContent: 'center',
   },
   hudLabel: {
     fontFamily: fonts.body,

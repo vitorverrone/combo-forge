@@ -5,7 +5,7 @@ import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { assertNever, PatternKind, Relic } from '../engine';
 
 import { useTranslation } from '../i18n';
-import { isRedSuit, relicDescription } from './format';
+import { relicDescription, suitColor } from './format';
 import { SuitSymbol } from './SuitSymbol';
 import { colors, radius, spacing } from './theme';
 import { fonts } from './typography';
@@ -56,9 +56,9 @@ export function RelicIcon({ relic, open, onPress, onDismiss }: RelicIconProps) {
     );
 }
 
-/** Cor do glifo — vermelho pra relíquias de naipe vermelho, dourado nas demais. */
+/** Cor do glifo — cor do Material nas relíquias de Material, dourado nas demais. */
 export function relicGlyphColor(relic: Relic): string {
-    return relic.effect.kind === 'suit' && isRedSuit(relic.effect.suit) ? colors.red : colors.gold;
+    return relic.effect.kind === 'suit' ? suitColor(relic.effect.suit) : colors.gold;
 }
 
 /** Retorno declarado + switch exaustivo — ver relics.ts::scoreModifiers. */

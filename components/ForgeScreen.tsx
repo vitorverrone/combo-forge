@@ -17,8 +17,8 @@ import { useTranslation } from '../i18n';
 import {
   forgeEffectDescription,
   forgeEffectLabel,
-  isRedSuit,
   relicDescription,
+  suitColor,
   suitName,
 } from './format';
 import { SuitSymbol } from './SuitSymbol';
@@ -189,7 +189,6 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
                 deck
                   .filter((card) => card.suit === suit)
                   .map((card) => {
-                    const red = isRedSuit(card.suit);
                     let cardEffectDisabled = false
                     run.forgedCards.filter((forgedCard) => {
                       if (cardKey(forgedCard.card) === cardKey(card) && forgedCard.effects.length >= 3) {
@@ -206,16 +205,15 @@ export function ForgeScreen({ run }: ForgeScreenProps) {
                         disabled={cardEffectDisabled}
                         style={({ pressed }) => [
                           styles.pickCard,
-                          red && styles.pickCardRed,
                           isSelected && styles.pickCardSelected,
                           pressed && styles.btnPressed,
                           cardEffectDisabled && { opacity: 0.7 }
                         ]}
                       >
-                        <Text style={[styles.pickCardRank, red && styles.pickCardRedText]}>
+                        <Text style={[styles.pickCardRank, { color: suitColor(card.suit) }]}>
                           {card.value}
                         </Text>
-                        <SuitSymbol suit={card.suit} color={red ? colors.red : colors.cardInk} size={14} />
+                        <SuitSymbol suit={card.suit} color={suitColor(card.suit)} size={32} />
                       </Pressable>
                     );
                   })
@@ -688,7 +686,6 @@ const styles = StyleSheet.create({
     display: 'flex',
     flexDirection: 'column'
   },
-  pickCardRed: {},
   pickCardSelected: {
     borderColor: colors.gold,
   },
@@ -697,7 +694,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '900',
     lineHeight: 18,
-    color: colors.cardInk,
     includeFontPadding: false
   },
   pickCardSuit: {
@@ -706,9 +702,6 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: colors.cardInk,
     includeFontPadding: false
-  },
-  pickCardRedText: {
-    color: colors.red,
   },
   pickerActions: {
     flexDirection: 'row',
