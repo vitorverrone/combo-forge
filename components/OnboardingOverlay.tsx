@@ -3,7 +3,9 @@ import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import { useTranslation } from '../i18n';
 import { kv } from '../services/sqliteKv';
+import { suitColor } from './format';
 import { PatternList } from './PatternList';
+import { SuitSymbol } from './SuitSymbol';
 import { colors, spacing, radius } from './theme';
 import { useResetStepOnReopen } from './useResetStepOnReopen';
 
@@ -135,17 +137,17 @@ function StepVisual({ kind }: { kind: Exclude<Step['visual'], 'pattern'> }) {
     case 'cards':
       return (
         <View style={styles.vCards}>
-          <View style={[styles.vCard, styles.vCardRed]}>
-            <Text style={[styles.vCardRank, styles.vCardRankRed]}>A</Text>
-            <Text style={[styles.vCardSuit, styles.vCardSuitRed]}>♥</Text>
+          <View style={styles.vCard}>
+            <Text style={[styles.vCardRank, { color: suitColor('hearts') }]}>1</Text>
+            <SuitSymbol suit="hearts" color={suitColor('hearts')} size={19} />
           </View>
           <View style={[styles.vCard, styles.vCardSelected]}>
-            <Text style={styles.vCardRank}>7</Text>
-            <Text style={styles.vCardSuit}>♠</Text>
+            <Text style={[styles.vCardRank, { color: suitColor('spades') }]}>7</Text>
+            <SuitSymbol suit="spades" color={suitColor('spades')} size={19} />
           </View>
-          <View style={[styles.vCard, styles.vCardRed]}>
-            <Text style={[styles.vCardRank, styles.vCardRankRed]}>10</Text>
-            <Text style={[styles.vCardSuit, styles.vCardSuitRed]}>♦</Text>
+          <View style={styles.vCard}>
+            <Text style={[styles.vCardRank, { color: suitColor('diamonds') }]}>10</Text>
+            <SuitSymbol suit="diamonds" color={suitColor('diamonds')} size={19} />
           </View>
         </View>
       );
@@ -292,7 +294,6 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderColor: 'transparent',
   },
-  vCardRed: {},
   vCardSelected: {
     transform: [{ translateY: -10 }],
     borderColor: colors.gold,
@@ -302,17 +303,6 @@ const styles = StyleSheet.create({
     fontWeight: '900',
     lineHeight: 20,
     color: colors.cardInk,
-  },
-  vCardRankRed: {
-    color: colors.red,
-  },
-  vCardSuit: {
-    fontSize: 19,
-    lineHeight: 22,
-    color: colors.cardInk,
-  },
-  vCardSuitRed: {
-    color: colors.red,
   },
   /* ── Combo visual ── */
   vCombo: {

@@ -15,8 +15,8 @@ import {
 } from './shop';
 
 describe('catálogo cosmético (ticket 14)', () => {
-  test('tem 4 skins de baralho', () => {
-    expect(COSMETIC_CATALOG.filter((item) => item.kind === 'deckSkin')).toHaveLength(4);
+  test('tem 2 skins de baralho (MVP: Emerald/Royal fora de escopo, comentadas no catálogo)', () => {
+    expect(COSMETIC_CATALOG.filter((item) => item.kind === 'deckSkin')).toHaveLength(2);
   });
 
   test('garantia explícita: itens só carregam dados visuais, nunca poder', () => {
@@ -42,9 +42,10 @@ describe('estado da loja', () => {
     expect(isOwned(state, 'deck-obsidian')).toBe(true);
     state = equipItem(state, 'deck-obsidian');
     expect(state.equippedDeckSkin).toBe('deck-obsidian');
-    state = purchaseItem(state, 'deck-emerald');
-    state = equipItem(state, 'deck-emerald');
-    expect(state.equippedDeckSkin).toBe('deck-emerald');
+    // Troca pra Classic (free, sempre possuída) — só confirma que equipar de
+    // novo troca a skin atual, sem depender de uma 2ª skin paga no catálogo.
+    state = equipItem(state, 'deck-classic');
+    expect(state.equippedDeckSkin).toBe('deck-classic');
   });
 
   test('não equipa item não comprado nem inexistente', () => {
@@ -60,16 +61,16 @@ describe('estado da loja', () => {
     expect(equipItem(state, 'deck-classic').equippedDeckSkin).toBe('deck-classic');
   });
 
-  test('mergeOwned junta ids do servidor (restore) sem duplicar', () => {
+  test('mergeOwned junta ids do servidor (restore) sem duplicar, ignorando ids fora do catálogo', () => {
     let state = purchaseItem(createInitialShopState(), 'deck-obsidian');
-    state = mergeOwned(state, ['deck-emerald', 'deck-obsidian', 'desconhecido']);
-    expect([...state.owned].sort()).toEqual(['deck-emerald', 'deck-obsidian']);
+    state = mergeOwned(state, ['deck-obsidian', 'desconhecido']);
+    expect([...state.owned].sort()).toEqual(['deck-obsidian']);
   });
 
   test('storage em memória persiste o estado', () => {
     const storage = createMemoryShopStorage();
     expect(storage.load()).toBeNull();
-    const state = purchaseItem(createInitialShopState(), 'deck-royal');
+    const state = purchaseItem(createInitialShopState(), 'deck-obsidian');
     storage.save(state);
     expect(storage.load()).toEqual(state);
   });

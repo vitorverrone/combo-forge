@@ -286,7 +286,7 @@ function RankedEntryRows({ entries }: { entries: readonly DailyLeaderboardEntry[
             <Text style={[styles.lbRank, isFirst && styles.lbRankFirst]}>
               {entry.rank}
             </Text>
-            {isFirst && <Text style={styles.lbCrown}>♦</Text>}
+            {isFirst && <Text style={styles.lbCrown}>★</Text>}
             <Text style={[styles.lbName, isFirst && styles.lbNameFirst]} numberOfLines={1}>
               {entry.name ?? t('daily.anonymousName')}
             </Text>

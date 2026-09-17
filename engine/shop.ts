@@ -13,14 +13,20 @@
  * app; dev simulado nos testes).
  */
 
+import { Suit } from './cards';
+
 /** Paleta de cores de uma skin de baralho (aplica na face das cartas). */
 export interface DeckSkinPalette {
   /** Face da carta (substitui colors.cardFace). */
   readonly cardFace: string;
-  /** Tinta dos valores/naipes pretos (substitui colors.cardInk). */
+  /** Tinta do Valor impresso (substitui colors.cardInk). */
   readonly cardInk: string;
-  /** Naipes vermelhos (substitui colors.red). */
-  readonly red: string;
+  /**
+   * Cor do símbolo de cada Material, por identificador interno de naipe.
+   * Cada skin traz as quatro porque uma face escura precisa de tons claros
+   * que a face de pergaminho não usaria.
+   */
+  readonly suits: Readonly<Record<Suit, string>>;
   readonly border: string;
 }
 
@@ -51,42 +57,62 @@ export const COSMETIC_CATALOG: readonly CosmeticItem[] = [
     kind: 'deckSkin',
     id: 'deck-classic',
     name: 'Classic',
-    description: 'Classic parchment deck',
+    description: 'Classic parchment set',
     productId: 'combo_forge_skin_classic',
     devPrice: '$0',
-    palette: { cardFace: '#f2e9d8', cardInk: '#221a2e', red: '#c1352c', border: 'transparent' },
+    palette: {
+      cardFace: '#f2e9d8',
+      cardInk: '#221a2e',
+      suits: { spades: '#5c6b7a', hearts: '#c4542a', diamonds: '#2e8c88', clubs: '#3a3348' },
+      border: 'transparent',
+    },
     free: true,
   },
   {
     kind: 'deckSkin',
     id: 'deck-obsidian',
-    name: 'Obsidian Deck',
+    name: 'Obsidian Set',
     description: 'Charcoal face with silver ink — forged in shadow.',
     productId: 'combo_forge_skin_obsidian',
     devPrice: '$0.99',
-    palette: { cardFace: '#1a1724', cardInk: '#f1eef7', red: '#e05c4e', border: '#4a4560' },
+    palette: {
+      cardFace: '#1a1724',
+      cardInk: '#f1eef7',
+      suits: { spades: '#9baab8', hearts: '#e87b4a', diamonds: '#5cc9c2', clubs: '#a9a3c4' },
+      border: '#4a4560',
+    },
     free: false,
   },
-  {
-    kind: 'deckSkin',
-    id: 'deck-emerald',
-    name: 'Emerald Deck',
-    description: 'Deep green face with gold ink — forest alloy.',
-    productId: 'combo_forge_skin_emerald',
-    devPrice: '$0.99',
-    palette: { cardFace: '#0f3a2c', cardInk: '#f4ecd2', red: '#d98c3a', border: '#2f6b52' },
-    free: false,
-  },
-  {
-    kind: 'deckSkin',
-    id: 'deck-royal',
-    name: 'Royal Deck',
-    description: 'Navy face with ivory ink — crown of the forge.',
-    productId: 'combo_forge_skin_royal',
-    devPrice: '$0.99',
-    palette: { cardFace: '#3a1442', cardInk: '#eccd6e', red: '#c1352c', border: '#caa15a' },
-    free: false,
-  },
+  // {
+  //   kind: 'deckSkin',
+  //   id: 'deck-emerald',
+  //   name: 'Emerald Set',
+  //   description: 'Deep green face with gold ink — forest alloy.',
+  //   productId: 'combo_forge_skin_emerald',
+  //   devPrice: '$0.99',
+  //   palette: {
+  //     cardFace: '#0f3a2c',
+  //     cardInk: '#f4ecd2',
+  //     suits: { spades: '#a8bcc4', hearts: '#e8a14a', diamonds: '#6fd9c0', clubs: '#b9b0d0' },
+  //     border: '#2f6b52',
+  //   },
+  //   free: false,
+  // },
+  // {
+  //   kind: 'deckSkin',
+  //   id: 'deck-royal',
+  //   name: 'Gilded Set',
+  //   description: 'Violet face with gold ink — crown of the forge.',
+  //   productId: 'combo_forge_skin_royal',
+  //   devPrice: '$0.99',
+  //   palette: {
+  //     cardFace: '#3a1442',
+  //     cardInk: '#eccd6e',
+  //     suits: { spades: '#b4b9cc', hearts: '#e88a4a', diamonds: '#6fc9d9', clubs: '#c9b8e0' },
+  //     border: '#caa15a',
+  //   },
+  //   free: false,
+  // },
 ];
 
 /**

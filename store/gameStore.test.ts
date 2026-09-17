@@ -930,13 +930,13 @@ describe('loja (delegação para o shopFlow — refactor)', () => {
       shopStorage: storage,
       shopProvider: {
         ...createDevShopProvider(),
-        restore: async () => ['combo_forge_skin_royal'],
+        restore: async () => ['combo_forge_skin_obsidian'],
         hasEntitlement: async (entitlementId) => entitlementId === REMOVE_ADS_ENTITLEMENT_ID,
       },
     });
     await store.getState().restorePurchases();
     const state = store.getState();
-    expect(state.shop.owned.owned).toContain('deck-royal');
+    expect(state.shop.owned.owned).toContain('deck-obsidian');
     expect(state.adsRemoved).toBe(true); // entitlement reentregue pelo restore
     expect(storage.load()?.adsRemoved).toBe(true);
   });

@@ -9,6 +9,7 @@ import {
   DailyAttempts,
   dailyCallToActionState,
   DeckSkinItem,
+  DeckSkinPalette,
   DisplayNameValidation,
   ForgeEffect,
   ForgerId,
@@ -18,23 +19,25 @@ import {
   RelicCategory,
   Suit,
 } from '../engine';
+import { suitColors } from './theme';
 
+/**
+ * Marca textual de cada Material, usada onde não cabe o SVG (ex.: rótulo curto
+ * de carta). Símbolos geométricos neutros — nada de ♠♥♦♣.
+ */
 export const SUIT_SYMBOL: Readonly<Record<Suit, string>> = {
-  spades: '♠',
-  hearts: '♥',
-  diamonds: '♦',
-  clubs: '♣',
+  spades: '▰',
+  hearts: '◆',
+  diamonds: '◇',
+  clubs: '⬢',
 };
 
-export const SUIT_NAME: Readonly<Record<Suit, string>> = {
-  spades: 'Spades',
-  hearts: 'Hearts',
-  diamonds: 'Diamonds',
-  clubs: 'Clubs',
-};
-
-export function isRedSuit(suit: Suit): boolean {
-  return suit === 'hearts' || suit === 'diamonds';
+/**
+ * Cor do símbolo do Material. Uma `DeckSkinPalette` sobrescreve estas cores
+ * (face escura precisa de tom claro); sem skin, vale a paleta da face clara.
+ */
+export function suitColor(suit: Suit, skin?: DeckSkinPalette): string {
+  return skin?.suits[suit] ?? suitColors[suit];
 }
 
 /** Pattern names — translated via i18n. */
@@ -46,17 +49,6 @@ const PATTERN_I18N_KEY: Readonly<Record<PatternKind, string>> = {
   [PatternKind.Straight]: 'format.pattern.straight',
   [PatternKind.FullHouse]: 'format.pattern.fullHouse',
   [PatternKind.FourOfAKind]: 'format.pattern.fourOfAKind',
-};
-
-/** Non-translated pattern names for internal use (tests, etc.). */
-export const PATTERN_NAME: Readonly<Record<PatternKind, string>> = {
-  [PatternKind.HighCard]: 'High Card',
-  [PatternKind.Pair]: 'Pair',
-  [PatternKind.TwoPair]: 'Two Pair',
-  [PatternKind.ThreeOfAKind]: 'Three of a Kind',
-  [PatternKind.Straight]: 'Straight',
-  [PatternKind.FullHouse]: 'Full House',
-  [PatternKind.FourOfAKind]: 'Four of a Kind',
 };
 
 /** Translated pattern name for display. */

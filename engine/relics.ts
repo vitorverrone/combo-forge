@@ -46,28 +46,28 @@ export const RELIC_POOL: readonly Relic[] = [
   // Naipe — multiplica a contribuição das cartas do Naipe no Valor-Base
   {
     id: 'suit-spades',
-    name: 'Blade of Spades',
+    name: 'Blade of Iron',
     category: 'suit',
     rarity: 'common',
     effect: { kind: 'suit', suit: 'spades', multiplier: 2 },
   },
   {
     id: 'suit-hearts',
-    name: 'Hearth of Hearts',
+    name: 'Hearth of Ember',
     category: 'suit',
     rarity: 'common',
     effect: { kind: 'suit', suit: 'hearts', multiplier: 2 },
   },
   {
     id: 'suit-diamonds',
-    name: 'Crown of Diamonds',
+    name: 'Crown of Crystal',
     category: 'suit',
     rarity: 'common',
     effect: { kind: 'suit', suit: 'diamonds', multiplier: 2 },
   },
   {
     id: 'suit-clubs',
-    name: 'Oak of Clubs',
+    name: 'Seam of Coal',
     category: 'suit',
     rarity: 'common',
     effect: { kind: 'suit', suit: 'clubs', multiplier: 2 },
