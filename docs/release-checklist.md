@@ -87,10 +87,8 @@ opcional e sem prazo mínimo.
    Decidido e implementado em 2026-09-08 — ver seção 3 "ATT" abaixo. Fecha a
    zona cinzenta de compliance da guideline 5.1.2 da Apple antes de
    submeter, mesmo o app só pedindo anúncio não-personalizado.
-4. **SKAdNetworkItems:** pendente — copiar a lista atual de
-   `developers.google.com/admob/ios/3p-skadnetworks` pro `app.json` antes do
-   build de produção final (seção 3 "SKAdNetwork" — **deliberadamente não
-   automatizado nesta sessão**, ver nota de risco lá).
+4. ~~**SKAdNetworkItems:** copiar a lista do Google pro `app.json`.~~ ✅
+   Feito em 2026-10-08 pro build 1.0.1 (seção 3 "SKAdNetworkItems").
 5. ~~**RevenueCat → app "Combo Forge (App Store)":** criar os mesmos 4
    produtos + gerar e subir a **In-App Purchase Key**.~~ ✅ Feito em
    2026-09-08 — key, 4 produtos, entitlement, offering e chave de API
@@ -120,7 +118,32 @@ opcional e sem prazo mínimo.
     versão do app → "Add for Review", com os IAPs anexados à mesma
     submission — Apple revisa app e IAP juntos na primeira vez). Próximo
     passo real, depois da validação no TestFlight (item 10).
-12. **Publicar em produção na App Store.**
+12. ~~**Publicar em produção na App Store.**~~ ✅ Versão 1.0.0 publicada em
+    2026-10-08, ainda com anúncios de TESTE (o build aprovado foi gerado com
+    `EXPO_PUBLIC_ADMOB_LIVE_ADS` desligado).
+13. **Update 1.0.1 com anúncios reais** (branch `chore/ios-live-ads-update`):
+    - [x] `version` 1.0.1 e `skAdNetworkItems` no `app.json`. O `buildNumber`
+      sobe sozinho (`appVersionSource: remote` + `autoIncrement`).
+    - [ ] Confirmar `EXPO_PUBLIC_ADMOB_LIVE_ADS=true` no ambiente `production`
+      do EAS imediatamente antes do build (já estava em 2026-10-08).
+    - [ ] `eas build --profile production --platform ios` + `eas submit`.
+    - [ ] App Store Connect: criar a versão 1.0.1, anexar o build, submeter pra
+      review com **liberação manual**.
+    - [ ] AdMob → app iOS → Detalhes da app store: vincular a ficha (a
+      propagação da busca pode levar até ~72h após a publicação).
+    - [ ] Só liberar a 1.0.1 depois do vínculo e de o AdMob servir anúncio real
+      (antes disso o banner fica vazio e rewarded/intersticial dão `NO_FILL`).
+    - [ ] Validar em device físico: ATT, 3 formatos reais, sem rótulo
+      "Test Ad", Remove Ads some com banner e intersticial.
+14. **R8 no Android** (2026-10-08): `enableMinifyInReleaseBuilds` e
+    `enableShrinkResourcesInReleaseBuilds` ligados no `expo-build-properties`
+    do `app.json`, sem `extraProguardRules` (AdMob, Firebase e RevenueCat
+    trazem consumer rules nos próprios AARs). Não afeta o iOS.
+    - [ ] Gerar um build Android `preview` e validar em device: boot, os 3
+      anúncios, compra/restore, Firebase. Se algo quebrar só em release,
+      suspeitar de R8 primeiro e adicionar keep rule.
+    - [ ] Guardar o mapping file do R8 (o EAS sobe junto com o `.aab`) e
+      conferir no Play Console que o arquivo de desofuscação foi associado.
 
 ---
 
@@ -142,7 +165,7 @@ opcional e sem prazo mínimo.
 | AdMob — ad units **iOS** | ✅ Criadas em 2026-09-08 — as 3 reais, `.env`/EAS/`app.json` atualizados | Aguardar ~1h de propagação antes de testar anúncio real (mesmo padrão do Android) |
 | AdMob — vínculo com a loja | ⏳ **Bloqueado, não pendente** (as duas plataformas) — só é possível pós-publicação em produção | Reordenado no roteiro de cada loja (item final) |
 | App Tracking Transparency (iOS) | ✅ **Implementado em 2026-09-08** — `expo-tracking-transparency` + prompt no boot (`App.tsx`/`services/tracking.ts`), banner espera a resposta antes de montar | — |
-| SKAdNetworkItems (iOS) | ⏳ **Não preenchido, deliberado** — lista muda com frequência, risco de transcrição errada via ferramenta automatizada (ver seção 3) | Copiar manualmente de `developers.google.com/admob/ios/3p-skadnetworks` antes do build de produção final |
+| SKAdNetworkItems (iOS) | ✅ **Preenchido em 2026-10-08** (50 IDs, extraídos por regex do HTML da página do Google) | Vai no build 1.0.1 |
 | Google Play Console | ✅ App criado, teste fechado publicado, 1 testador ativo | Recrutar até 12 testadores + aguardar 14 dias corridos |
 | Google Play Console — IAPs | ✅ 4 produtos únicos criados e ativos | — |
 | App Store Connect — app + IAPs | ✅ App, 4 IAPs, Tradução/Review Info e App Privacy **completos** (2026-09-08) | Falta só submeter app + IAPs juntos pra revisão |
@@ -430,7 +453,14 @@ cinzenta, decidiu-se fechar o risco: implementar o prompt de qualquer forma.
       prompt aparece uma vez no primeiro launch, o app funciona igual
       aceitando ou negando.
 
-### ⏳ SKAdNetworkItems — pendente, deliberadamente não preenchido agora
+### ✅ SKAdNetworkItems — preenchido em 2026-10-08 (build 1.0.1)
+
+Os 50 IDs foram extraídos por regex do HTML cru da página do Google (atualizada
+em 2026-02-10 UTC), sem passar por resumo automatizado, e validados contra o
+formato `^[a-z0-9]{10}\.skadnetwork$`. Reextrair da mesma página de tempos em
+tempos, o Google avisa que a lista muda.
+
+Histórico da decisão original, mantido pelo motivo do cuidado:
 
 Google recomenda adicionar a lista de `SKAdNetworkIdentifier` publicada em
 **`developers.google.com/admob/ios/3p-skadnetworks`** ao `Info.plist` (via
@@ -450,10 +480,9 @@ nenhum teste (um ID errado só falha silenciosamente em atribuir instalação,
 nunca quebra o app) — preferível copiar direto da página no navegador na
 hora de fazer o build de produção final, não hoje.
 
-- [ ] Antes do build `production` final do iOS: abrir
-      `developers.google.com/admob/ios/3p-skadnetworks`, copiar a lista
-      atual, adicionar como `skAdNetworkItems: string[]` na config do
-      plugin `react-native-google-mobile-ads` em `app.json`.
+- [x] Antes do build `production` final do iOS: copiar a lista de
+      `developers.google.com/admob/ios/3p-skadnetworks` pra `skAdNetworkItems`
+      na config do plugin `react-native-google-mobile-ads` em `app.json`.
 
 ### Configurações do app (as 2 plataformas)
 
@@ -1058,6 +1087,35 @@ tocado, só a apresentação.
       concluído.
 - [ ] Build de produção instalado em device físico com todo o fluxo
       validado (compra real, restore, os 3 formatos de anúncio).
+- [ ] **Próximo build Android (pós-1.0.0): ativar R8.** O Play Console
+      (Qualidade → Versão 1.0.0) recomenda a otimização do R8 — o build
+      de release está sem minificação. Não bloqueia a publicação, então
+      ficou fora da 1.0.0 pra não somar risco à primeira submissão. Em
+      `app.json`, no plugin `expo-build-properties` → `android`, adicionar
+      `enableMinifyInReleaseBuilds: true` e
+      `enableShrinkResourcesInReleaseBuilds: true`. Risco: o R8 pode quebrar
+      libs nativas sem regra de proguard (AdMob, Firebase Analytics,
+      RevenueCat) e a falha só aparece em runtime — validar num build
+      interno (compra, restore, os 3 formatos de anúncio, analytics) antes
+      de mandar pra produção.
+- [ ] **Pós-1.0.0: APIs de edge-to-edge descontinuadas (Android 15).** O
+      Play Console (Qualidade → Versão 1.0.0) avisa que o app usa
+      `Window.setStatusBarColor`/`setNavigationBarColor`/
+      `getStatusBarColor` e `LAYOUT_IN_DISPLAY_CUTOUT_MODE_*`. Todas as
+      origens são de dependências, não de código do app: React Native
+      (`StatusBarModule`, `WindowUtilKt`), Material Components, AdMob
+      (`gms.ads`) e Play Core. Não bloqueia nada e não dá pra corrigir no
+      código do app — resolve atualizando o Expo SDK / React Native e o
+      `react-native-google-mobile-ads` pra versões que já migraram. Revisar
+      o aviso depois de cada upgrade de SDK.
+- [ ] **Pós-1.0.0: restrição de orientação (telas grandes).** O Play
+      Console recomenda remover `android:screenOrientation="PORTRAIT"` da
+      `MainActivity` pra compatibilidade com tablets e dobráveis (Android
+      16+ ignora a trava em telas grandes). Decisão pendente: manter
+      retrato travado (escolha de design, jogo de cartas) ou suportar
+      paisagem/telas largas — o segundo exige testar e ajustar o layout de
+      todas as telas. Só vale o esforço se aparecer em tablets/dobráveis
+      for objetivo.
 
 ### iOS (novo)
 
